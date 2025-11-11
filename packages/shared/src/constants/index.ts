@@ -34,6 +34,7 @@ export const WS_EVENTS = {
   ANSWER_REVEALED: 'answer-revealed',
   NEXT_QUESTION: 'next-question',
   QUESTION_STARTED: 'question-started',
+  END_GAME: 'end-game',
   GAME_ENDED: 'game-ended',
   ERROR: 'error',
   REJOIN_ROOM: 'rejoin-room',
