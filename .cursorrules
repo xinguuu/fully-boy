@@ -1,0 +1,1557 @@
+# Xingu Project - AI Development Rules
+
+## 📝 MANDATORY: Post-Work Documentation Protocol
+
+**After completing ANY task or work session, AI MUST:**
+
+1. **Update this .cursorrules file** with:
+   - New commands, scripts, or workflows discovered
+   - Dependencies added or changed
+   - Project structure modifications
+   - New patterns, conventions, or architectural decisions
+   - Important gotchas, edge cases, or lessons learned
+   - Configuration changes or environment updates
+
+2. **Update "Recent Changes and Notes" section** with:
+   - Date and clear description of work completed
+   - Technical details of implementation
+   - Files modified or created
+   - Testing results and coverage
+   - Any breaking changes or migration notes
+
+3. **Update "Last Working State" section** with:
+   - What is completed and working
+   - What is in progress
+   - What needs attention next
+   - Test status and coverage metrics
+
+4. **Update relevant command examples** if new workflows are established
+
+### IMPORTANT: Maintain Continuity
+
+This documentation protocol ensures:
+- **Seamless handoffs** between developers or AI instances
+- **Historical context** of architectural decisions
+- **Up-to-date command references** and workflows
+- **Clear next steps** for continuing development
+- **Preserved institutional knowledge** across work sessions
+
+**NO WORK IS COMPLETE until this file reflects the changes.**
+
+---
+
+## 🏗️ Monorepo + Microservice Architecture
+
+### Project Structure (Turborepo + Docker)
+```
+xingu/
+├── apps/
+│   ├── web/                    # 📦 Next.js 15 Frontend (Container)
+│   │   ├── app/
+│   │   ├── components/
+│   │   ├── lib/
+│   │   ├── tests/
+│   │   └── Dockerfile
+│   ├── auth-service/           # 📦 NestJS Auth Service (Container)
+│   │   ├── src/
+│   │   │   ├── modules/
+│   │   │   ├── common/
+│   │   │   └── tests/
+│   │   ├── prisma/
+│   │   └── Dockerfile
+│   ├── game-service/           # 📦 Express Game Service (Container)
+│   │   ├── src/
+│   │   │   ├── routes/
+│   │   │   ├── controllers/
+│   │   │   ├── services/
+│   │   │   └── tests/
+│   │   └── Dockerfile
+│   └── ws-service/             # 📦 Socket.io WebSocket Service (Container)
+│       ├── src/
+│       │   ├── handlers/
+│       │   ├── rooms/
+│       │   └── tests/
+│       └── Dockerfile
+├── packages/
+│   ├── shared/                 # Shared Types, Utils, Constants
+│   │   ├── types/
+│   │   ├── utils/
+│   │   ├── constants/
+│   │   ├── errors/
+│   │   └── schemas/            # Zod schemas (API contract)
+│   ├── database/               # Shared Prisma Schema
+│   │   ├── prisma/
+│   │   └── migrations/
+│   └── config/                 # Shared Configuration
+│       ├── eslint/
+│       ├── typescript/
+│       └── jest/
+├── infrastructure/             # Docker Infrastructure
+│   ├── nginx/                  # 📦 Reverse Proxy (Container)
+│   │   ├── nginx.conf
+│   │   └── Dockerfile
+│   ├── postgres/               # 📦 PostgreSQL Database (Container)
+│   │   └── init.sql
+│   └── redis/                  # 📦 Redis Session Store (Container)
+│       └── redis.conf
+├── docker-compose.yml          # All services orchestration
+├── docker-compose.dev.yml      # Development override
+├── turbo.json
+├── package.json
+└── .cursorrules
+```
+
+### 🐳 Docker Container Architecture
+
+**Total: 7 Containers**
+
+1. **nginx** - Reverse proxy, load balancing
+2. **postgres** - Main database (users, games, rooms)
+3. **redis** - Session sharing, real-time state
+4. **web** - Next.js frontend (SSR)
+5. **auth-service** - NestJS (authentication, users)
+6. **game-service** - Express (games, templates, rooms)
+7. **ws-service** - Socket.io (real-time WebSocket)
+
+### 🔄 Service Communication
+
+```
+Client (Browser)
+    ↓
+Nginx (Port 80)
+    ↓
+┌────────────┬─────────────┬──────────────┐
+│    Web     │Auth Service │Game Service  │
+│  (Next.js) │  (NestJS)   │  (Express)   │
+└────┬───────┴──────┬──────┴──────┬───────┘
+     │              │             │
+     └──────────────┴─────────────┴────→ PostgreSQL
+     │              │             │
+     └──────────────┴─────────────┴────→ Redis (Session)
+     │
+     └────────────────────────────────→ WS Service (Socket.io)
+                                              ↓
+                                           Redis (Pub/Sub)
+```
+
+## 🎯 Core Development Workflow
+
+### 1. TASK-DRIVEN DEVELOPMENT (MANDATORY)
+- **Always create TODOs first** before starting work
+- Break down large tasks **into smaller units** (minimum 2 TODOs)
+- Each TODO must be independently testable
+- Check off TODOs immediately after completion
+- **Monorepo**: Specify affected apps/packages
+
+### 2. MONOREPO + MSA Principles
+- **App Independence**: Each app (web, server, mobile) can run independently
+- **Package Sharing**: Common logic managed in packages/
+- **Feature-based Modules**: Each feature is completely independent
+- **Domain-driven Design**: Clear separation by domain
+- **Vertical Slicing**: UI → API → Business Logic → Data Layer all independent
+- **Loose Coupling**: Minimize inter-module dependencies
+- **High Cohesion**: Keep related things together
+
+#### Web App Folder Structure (Next.js)
+```
+apps/web/
+├── app/
+│   ├── (features)/
+│   │   ├── auth/
+│   │   ├── users/
+│   │   └── products/
+│   └── api/
+├── components/
+│   ├── features/
+│   └── layouts/
+├── lib/
+└── tests/
+```
+
+#### Server Folder Structure (Backend)
+```
+apps/server/
+├── src/
+│   ├── modules/
+│   │   ├── auth/
+│   │   │   ├── auth.controller.ts
+│   │   │   ├── auth.service.ts
+│   │   │   ├── auth.dto.ts
+│   │   │   ├── auth.entity.ts
+│   │   │   └── tests/
+│   │   ├── users/
+│   │   └── products/
+│   ├── common/
+│   │   ├── filters/
+│   │   ├── guards/
+│   │   ├── interceptors/
+│   │   └── pipes/
+│   └── main.ts
+└── prisma/
+    └── schema.prisma
+```
+
+#### Mobile App Folder Structure (React Native)
+```
+apps/mobile/
+├── src/
+│   ├── screens/
+│   │   ├── auth/
+│   │   ├── home/
+│   │   └── profile/
+│   ├── components/
+│   ├── navigation/
+│   ├── hooks/
+│   ├── services/
+│   └── store/
+└── tests/
+```
+
+### 3. TDD (Test-Driven Development) - STRICT
+1. **🔴 RED**: Write a failing test first
+2. **🟢 GREEN**: Write minimal code to pass the test
+3. **🔵 REFACTOR**: Improve and optimize the code
+
+#### Test Priority
+- Unit Tests (Vitest) - All functions/components
+- Integration Tests - API and inter-module integration
+- E2E Tests (Playwright) - Major user flows
+
+### 4. AUTOMATED VALIDATION (MANDATORY)
+**Validation steps that must be executed after writing code**:
+
+#### Full Monorepo Validation
+```bash
+# 1. Type check everything
+npm run type-check
+
+# 2. Lint everything
+npm run lint
+
+# 3. Unit tests for everything
+npm run test
+
+# 4. Build everything (utilizing Turborepo caching)
+npm run build
+
+# 5. E2E tests
+npm run test:e2e
+```
+
+#### Specific App Validation (Fast Iteration)
+```bash
+# Web app only
+npm run build --filter=web
+npm run test --filter=web
+
+# Server app only
+npm run build --filter=server
+npm run test --filter=server
+
+# Mobile app only
+npm run test --filter=mobile
+
+# Specific package only
+npm run test --filter=@xingu/ui
+```
+
+**AI Work Rules**:
+- **Directly execute** the above commands after completing code
+- **Prioritize validation of affected apps/packages only** (fast feedback)
+- Run **full validation** when major features are completed
+- **Fix immediately** and re-validate when errors occur
+- Do not proceed to next task until all validations pass
+- Record validation failures in TODOs
+
+### 5. SOLID Principles (TypeScript/React)
+
+#### Single Responsibility Principle (SRP)
+- One component/function should have one responsibility
+- Consider splitting files over 200 lines
+
+#### Open/Closed Principle (OCP)
+- Open for extension, closed for modification
+- Utilize Props and Composition
+
+#### Liskov Substitution Principle (LSP)
+- Ensure type safety
+- Utilize Interfaces
+
+#### Interface Segregation Principle (ISP)
+- Small, specific interfaces
+- Pass only necessary props
+
+#### Dependency Inversion Principle (DIP)
+- Depend on abstractions
+- Dependency injection through Hooks
+
+### 6. Clean Code Principles
+
+#### File/Folder Naming Conventions
+```
+✅ GOOD:
+- Components: Button.tsx, UserProfile.tsx (PascalCase)
+- Utils/Functions: formatDate.ts, calculateTotal.ts (camelCase)
+- Hooks: useAuth.ts, useUserData.ts (camelCase + use prefix)
+- Types: user.types.ts, api.types.ts (camelCase + .types)
+- Constants: API_ENDPOINTS.ts, USER_ROLES.ts (UPPER_SNAKE_CASE)
+- Folders: user-profile/, auth-wizard/ (kebab-case)
+- Tests: Button.test.tsx, formatDate.test.ts (.test)
+- E2E: login.spec.ts, checkout.spec.ts (.spec)
+
+❌ BAD:
+- button.tsx (components should be PascalCase)
+- FormatDate.ts (utils should be camelCase)
+- Auth.hook.ts (missing use prefix)
+- UserTypes.ts (type files should use .types)
+- api_endpoints.ts (no snake_case except for constants)
+```
+
+#### Variable/Function Naming Conventions
+```typescript
+// ✅ GOOD - Clear and meaningful names
+const isUserAuthenticated = useAuth();
+const hasPermission = checkPermission();
+const fetchUserData = async () => {};
+const totalPrice = calculateTotal(items);
+const isLoading = false;
+const hasError = false;
+
+// ❌ BAD - Unclear or abbreviated names
+const auth = useAuth();
+const check = checkPermission();
+const getData = async () => {};
+const total = calc(items);
+const loading = false;
+const err = false;
+```
+
+#### Function Rules
+- Functions should do one thing (SRP)
+- Function names start with verbs (get, set, fetch, create, update, delete, handle, is, has)
+- Recommend 3 or fewer parameters (group into object if more)
+- Favor pure functions (minimize side effects)
+- Clearly mark async functions
+
+#### Component Structure Order
+```typescript
+// 1. Imports
+import { useState } from 'react';
+import type { User } from '@xingu/shared';
+import { Button } from '@xingu/ui';
+
+// 2. Types/Interfaces
+interface UserProfileProps {
+  user: User;
+  onUpdate: (user: User) => void;
+}
+
+// 3. Constants
+const MAX_NAME_LENGTH = 50;
+
+// 4. Main Component
+export function UserProfile({ user, onUpdate }: UserProfileProps) {
+  // State
+  const [isEditing, setIsEditing] = useState(false);
+  
+  // Hooks
+  const { mutate } = useUpdateUser();
+  
+  // Handlers
+  const handleSubmit = () => {
+    // ...
+  };
+  
+  // Render
+  return (
+    <div>
+      {/* JSX */}
+    </div>
+  );
+}
+
+// 5. Sub Components (if needed)
+function UserAvatar({ src }: { src: string }) {
+  return <img src={src} />;
+}
+
+// 6. Helper Functions (outside component)
+function validateUserName(name: string): boolean {
+  return name.length <= MAX_NAME_LENGTH;
+}
+
+// 7. Exports (if needed)
+export type { UserProfileProps };
+```
+
+#### 🚨 NO Redundant Comments/JSDoc
+
+- **NEVER** add obvious/redundant comments that just repeat what code clearly indicates
+- **Examples to AVOID:**
+  ```typescript
+  // ❌ REDUNDANT - function name is clear
+  // Create user
+  function createUser() {}
+
+  // ❌ REDUNDANT - class name is clear
+  // User repository
+  class UserRepository {}
+
+  // ❌ REDUNDANT - file name is obvious
+  // user.types.ts
+  /**
+   * User types
+   */
+  export interface User {}
+  ```
+
+#### ✅ When Comments ARE Valuable
+
+- **Complex business logic** that needs explanation
+- **Method parameters** with specific validation rules or formats
+- **Return value details** when not obvious from type hints
+- **Usage examples** for complex APIs
+- **Important side effects** or state changes
+- **Examples of GOOD comments:**
+  ```typescript
+  /**
+   * Get existing tags or create new ones, handling duplicates and validation.
+   * Tags are case-insensitive and normalized before storage.
+   *
+   * @param tagNames - List of tag names to process
+   * @returns Promise resolving to Tag objects (existing or newly created)
+   * @throws {ValidationError} If tag name exceeds 50 characters or contains invalid characters
+   */
+  async getOrCreateTags(tagNames: string[]): Promise<Tag[]> {
+    // Normalize and deduplicate tags
+    const normalized = [...new Set(tagNames.map(name => name.toLowerCase().trim()))];
+    // ... complex logic
+  }
+  ```
+
+#### Code Comments Policy
+
+- **IMPORTANT**: DO NOT ADD ***ANY*** COMMENTS unless explicitly asked or the logic is genuinely complex
+- Let clear naming and type safety speak for themselves
+- Focus on writing self-documenting code
+
+### 7. Import Conventions (TypeScript/JavaScript)
+
+The project follows modern ES modules best practices:
+
+#### Package Internals (within monorepo packages)
+
+- Use explicit relative imports for same package: `./module`, `../package`
+- Examples:
+  ```typescript
+  // In packages/shared/utils/format.ts
+  import { User } from '../types/user';
+  import { constants } from './constants';
+  
+  // In apps/web/lib/services/user-service.ts
+  import { fetchUserData } from '../api/client';
+  import type { User } from '@xingu/shared';
+  ```
+
+#### External Packages
+
+- Use absolute imports for third-party packages and workspace packages
+- Examples:
+  ```typescript
+  import { z } from 'zod';
+  import { useQuery } from '@tanstack/react-query';
+  import type { User } from '@xingu/shared';
+  import { Button } from '@xingu/ui';
+  ```
+
+#### Monorepo Workspace Imports
+
+- Use workspace package names with `@xingu/` prefix
+- Examples:
+  ```typescript
+  // In apps/web/
+  import type { User, ApiError } from '@xingu/shared';
+  import { Button, Card } from '@xingu/ui';
+  import { createUser } from '@xingu/api-client';
+  ```
+
+#### Type-only Imports
+
+- Use `import type` for type-only imports (optimization)
+- Examples:
+  ```typescript
+  import type { User } from '@xingu/shared';
+  import type { NextPage } from 'next';
+  import { createUser } from '@xingu/api-client'; // Runtime import
+  ```
+
+This follows Next.js, Vercel, and modern TypeScript patterns for clear dependency relationships.
+
+### 8. Next.js 15 + React 19 Best Practices
+
+#### Server Components (Default)
+```typescript
+// app/users/page.tsx
+export default async function UsersPage() {
+  const users = await fetchUsers(); // Direct fetch on server
+  return <UserList users={users} />;
+}
+```
+
+#### Client Components (Only When Necessary)
+```typescript
+'use client';  // Explicit declaration
+
+// Use cases:
+// - useState, useEffect, and other React hooks
+// - Browser APIs (localStorage, etc)
+// - Event listeners
+// - Context usage
+```
+
+#### Data Fetching
+```typescript
+// ✅ Fetch in Server Component
+const data = await fetch('https://api.example.com', {
+  next: { revalidate: 3600 } // ISR
+});
+
+// ✅ Server Actions
+'use server';
+export async function createUser(formData: FormData) {
+  // ...
+}
+```
+
+#### Error Handling & Loading States
+```typescript
+// app/users/error.tsx - Error boundary
+'use client';
+
+export default function Error({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) {
+  return (
+    <div>
+      <h2>Something went wrong!</h2>
+      <button onClick={() => reset()}>Try again</button>
+    </div>
+  );
+}
+
+// app/users/loading.tsx - Loading state
+export default function Loading() {
+  return <UsersSkeleton />;
+}
+
+// app/users/not-found.tsx - 404 page
+export default function NotFound() {
+  return <div>User not found</div>;
+}
+```
+
+### 8. TypeScript Strict Rules
+
+```typescript
+// tsconfig.json - strict mode
+{
+  "compilerOptions": {
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true
+  }
+}
+```
+
+#### Type Definitions
+```typescript
+// ✅ Interface first (extensible)
+interface User {
+  id: string;
+  name: string;
+  email: string;
+}
+
+// ✅ Type for unions/intersections
+type Status = 'pending' | 'success' | 'error';
+
+// ❌ No enum → Use const object
+const UserRole = {
+  ADMIN: 'admin',
+  USER: 'user',
+} as const;
+
+type UserRole = typeof UserRole[keyof typeof UserRole];
+```
+
+### 9. Performance Optimization
+
+#### React Optimization
+```typescript
+// ✅ Memoization (only when needed)
+const MemoizedComponent = memo(Component);
+const memoizedValue = useMemo(() => compute(), [deps]);
+const memoizedCallback = useCallback(() => {}, [deps]);
+
+// ✅ Dynamic Import
+const DynamicComponent = dynamic(() => import('./Heavy'), {
+  loading: () => <Skeleton />
+});
+```
+
+#### Next.js Image
+```typescript
+import Image from 'next/image';
+
+<Image
+  src="/image.jpg"
+  alt="Description"
+  width={500}
+  height={300}
+  priority={false}
+  loading="lazy"
+/>
+```
+
+### 10. Testing Strategy
+
+#### Unit Tests (Vitest)
+```typescript
+import { describe, it, expect } from 'vitest';
+import { render, screen } from '@testing-library/react';
+
+describe('Button', () => {
+  it('renders correctly', () => {
+    render(<Button>Click</Button>);
+    expect(screen.getByText('Click')).toBeInTheDocument();
+  });
+});
+```
+
+#### E2E Tests (Playwright)
+```typescript
+import { test, expect } from '@playwright/test';
+
+test('user can login', async ({ page }) => {
+  await page.goto('/login');
+  await page.fill('[name="email"]', 'test@example.com');
+  await page.fill('[name="password"]', 'password');
+  await page.click('button[type="submit"]');
+  await expect(page).toHaveURL('/dashboard');
+});
+```
+
+### 11. Git Commit Conventions
+
+```
+feat: New feature
+fix: Bug fix
+refactor: Refactoring
+test: Add/modify tests
+docs: Documentation changes
+style: Code formatting
+chore: Build/config changes
+perf: Performance improvements
+```
+
+### 12. Code Review Checklist
+
+Before Push:
+- [ ] All TODOs completed
+- [ ] Tests written and passing
+- [ ] Type check passed
+- [ ] Lint passed
+- [ ] Build successful
+- [ ] E2E tests passed (for major features)
+- [ ] Code review (self)
+- [ ] Remove unnecessary console.log
+- [ ] Add comments (for complex logic)
+
+---
+
+## 🌐 Language Policy
+
+**All code, documentation, and services are provided in English by default.**
+
+This includes:
+- Code comments and documentation
+- Variable, function, class, and file names
+- API responses and error messages
+- Database schemas and content
+- User-facing messages and notifications
+- Log messages and debug information
+- Test data and fixtures
+- Git commit messages
+- PR descriptions and code reviews
+
+**Rationale**:
+- International collaboration and open-source readiness
+- Industry standard for software development
+- Better tooling and library support
+- Easier recruitment of global talent
+- Future internationalization (i18n) uses English as primary language
+
+**Exception**: User-facing content in final production may support multiple languages through i18n systems.
+
+---
+
+## 🚨 CRITICAL RULES (Absolute Rules)
+
+1. **No coding without TODOs**
+2. **No code without tests**
+3. **No next task until build/test pass**
+4. **No any type** (use unknown)
+5. **No console.log in production code**
+6. **No hardcoding** (use environment variables or constants)
+7. **No files over 500 lines** (must split)
+8. **No complex logic without meaningful comments** (avoid redundant comments)
+9. **No missing async error handling**
+10. **No ignoring accessibility (a11y)**
+11. **No work completion without documentation update**
+12. **No redundant comments that repeat obvious code**
+
+---
+
+## 💡 AI Assistant Behavior Rules
+
+### At Start of Work:
+1. Create TODO list (3-10 items)
+2. Break each TODO into smaller units
+3. Set first TODO to 'in_progress'
+
+### While Writing Code:
+1. Strictly follow TDD order (test → implementation → refactor)
+2. Split modules according to MSA principles
+3. Apply SOLID principles
+4. Comply with TypeScript strict mode
+
+### After Writing Code:
+1. Run automated validation:
+   - `npm run type-check`
+   - `npm run lint`
+   - `npm run test`
+   - `npm run build`
+   - `npm run test:e2e` (if needed)
+2. Fix immediately if failed
+3. Check TODO completion
+4. **Update documentation** (this .cursorrules file):
+   - Add to "Recent Changes and Notes" section
+   - Update "Last Working State" section
+   - Record new patterns or conventions discovered
+5. Move to next TODO
+
+### When Error Occurs:
+1. Analyze error logs
+2. Identify root cause
+3. Fix and re-validate
+4. Improve to prevent recurrence
+5. **Document the issue and solution** in "Recent Changes and Notes"
+
+### Work Session Completion:
+**Before ending ANY work session, MUST complete:**
+1. ✅ All validation checks passed
+2. ✅ TODOs updated and completed ones checked off
+3. ✅ "Recent Changes and Notes" updated with session summary
+4. ✅ "Last Working State" reflects current project status
+5. ✅ Any new patterns or conventions documented
+6. ✅ Next steps clearly identified for future work
+
+**Remember**: Documentation is NOT optional - it's part of completing the work.
+
+---
+
+## 📚 Technology Stack
+
+### Monorepo & Infrastructure
+- **Tool**: Turborepo
+- **Package Manager**: npm (workspaces)
+- **Language**: TypeScript (Strict Mode)
+- **Containerization**: Docker + Docker Compose
+- **Orchestration**: docker-compose.yml
+
+### Apps
+
+#### 🌐 Web (Frontend)
+- **Framework**: Next.js 15 (App Router)
+- **UI Library**: React 19
+- **Styling**: Tailwind CSS
+- **UI Components**: Shadcn UI + Radix UI
+- **State Management**: Zustand / Jotai (if needed)
+- **Form**: react-hook-form + Zod
+- **Data Fetching**: TanStack Query (React Query)
+- **Testing**: Vitest + Testing Library + Playwright
+
+#### 🔧 Backend (Microservices)
+
+**Auth Service (NestJS)**
+- **Framework**: NestJS (TypeScript)
+- **Runtime**: Node.js 24+
+- **Responsibilities**: Authentication, User Management
+- **Authentication**: JWT + Refresh Token
+- **Validation**: class-validator + class-transformer
+- **Testing**: Jest + Supertest
+- **Documentation**: Swagger
+
+**Game Service (Express)**
+- **Framework**: Express (JavaScript/TypeScript)
+- **Runtime**: Node.js 24+
+- **Responsibilities**: Game Templates, Room Management, Customization
+- **Validation**: Zod
+- **Testing**: Vitest + Supertest
+- **Documentation**: OpenAPI
+
+**WebSocket Service (Socket.io)**
+- **Framework**: Socket.io
+- **Runtime**: Node.js 24+
+- **Responsibilities**: Real-time Communication, Game State Sync
+- **Testing**: Jest + Socket.io Client
+
+**Common**
+- **Database**: PostgreSQL (Shared)
+- **ORM**: Prisma (Shared Schema)
+- **Session Store**: Redis
+- **Cache**: Redis
+
+#### 🐳 Infrastructure
+
+**Nginx (Reverse Proxy)**
+- **Image**: nginx:alpine
+- **Purpose**: Reverse proxy, load balancing, SSL termination
+- **Config**: Custom nginx.conf
+
+**PostgreSQL (Database)**
+- **Image**: postgres:15-alpine
+- **Purpose**: Main database (users, games, rooms, templates)
+- **ORM**: Prisma (shared schema)
+
+**Redis (Session & Cache)**
+- **Image**: redis:alpine
+- **Purpose**: 
+  - Session sharing across services
+  - Real-time game state
+  - Pub/Sub for WebSocket
+  - Rate limiting
+
+### Shared Packages
+- **@xingu/shared**: Types, utils, constants, errors, Zod schemas (API contract)
+- **@xingu/database**: Prisma schema and migrations (shared across services)
+- **@xingu/config**: ESLint, TypeScript, Jest configuration
+
+### DevOps
+- **Containerization**: Docker + Docker Compose
+- **Linting**: ESLint + Prettier
+- **Git Hooks**: Husky + lint-staged
+- **CI/CD**: GitHub Actions
+- **Deployment**: 
+  - All services: Docker containers
+  - Orchestration: Docker Compose (dev) / Kubernetes (prod)
+  - Registry: Docker Hub / AWS ECR
+
+---
+
+## 🎨 UI/UX Principles
+
+- **Mobile-First**: Design from mobile
+- **Accessibility**: Comply with WCAG 2.1 AA
+- **Performance**: Optimize Core Web Vitals
+- **Responsive**: Support all devices
+- **Dark Mode**: Consider dark mode support
+
+---
+
+## 📝 Documentation
+
+- JSDoc comments for complex logic
+- Update README.md (when adding new features)
+- API documentation (major endpoints)
+- Architecture Decision Records (ADR)
+
+---
+
+## ⚠️ Error Handling Strategy
+
+### 1. Error Type Definitions (packages/shared/errors/)
+```typescript
+// packages/shared/errors/base.error.ts
+export class AppError extends Error {
+  constructor(
+    message: string,
+    public code: string,
+    public statusCode: number = 500,
+    public isOperational: boolean = true
+  ) {
+    super(message);
+    this.name = this.constructor.name;
+    Error.captureStackTrace(this, this.constructor);
+  }
+}
+
+// packages/shared/errors/auth.error.ts
+export class AuthenticationError extends AppError {
+  constructor(message: string = 'Authentication failed') {
+    super(message, 'AUTH_ERROR', 401);
+  }
+}
+
+export class AuthorizationError extends AppError {
+  constructor(message: string = 'Permission denied') {
+    super(message, 'FORBIDDEN', 403);
+  }
+}
+
+// packages/shared/errors/validation.error.ts
+export class ValidationError extends AppError {
+  constructor(
+    message: string,
+    public fields?: Record<string, string[]>
+  ) {
+    super(message, 'VALIDATION_ERROR', 400);
+  }
+}
+
+// packages/shared/errors/index.ts
+export * from './base.error';
+export * from './auth.error';
+export * from './validation.error';
+```
+
+### 2. Server Error Handling (Backend)
+```typescript
+// apps/server/src/common/filters/http-exception.filter.ts
+import { ExceptionFilter, Catch, ArgumentsHost } from '@nestjs/common';
+import { AppError } from '@xingu/shared/errors';
+
+@Catch()
+export class AllExceptionsFilter implements ExceptionFilter {
+  catch(exception: unknown, host: ArgumentsHost) {
+    const ctx = host.switchToHttp();
+    const response = ctx.getResponse();
+    
+    // Handle AppError
+    if (exception instanceof AppError) {
+      return response.status(exception.statusCode).json({
+        success: false,
+        error: {
+          code: exception.code,
+          message: exception.message,
+          ...(exception instanceof ValidationError && {
+            fields: exception.fields,
+          }),
+        },
+      });
+    }
+    
+    // Unexpected error
+    console.error('Unexpected error:', exception);
+    return response.status(500).json({
+      success: false,
+      error: {
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'An unexpected error occurred',
+      },
+    });
+  }
+}
+
+// Usage example
+async createUser(dto: CreateUserDTO) {
+  // Validation
+  const existing = await this.findByEmail(dto.email);
+  if (existing) {
+    throw new ValidationError('User already exists', {
+      email: ['Email is already taken'],
+    });
+  }
+  
+  // Authorization
+  if (!hasPermission(user, 'create:user')) {
+    throw new AuthorizationError();
+  }
+  
+  try {
+    return await this.userRepository.create(dto);
+  } catch (error) {
+    // Database error, etc.
+    throw new AppError('Failed to create user', 'CREATE_USER_FAILED');
+  }
+}
+```
+
+### 3. Client Error Handling (Web/Mobile)
+```typescript
+// packages/api-client/src/client.ts
+import { AppError } from '@xingu/shared/errors';
+
+export async function apiRequest<T>(
+  url: string,
+  options?: RequestInit
+): Promise<T> {
+  try {
+    const response = await fetch(url, options);
+    
+    if (!response.ok) {
+      const error = await response.json();
+      throw new AppError(
+        error.error.message,
+        error.error.code,
+        response.status
+      );
+    }
+    
+    return response.json();
+  } catch (error) {
+    if (error instanceof AppError) {
+      throw error;
+    }
+    
+    // Network error
+    throw new AppError(
+      'Network error occurred',
+      'NETWORK_ERROR',
+      0,
+      false
+    );
+  }
+}
+
+// Use with React Query
+import { useMutation } from '@tanstack/react-query';
+import { toast } from 'sonner';
+
+function useCreateUser() {
+  return useMutation({
+    mutationFn: createUser,
+    onError: (error: AppError) => {
+      // Handle by error type
+      if (error.code === 'VALIDATION_ERROR') {
+        toast.error('Please check your input');
+      } else if (error.statusCode === 401) {
+        toast.error('Login required');
+        router.push('/login');
+      } else {
+        toast.error(error.message);
+      }
+    },
+  });
+}
+```
+
+### 4. Error Boundary (React)
+```typescript
+// apps/web/components/error-boundary.tsx
+'use client';
+
+import { Component, ReactNode } from 'react';
+import { AppError } from '@xingu/shared/errors';
+
+interface Props {
+  children: ReactNode;
+  fallback?: (error: Error, reset: () => void) => ReactNode;
+}
+
+interface State {
+  hasError: boolean;
+  error: Error | null;
+}
+
+export class ErrorBoundary extends Component<Props, State> {
+  constructor(props: Props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error): State {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    // Error logging (Sentry, etc.)
+    console.error('Error caught by boundary:', error, errorInfo);
+  }
+
+  reset = () => {
+    this.setState({ hasError: false, error: null });
+  };
+
+  render() {
+    if (this.state.hasError && this.state.error) {
+      if (this.props.fallback) {
+        return this.props.fallback(this.state.error, this.reset);
+      }
+      
+      return (
+        <div>
+          <h2>Something went wrong</h2>
+          <p>{this.state.error.message}</p>
+          <button onClick={this.reset}>Try again</button>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+```
+
+### 5. Error Handling Rules
+
+#### ✅ DO
+- Use try-catch for all async functions
+- Throw errors with clear messages
+- Display user-friendly error messages
+- Detailed errors in development, generic messages in production
+- Error logging (Sentry, LogRocket, etc.)
+- Handle predictable errors explicitly
+- Handle form validation before submission
+
+#### ❌ DON'T
+- Ignore errors or use empty catch blocks
+- Include sensitive information in error messages
+- Expose technical error messages to users
+- Handle errors only with console.log
+- Expose error stacks to clients
+
+---
+
+## 🔒 Security
+
+- Manage sensitive information with environment variables
+- XSS prevention (input validation and sanitization)
+- Use CSRF tokens
+- SQL Injection prevention (ORM/Prepared Statements)
+- Set security headers
+- API Rate Limiting (server)
+- Handle sensitive data only on server
+
+---
+
+## 🎁 Monorepo Specific Rules
+
+### 1. Package Dependency Management
+```json
+// packages/ui/package.json
+{
+  "name": "@xingu/ui",
+  "version": "0.0.0",
+  "private": true,
+  "dependencies": {
+    "react": "^19.0.0",
+    "@xingu/shared": "workspace:*"  // Internal monorepo dependency
+  }
+}
+```
+
+**Rules**:
+- Use `workspace:*` for internal packages
+- Absolutely no circular dependencies
+- Dependency direction: `apps → packages` (one-way)
+- Be careful with inter-package dependencies
+
+### 2. Shared Code Writing Guide
+
+#### Type Sharing (packages/shared/types/)
+```typescript
+// packages/shared/types/user.ts
+export interface User {
+  id: string;
+  email: string;
+  name: string;
+  createdAt: Date;
+}
+
+export interface UserCreateDTO {
+  email: string;
+  password: string;
+  name: string;
+}
+```
+
+#### Utility Sharing (packages/shared/utils/)
+```typescript
+// packages/shared/utils/format.ts
+export function formatDate(date: Date): string {
+  return date.toISOString();
+}
+
+// Only platform-independent logic!
+```
+
+#### API Client Sharing (packages/api-client/)
+```typescript
+// packages/api-client/src/users.ts
+import type { User, UserCreateDTO } from '@xingu/shared';
+
+export async function createUser(data: UserCreateDTO): Promise<User> {
+  // Common API call logic
+}
+```
+
+**Rules**:
+- **Platform Independent**: Works on Node.js, browser, and React Native
+- **Favor Pure Functions**
+- **Zero Dependencies** or minimal dependencies
+- **Clear Exports**: Use barrel exports
+
+### 3. Environment Variable Management
+
+#### Root .env Structure
+```bash
+# Common environment variables
+DATABASE_URL=postgresql://...
+JWT_SECRET=...
+
+# App-specific environment variables
+WEB_API_URL=http://localhost:3001
+SERVER_PORT=3001
+MOBILE_API_URL=http://192.168.1.100:3001
+```
+
+#### App-specific Environment Variables
+```bash
+# apps/web/.env.local
+NEXT_PUBLIC_API_URL=http://localhost:3001
+
+# apps/server/.env
+DATABASE_URL=postgresql://...
+PORT=3001
+
+# apps/mobile/.env
+EXPO_PUBLIC_API_URL=http://192.168.1.100:3001
+```
+
+**Rules**:
+- Common environment variables at root
+- App-specific environment variables in each app directory
+- Must maintain `.env.example` files
+- Must define environment variable types
+
+### 4. API Contract
+
+#### Define API Contract with Zod Schema
+```typescript
+// packages/shared/schemas/user.schema.ts
+import { z } from 'zod';
+
+export const userSchema = z.object({
+  id: z.string().uuid(),
+  email: z.string().email(),
+  name: z.string().min(2),
+  createdAt: z.date(),
+});
+
+export const createUserSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(8),
+  name: z.string().min(2),
+});
+
+export type User = z.infer<typeof userSchema>;
+export type CreateUserDTO = z.infer<typeof createUserSchema>;
+```
+
+**Rules**:
+- Validate all API requests/responses with Zod schemas
+- Server and client use the same schema
+- Types automatically inferred from schema
+
+### 5. Version Management Strategy
+
+#### Using Changesets
+```bash
+# Record changes
+npx changeset
+
+# Update versions
+npx changeset version
+
+# Publish
+npx changeset publish
+```
+
+**Rules**:
+- Record major changes in changesets
+- Explicitly mark Breaking Changes
+- Manage version synchronization between packages
+
+### 6. Cross-Platform Components
+
+#### UI Package Structure
+```
+packages/ui/
+├── src/
+│   ├── web/              # Web-specific (Next.js)
+│   │   └── Button.tsx
+│   ├── mobile/           # Mobile-specific (React Native)
+│   │   └── Button.tsx
+│   ├── shared/           # Common logic
+│   │   └── Button.logic.ts
+│   └── index.ts
+```
+
+**Rules**:
+- Separate platform-specific implementations
+- Common logic in `shared/`
+- Auto-detect platform on export
+
+### 7. Turborepo Optimization
+
+#### turbo.json Configuration
+```json
+{
+  "pipeline": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**", ".next/**"]
+    },
+    "test": {
+      "dependsOn": ["build"],
+      "cache": false
+    },
+    "lint": {
+      "cache": true
+    }
+  }
+}
+```
+
+**Rules**:
+- Clearly define build order
+- Optimize caching strategy
+- Maximize parallel execution
+
+### 8. Code Reuse Priority
+
+1. **@xingu/shared** - Pure logic, types, utilities
+2. **@xingu/ui** - UI components (platform-specific)
+3. **@xingu/api-client** - API call logic
+4. **@xingu/config** - Configuration files
+
+**Rules**:
+- Consider splitting into package if used 2+ times
+- Must split into package if used 3+ times
+- Separate platform-specific code
+
+---
+
+## 📋 Recent Changes and Notes
+
+### 2025-11-11: Microservice Architecture & Docker Integration
+- **Status**: ✅ Complete
+- **Changes Made**:
+  1. **Monorepo Structure Updated** to Microservice Architecture:
+     - Replaced single `server` app with 3 services:
+       - `auth-service` (NestJS) - Authentication & Users
+       - `game-service` (Express) - Games & Rooms  
+       - `ws-service` (Socket.io) - Real-time WebSocket
+     - Added `infrastructure/` for Docker configs (nginx, postgres, redis)
+     - Updated `packages/` structure (shared, database, config)
+  
+  2. **Docker & Containerization**:
+     - 7 containers total: nginx, postgres, redis, web, auth-service, game-service, ws-service
+     - Added Docker Compose orchestration
+     - Container communication patterns defined
+     - Development vs Production configurations
+  
+  3. **Technology Stack Clarified**:
+     - MSA (Microservice Architecture) pattern
+     - Heterogeneous services (NestJS + Express) for bonus points
+     - Redis for session sharing across services
+     - Nginx as reverse proxy
+  
+  4. **MVP Scope Refined**:
+     - Phase 1 (Week 1-2): Core features with 1 game (OX Quiz)
+     - Phase 2 (Week 3-4): Enhanced features
+     - Phase 3 (Week 5+): Premium features
+     - Clear exclusions for v2
+  
+  5. **Service Responsibilities Defined**:
+     - Auth Service: User management, JWT, sessions
+     - Game Service: Templates, rooms, customization
+     - WS Service: Real-time sync, game state
+  
+  6. **Added Docker Development Rules**:
+     - Local development workflow (without Docker)
+     - Docker development workflow
+     - Dockerfile best practices
+     - Service communication patterns
+     - Health checks and troubleshooting
+
+- **Files Modified**:
+  - `.cursorrules` - Added MSA structure, Docker rules, updated tech stack
+  - `docs/01-overview.md` - Added Technology Stack section, refined MVP scope
+
+- **Architecture Benefits**:
+  - Meets course requirements (6+ containers, heterogeneous services, session sharing)
+  - Real microservice architecture (not just monolith split)
+  - Independent service deployment
+  - Scalable and maintainable
+
+### 2025-11-10: Enhanced Documentation and Code Quality Rules
+- **Status**: ✅ Complete
+- **Changes Made**:
+  1. **Translated entire .cursorrules to English** for international collaboration
+  2. **Added Post-Work Documentation Protocol** (mandatory AI behavior)
+     - AI must update documentation after every work session
+     - Ensures continuity between developers and AI instances
+     - Maintains historical context and architectural decisions
+  3. **Added Code Style Guidelines**:
+     - 🚨 NO Redundant Comments/JSDoc policy established
+     - Clear guidelines on when comments are valuable vs. redundant
+     - Examples of good vs. bad commenting practices
+  4. **Added Import Conventions** (TypeScript/JavaScript):
+     - Relative imports for package internals
+     - Absolute imports for external packages
+     - Workspace imports with `@xingu/` prefix
+     - Type-only imports with `import type`
+  5. **Added Language Policy**:
+     - English-first for all code, documentation, and services
+     - Rationale and exceptions documented
+  6. **Enhanced Critical Rules**:
+     - Added rule #11: No work completion without documentation update
+     - Added rule #12: No redundant comments that repeat obvious code
+  7. **Added "Recent Changes and Notes" section** for tracking history
+  8. **Added "Last Working State" section** for project status tracking
+  9. **Enhanced AI Assistant Behavior Rules**:
+     - Added documentation steps to "After Writing Code"
+     - Added "Work Session Completion" checklist
+     - Documentation is now mandatory part of work completion
+
+- **Files Modified**:
+  - `.cursorrules` - Comprehensive updates with new sections and guidelines
+
+- **Benefits**:
+  - Seamless handoffs between AI instances and developers
+  - Clear historical context of decisions
+  - Reduced redundant comments improves code readability
+  - Consistent import patterns across monorepo
+  - English-first policy supports international collaboration
+
+### Template Initialization
+- **Date**: Project initialization  
+- **Status**: Base template created with comprehensive development rules
+- **Architecture**: Turborepo monorepo with Next.js 15, React 19, and Node.js backend
+- **Key Features**:
+  - TDD workflow with automated validation
+  - SOLID principles and Clean Code guidelines
+  - Comprehensive error handling strategy
+  - Monorepo-specific patterns and conventions
+  - Post-work documentation protocol established
+
+### Next Steps
+- Initialize project structure (apps/web, apps/server, apps/mobile, packages/*)
+- Set up development environment and dependencies
+- Configure Turborepo pipeline
+- Implement base authentication system
+- Create shared UI component library
+
+---
+
+## 🔄 Last Working State
+
+### Current Status (Updated: 2025-11-11)
+- **Project Stage**: Architecture Design & Documentation
+- **Architecture**: ✅ Microservice Architecture (MSA) defined
+- **Infrastructure**: ✅ Docker containerization planned (7 containers)
+- **Documentation**: ✅ Complete (overview, IA)
+- **Code**: ❌ Not started yet
+- **Database**: ❌ Schema design pending
+- **API**: ❌ Endpoint design pending
+
+### What's Working
+- ✅ Project documentation (overview, IA)
+- ✅ Microservice architecture defined (3 services)
+- ✅ Docker containerization strategy (7 containers)
+- ✅ Technology stack selected
+- ✅ MVP scope defined (Phase 1-3)
+- ✅ Development rules and guidelines
+- ✅ Service responsibilities clear
+- ✅ Course requirements mapped
+
+### What's In Progress
+- ⏳ Nothing (ready to start implementation)
+
+### What Needs Attention (Next Steps)
+**Immediate**:
+1. 🔴 Database schema design (PRD → DB schema)
+2. 🔴 API endpoint design (RESTful + WebSocket events)
+3. 🔴 Detailed PRD document (03-prd.md)
+
+**After Documentation**:
+4. 🔴 Initialize Turborepo monorepo
+5. 🔴 Create base services (auth, game, ws)
+6. 🔴 Set up Docker Compose
+7. 🔴 Implement MVP Phase 1 (OX Quiz game)
+
+### Documentation Quality
+- ✅ Architecture documentation complete
+- ✅ Microservice design documented
+- ✅ Docker containerization strategy clear
+- ✅ MVP roadmap defined (3 phases)
+- ✅ Service communication patterns defined
+- ✅ Course requirements alignment documented
+
+---
+
+## 🐳 Docker & Containerization Rules
+
+### 1. Container Development Workflow
+
+#### Local Development (Without Docker)
+```bash
+# Install dependencies
+npm install
+
+# Run all services (Turborepo)
+npm run dev
+
+# Run specific service
+npm run dev --filter=auth-service
+```
+
+#### Docker Development
+```bash
+# Start all containers
+docker-compose up
+
+# Build and start
+docker-compose up --build
+
+# Stop all
+docker-compose down
+```
+
+### 2. Dockerfile Best Practices
+
+- Use multi-stage builds
+- Use alpine images when possible
+- Layer caching optimization
+- .dockerignore for node_modules
+- Non-root user for security
+- Health checks
+
+### 3. Service Communication Rules
+
+#### Internal (Docker Network)
+- Use service names: `http://auth-service:3001`
+
+#### External (Browser)
+- Through Nginx: `http://localhost/api/auth`
+
+### 4. Database & Redis Rules
+
+#### PostgreSQL
+- Single database, shared Prisma schema
+- Volume for persistence
+
+#### Redis
+- Session store + real-time state
+- No persistence needed
+
+---
+
+**Remember**: Quality over Speed. Writing it correctly is more important than writing it quickly.
