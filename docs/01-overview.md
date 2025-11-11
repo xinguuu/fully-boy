@@ -321,9 +321,9 @@
 
 ### Prerequisites
 
-- **Node.js**: 20+
+- **Node.js**: 24+
 - **Docker**: Docker Desktop or Docker Engine + Docker Compose
-- **PostgreSQL**: 15+ (or use Docker)
+- **PostgreSQL**: 17+ (or use Docker)
 - **Redis**: Latest (or use Docker)
 - **Git**: For version control
 
@@ -467,7 +467,7 @@ npm run lint
 ### 🗄️ Infrastructure
 
 #### PostgreSQL
-- **버전**: 15-alpine
+- **버전**: 17-alpine
 - **용도**: 사용자, 게임, 방, 템플릿 데이터
 - **ORM**: Prisma (공통 스키마)
 

@@ -1,0 +1,207 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ========================================
+// User & Authentication
+// ========================================
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  passwordHash  String
+  name          String?
+  role          Role     @default(ORGANIZER)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  games         Game[]
+  rooms         Room[]
+  favorites     Favorite[]
+
+  @@index([email])
+  @@map("users")
+}
+
+enum Role {
+  ORGANIZER
+  ADMIN
+}
+
+// ========================================
+// Game Templates
+// ========================================
+
+model Game {
+  id              String      @id @default(cuid())
+  title           String
+  description     String?
+  thumbnail       String?
+
+  // Classification
+  gameType        GameType
+  category        Category
+  isPublic        Boolean     @default(false)
+
+  // Metadata
+  duration        Int
+  minPlayers      Int         @default(5)
+  maxPlayers      Int         @default(100)
+  needsMobile     Boolean
+
+  // Stats
+  playCount       Int         @default(0)
+  favoriteCount   Int         @default(0)
+
+  // Settings
+  settings        Json
+
+  // Content
+  questions       Question[]
+
+  // Ownership
+  userId          String?
+  user            User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  // Relations
+  rooms           Room[]
+  favorites       Favorite[]
+
+  @@index([gameType, isPublic])
+  @@index([category, isPublic])
+  @@index([userId])
+  @@map("games")
+}
+
+enum GameType {
+  OX_QUIZ
+  BALANCE_GAME
+  INITIAL_QUIZ
+  FOUR_CHOICE_QUIZ
+  SPEED_QUIZ
+}
+
+enum Category {
+  ICE_BREAKING
+  QUIZ
+  MUSIC
+  VOTE
+  ENTERTAINMENT
+  MEME
+}
+
+// ========================================
+// Questions
+// ========================================
+
+model Question {
+  id          String   @id @default(cuid())
+  gameId      String
+  game        Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  order       Int
+  content     String
+  data        Json
+
+  // Media
+  imageUrl    String?
+  videoUrl    String?
+  audioUrl    String?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([gameId, order])
+  @@map("questions")
+}
+
+// ========================================
+// Favorites (Starring)
+// ========================================
+
+model Favorite {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  gameId    String
+  game      Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, gameId])
+  @@index([userId])
+  @@map("favorites")
+}
+
+// ========================================
+// Rooms & Game Sessions
+// ========================================
+
+model Room {
+  id            String      @id @default(cuid())
+  pin           String      @unique
+
+  gameId        String
+  game          Game        @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  organizerId   String
+  organizer     User        @relation(fields: [organizerId], references: [id], onDelete: Cascade)
+
+  status        RoomStatus  @default(WAITING)
+
+  // Timestamps
+  createdAt     DateTime    @default(now())
+  startedAt     DateTime?
+  endedAt       DateTime?
+  expiresAt     DateTime
+
+  // Relations
+  result        GameResult?
+
+  @@index([pin])
+  @@index([organizerId])
+  @@index([expiresAt])
+  @@map("rooms")
+}
+
+enum RoomStatus {
+  WAITING
+  PLAYING
+  FINISHED
+}
+
+// ========================================
+// Game Results
+// ========================================
+
+model GameResult {
+  id              String   @id @default(cuid())
+  roomId          String   @unique
+  room            Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  // Statistics
+  participantCount Int
+  duration         Int
+  averageScore     Float
+
+  // Leaderboard (top 10)
+  leaderboard      Json
+
+  // Question stats
+  questionStats    Json
+
+  createdAt        DateTime @default(now())
+
+  @@index([roomId])
+  @@map("game_results")
+}

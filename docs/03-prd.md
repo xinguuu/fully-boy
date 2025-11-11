@@ -2343,8 +2343,8 @@ Content-Security-Policy: default-src 'self'
 ### 12.1 Technical Dependencies
 
 **Critical Dependencies:**
-- Node.js 20+
-- PostgreSQL 15+
+- Node.js 24+
+- PostgreSQL 17+
 - Redis (latest)
 - Docker & Docker Compose
 - Nginx
