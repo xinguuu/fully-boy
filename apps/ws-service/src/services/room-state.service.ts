@@ -1,0 +1,86 @@
+import { redis } from '../config/redis';
+import { RoomState, Player } from '../types/room.types';
+
+export class RoomStateService {
+  private getRoomKey(pin: string): string {
+    return `room:${pin}:state`;
+  }
+
+  async getRoomState(pin: string): Promise<RoomState | null> {
+    const data = await redis.get(this.getRoomKey(pin));
+    if (!data) return null;
+    return JSON.parse(data);
+  }
+
+  async setRoomState(pin: string, state: RoomState): Promise<void> {
+    await redis.setex(this.getRoomKey(pin), 86400, JSON.stringify(state));
+  }
+
+  async deleteRoomState(pin: string): Promise<void> {
+    await redis.del(this.getRoomKey(pin));
+  }
+
+  async addPlayer(pin: string, player: Player): Promise<RoomState | null> {
+    const state = await this.getRoomState(pin);
+    if (!state) return null;
+
+    state.players[player.id] = player;
+    await this.setRoomState(pin, state);
+    return state;
+  }
+
+  async removePlayer(pin: string, playerId: string): Promise<RoomState | null> {
+    const state = await this.getRoomState(pin);
+    if (!state) return null;
+
+    delete state.players[playerId];
+    await this.setRoomState(pin, state);
+    return state;
+  }
+
+  async updatePlayer(
+    pin: string,
+    playerId: string,
+    updates: Partial<Player>,
+  ): Promise<RoomState | null> {
+    const state = await this.getRoomState(pin);
+    if (!state || !state.players[playerId]) return null;
+
+    state.players[playerId] = {
+      ...state.players[playerId],
+      ...updates,
+    };
+    await this.setRoomState(pin, state);
+    return state;
+  }
+
+  async updateRoomStatus(
+    pin: string,
+    status: 'waiting' | 'playing' | 'finished',
+  ): Promise<RoomState | null> {
+    const state = await this.getRoomState(pin);
+    if (!state) return null;
+
+    state.status = status;
+    if (status === 'playing' && !state.startedAt) {
+      state.startedAt = new Date();
+    }
+    if (status === 'finished' && !state.endedAt) {
+      state.endedAt = new Date();
+    }
+
+    await this.setRoomState(pin, state);
+    return state;
+  }
+
+  async nextQuestion(pin: string): Promise<RoomState | null> {
+    const state = await this.getRoomState(pin);
+    if (!state) return null;
+
+    state.currentQuestionIndex += 1;
+    await this.setRoomState(pin, state);
+    return state;
+  }
+}
+
+export const roomStateService = new RoomStateService();
