@@ -1055,6 +1055,21 @@ npx prisma db seed
 
 ## 8. API Specifications
 
+### Service Architecture Overview (6 Microservices)
+
+**Updated**: 2025-11-11 - Refactored from 3 services to 6 services for better separation of concerns
+
+| Service | Port | Base URL | Purpose |
+|---------|------|----------|---------|
+| **Auth Service** | 3001 | `/api/auth` | User authentication, JWT management |
+| **Template Service** | 3002 | `/api/templates` | Public game templates (read-only, cached) |
+| **Game Service** | 3003 | `/api/games` | My games CRUD, customization |
+| **Room Service** | 3004 | `/api/rooms` | Room creation, PIN management |
+| **WS Service** | 3005 | `/ws` | Real-time gameplay (WebSocket) |
+| **Result Service** | 3006 | `/api/results` | Game results, statistics, leaderboards |
+
+---
+
 ### 8.1 Auth Service API (NestJS)
 
 **Base URL**: `http://localhost:3001/api/auth` (dev)
@@ -1216,16 +1231,18 @@ Authorization: Bearer {accessToken}
 
 ---
 
-### 8.2 Game Service API (Express)
+### 8.2 Template Service API (Express)
 
-**Base URL**: `http://localhost:3002/api/games` (dev)
-**Production**: `https://xingu.com/api/games` (via Nginx)
+**Base URL**: `http://localhost:3002/api/templates` (dev)
+**Production**: `https://xingu.com/api/templates` (via Nginx)
 
-**Authentication**: All endpoints require `Authorization: Bearer {accessToken}` header
+**Port**: 3002
+**Authentication**: Optional (public templates, but favorite requires auth)
+**Purpose**: Public game templates (read-only, heavy caching)
 
 ---
 
-#### 8.2.1 GET /templates
+#### 8.2.1 GET /
 
 **Description**: Get all public game templates with filters
 
@@ -1273,7 +1290,7 @@ Authorization: Bearer {accessToken}
 
 ---
 
-#### 8.2.2 GET /templates/:id
+#### 8.2.2 GET /:id
 
 **Description**: Get single game template details
 

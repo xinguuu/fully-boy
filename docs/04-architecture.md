@@ -161,7 +161,7 @@ CREATE INDEX idx_gameresult_roomId ON game_results(roomId);
 
 ## 2. System Architecture
 
-### 2.1 Microservice Architecture (MSA)
+### 2.1 Microservice Architecture (MSA) - 6 Backend Services
 
 ```mermaid
 graph TB
@@ -174,35 +174,55 @@ graph TB
         Nginx[Nginx<br/>Port 80/443]
     end
 
-    subgraph "Application Layer"
+    subgraph "Frontend"
         Web[Next.js 15<br/>SSR Frontend<br/>Port 3000]
+    end
+
+    subgraph "Backend Services (6)"
         Auth[NestJS<br/>Auth Service<br/>Port 3001]
-        Game[Express<br/>Game Service<br/>Port 3002]
-        WS[Socket.io<br/>WebSocket Service<br/>Port 3003]
+        Template[Express<br/>Template Service<br/>Port 3002]
+        Game[Express<br/>Game Service<br/>Port 3003]
+        Room[Express<br/>Room Service<br/>Port 3004]
+        WS[Socket.io<br/>WS Service<br/>Port 3005]
+        Result[Express<br/>Result Service<br/>Port 3006]
     end
 
     subgraph "Data Layer"
         Postgres[(PostgreSQL 17<br/>Main Database)]
-        Redis[(Redis<br/>Session & Cache)]
+        Redis[(Redis<br/>Session & Pub/Sub)]
     end
 
     Browser --> Nginx
     Mobile --> Nginx
 
-    Nginx -->|SSR Pages| Web
+    Nginx -->|SSR| Web
     Nginx -->|/api/auth/*| Auth
+    Nginx -->|/api/templates/*| Template
     Nginx -->|/api/games/*| Game
-    Nginx -->|/ws upgrade| WS
+    Nginx -->|/api/rooms/*| Room
+    Nginx -->|/ws| WS
+    Nginx -->|/api/results/*| Result
 
-    Web -->|REST API| Auth
-    Web -->|REST API| Game
-    Web -->|WebSocket| WS
+    Web --> Auth
+    Web --> Template
+    Web --> Game
+    Web --> Room
+    Web --> WS
+    Web --> Result
 
     Auth --> Postgres
     Auth --> Redis
+    Template --> Postgres
+    Template --> Redis
     Game --> Postgres
-    Game --> Redis
+    Room --> Postgres
+    Room --> Redis
     WS --> Redis
+    Result --> Postgres
+
+    Room -.->|Get game info| Game
+    WS -.->|Get room info| Room
+    WS -.->|Save results| Result
 
     style Nginx fill:#f9f,stroke:#333,stroke-width:4px
     style Postgres fill:#336791,stroke:#fff,color:#fff
@@ -215,9 +235,12 @@ graph TB
 |---------|------|------------|------------------|
 | **Nginx** | 80, 443 | Nginx Alpine | Reverse proxy, load balancing, SSL/TLS, static files |
 | **Web** | 3000 | Next.js 15 | SSR pages, client-side routing, UI rendering |
-| **Auth Service** | 3001 | NestJS | User registration, login, JWT management, sessions |
-| **Game Service** | 3002 | Express | Game CRUD, template management, room creation |
-| **WS Service** | 3003 | Socket.io | Real-time events, game state sync, participant tracking |
+| **Auth Service** | 3001 | NestJS | User authentication, JWT management, sessions |
+| **Template Service** | 3002 | Express | Public game templates (read-only, heavy caching) |
+| **Game Service** | 3003 | Express | My games CRUD, game customization, favorites |
+| **Room Service** | 3004 | Express | Room creation, PIN management, participant tracking |
+| **WS Service** | 3005 | Socket.io | Real-time gameplay, WebSocket events, game state sync |
+| **Result Service** | 3006 | Express | Game results, statistics, leaderboards, PDF export |
 | **PostgreSQL** | 5432 | PostgreSQL 17 | Persistent data storage (users, games, results) |
 | **Redis** | 6379 | Redis Alpine | Session storage, real-time state, rate limiting, pub/sub |
 
@@ -225,12 +248,20 @@ graph TB
 
 **Synchronous (REST API):**
 - Web ↔ Auth Service: User authentication, profile
-- Web ↔ Game Service: Browse templates, CRUD games, create rooms
+- Web ↔ Template Service: Browse public game templates
+- Web ↔ Game Service: My games CRUD, customization
+- Web ↔ Room Service: Create rooms, manage participants
+- Web ↔ Result Service: View game results, statistics
 - Services ↔ PostgreSQL: Database queries via Prisma
 
 **Asynchronous (WebSocket):**
 - Web ↔ WS Service: Real-time game events, participant updates
 - WS Service ↔ Redis: Pub/Sub for horizontal scaling
+
+**Inter-Service Communication:**
+- Room Service → Game Service: Get game information (REST)
+- WS Service → Room Service: Get room details (REST)
+- WS Service → Result Service: Save game results (REST)
 
 **Session Sharing:**
 - All services share session data via Redis
