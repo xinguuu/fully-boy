@@ -7,7 +7,12 @@ import { redisPub, redisSub, disconnectRedis } from './config/redis';
 import { setupRoomHandlers } from './handlers/room.handler';
 import { setupGameHandlers } from './handlers/game.handler';
 
-const httpServer = createServer();
+const httpServer = createServer((req, res) => {
+  if (req.url === '/health' && req.method === 'GET') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ status: 'WebSocket Service is healthy!' }));
+  }
+});
 
 const io = new Server(httpServer, {
   cors: {
@@ -25,7 +30,7 @@ io.on(WS_EVENTS.CONNECTION, (socket) => {
   setupGameHandlers(io, socket);
 });
 
-const port = process.env.PORT || 3003;
+const port = process.env.PORT || 3005;
 
 async function startServer() {
   await connectDatabase();

@@ -1,155 +1,53 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response } from 'express';
 import { gameService } from '../services/game.service';
-import { GetTemplatesQuery, CreateGameDto, UpdateGameDto } from '../dto/game.dto';
-import { GameType } from '@prisma/client';
+import { CreateGameDto, UpdateGameDto } from '../dto/game.dto';
+import { UnauthorizedError } from '../middleware/error.middleware';
 
 export class GameController {
-  async getTemplates(
-    req: Request<unknown, unknown, unknown, GetTemplatesQuery>,
-    res: Response,
-    next: NextFunction,
-  ): Promise<void> {
-    try {
-      const result = await gameService.getTemplates(req.query);
-      res.json(result);
-    } catch (error) {
-      next(error);
+  async getMyGames(req: Request, res: Response): Promise<void> {
+    if (!req.user) {
+      throw new UnauthorizedError();
     }
+
+    const games = await gameService.getMyGames(req.user.id);
+    res.status(200).json(games);
   }
 
-  async getTemplatesByType(
-    req: Request<{ gameType: GameType }>,
-    res: Response,
-    next: NextFunction,
-  ): Promise<void> {
-    try {
-      const { gameType } = req.params;
-
-      if (!Object.values(GameType).includes(gameType)) {
-        res.status(400).json({
-          statusCode: 400,
-          message: 'Invalid game type',
-        });
-        return;
-      }
-
-      const games = await gameService.getTemplatesByType(gameType);
-      res.json(games);
-    } catch (error) {
-      next(error);
+  async getGameById(req: Request, res: Response): Promise<void> {
+    if (!req.user) {
+      throw new UnauthorizedError();
     }
+
+    const { id } = req.params;
+    const game = await gameService.getGameById(id, req.user.id);
+    res.status(200).json(game);
   }
 
-  async getMyGames(req: Request, res: Response, next: NextFunction): Promise<void> {
-    try {
-      if (!req.user) {
-        res.status(401).json({
-          statusCode: 401,
-          message: 'Unauthorized',
-        });
-        return;
-      }
-
-      const games = await gameService.getMyGames(req.user.id);
-      res.json(games);
-    } catch (error) {
-      next(error);
+  async createGame(req: Request, res: Response): Promise<void> {
+    if (!req.user) {
+      throw new UnauthorizedError();
     }
+
+    const game = await gameService.createGame(req.user.id, req.body as CreateGameDto);
+    res.status(201).json(game);
   }
 
-  async createGame(
-    req: Request<unknown, unknown, CreateGameDto>,
-    res: Response,
-    next: NextFunction,
-  ): Promise<void> {
-    try {
-      if (!req.user) {
-        res.status(401).json({
-          statusCode: 401,
-          message: 'Unauthorized',
-        });
-        return;
-      }
-
-      const game = await gameService.createGame(req.user.id, req.body);
-      res.status(201).json(game);
-    } catch (error) {
-      next(error);
+  async updateGame(req: Request, res: Response): Promise<void> {
+    if (!req.user) {
+      throw new UnauthorizedError();
     }
+
+    const game = await gameService.updateGame(req.params.id, req.user.id, req.body as UpdateGameDto);
+    res.status(200).json(game);
   }
 
-  async updateGame(
-    req: Request<{ id: string }, unknown, UpdateGameDto>,
-    res: Response,
-    next: NextFunction,
-  ): Promise<void> {
-    try {
-      if (!req.user) {
-        res.status(401).json({
-          statusCode: 401,
-          message: 'Unauthorized',
-        });
-        return;
-      }
-
-      const game = await gameService.updateGame(req.params.id, req.user.id, req.body);
-      res.json(game);
-    } catch (error) {
-      if (error instanceof Error) {
-        if (error.message === 'Game not found') {
-          res.status(404).json({
-            statusCode: 404,
-            message: error.message,
-          });
-          return;
-        }
-        if (error.message === 'Unauthorized to update this game') {
-          res.status(403).json({
-            statusCode: 403,
-            message: error.message,
-          });
-          return;
-        }
-      }
-      next(error);
+  async deleteGame(req: Request, res: Response): Promise<void> {
+    if (!req.user) {
+      throw new UnauthorizedError();
     }
-  }
 
-  async deleteGame(
-    req: Request<{ id: string }>,
-    res: Response,
-    next: NextFunction,
-  ): Promise<void> {
-    try {
-      if (!req.user) {
-        res.status(401).json({
-          statusCode: 401,
-          message: 'Unauthorized',
-        });
-        return;
-      }
-
-      await gameService.deleteGame(req.params.id, req.user.id);
-      res.status(204).send();
-    } catch (error) {
-      if (error instanceof Error) {
-        if (error.message === 'Game not found') {
-          res.status(404).json({
-            statusCode: 404,
-            message: error.message,
-          });
-          return;
-        }
-        if (error.message === 'Unauthorized to delete this game') {
-          res.status(403).json({
-            statusCode: 403,
-            message: error.message,
-          });
-          return;
-        }
-      }
-      next(error);
-    }
+    await gameService.deleteGame(req.params.id, req.user.id);
+    res.status(204).send();
   }
 }
 

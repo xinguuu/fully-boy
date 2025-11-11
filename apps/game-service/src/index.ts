@@ -4,7 +4,6 @@ import { connectDatabase, disconnectDatabase } from './config/database';
 import { disconnectRedis } from './config/redis';
 import { errorMiddleware, notFoundMiddleware } from './middleware/error.middleware';
 import gameRoutes from './routes/game.routes';
-import roomRoutes from './routes/room.routes';
 
 const app = express();
 
@@ -21,13 +20,12 @@ app.get('/health', (_req, res) => {
   res.json({ status: 'Game Service is healthy!' });
 });
 
-app.use('/games', gameRoutes);
-app.use('/rooms', roomRoutes);
+app.use('/api/games', gameRoutes);
 
 app.use(notFoundMiddleware);
 app.use(errorMiddleware);
 
-const port = process.env.PORT || 3002;
+const port = process.env.PORT || 3003;
 
 async function startServer() {
   await connectDatabase();
