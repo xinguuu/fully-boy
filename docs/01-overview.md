@@ -337,16 +337,16 @@ git clone https://github.com/your-org/xingu.git
 cd xingu
 
 # Install dependencies (Turborepo will install all workspace packages)
-npm install
+pnpm install
 
 # Set up environment variables
 cp .env.example .env
 
 # Run database migrations
-npm run db:migrate
+pnpm db:migrate
 
 # Start all services in development mode
-npm run dev
+pnpm dev
 
 # Access the application
 # - Frontend: http://localhost:3000
@@ -384,21 +384,21 @@ docker-compose logs -f auth-service
 
 ```bash
 # Run specific service only
-npm run dev --filter=web
-npm run dev --filter=auth-service
+pnpm dev --filter=web
+pnpm dev --filter=auth-service
 
 # Run tests
-npm run test
-npm run test:e2e
+pnpm test
+pnpm test:e2e
 
 # Build for production
-npm run build
+pnpm build
 
 # Type checking
-npm run type-check
+pnpm type-check
 
 # Linting
-npm run lint
+pnpm lint
 ```
 
 ---
@@ -408,7 +408,7 @@ npm run lint
 ### 🏗️ Architecture
 
 - **Pattern**: Microservice Architecture (MSA)
-- **Monorepo**: Turborepo (npm workspaces)
+- **Monorepo**: Turborepo (pnpm workspaces)
 - **Containerization**: Docker + Docker Compose
 - **Total Containers**: 7 containers
 

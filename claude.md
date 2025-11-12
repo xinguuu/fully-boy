@@ -109,7 +109,7 @@ xingu/
 - **Containerization**: Docker + Docker Compose
 - **Orchestration**: Docker Compose (dev) / Kubernetes (prod)
 - **Reverse Proxy**: Nginx
-- **Monorepo**: Turborepo + npm workspaces
+- **Monorepo**: Turborepo + pnpm workspaces
 
 ---
 
@@ -131,18 +131,18 @@ xingu/
 
 #### Full Monorepo Validation
 ```bash
-npm run type-check  # Type check everything
-npm run lint        # Lint everything
-npm run test        # Unit tests
-npm run build       # Build all (Turborepo caching)
-npm run test:e2e    # E2E tests
+pnpm type-check  # Type check everything
+pnpm lint        # Lint everything
+pnpm test        # Unit tests
+pnpm build       # Build all (Turborepo caching)
+pnpm test:e2e    # E2E tests
 ```
 
 #### Specific App Validation (Fast Iteration)
 ```bash
-npm run build --filter=web
-npm run test --filter=auth-service
-npm run test --filter=game-service
+pnpm build --filter=web
+pnpm test --filter=auth-service
+pnpm test --filter=game-service
 ```
 
 ### 4. SOLID Principles (TypeScript/React)
@@ -420,9 +420,9 @@ export class ValidationError extends AppError {
 
 ### Local Development (Without Docker)
 ```bash
-npm install
-npm run dev              # All services
-npm run dev --filter=web # Specific service
+pnpm install
+pnpm dev              # All services
+pnpm dev --filter=web # Specific service
 ```
 
 ### Docker Development
@@ -469,11 +469,11 @@ This includes:
 ### After Writing Code:
 1. Run automated validation:
    ```bash
-   npm run type-check
-   npm run lint
-   npm run test
-   npm run build
-   npm run test:e2e  # if needed
+   pnpm type-check
+   pnpm lint
+   pnpm test
+   pnpm build
+   pnpm test:e2e  # if needed
    ```
 2. Fix immediately if failed
 3. Check TODO completion
@@ -684,17 +684,17 @@ This includes:
 ### Common Commands
 ```bash
 # Development
-npm run dev
-npm run dev --filter=web
+pnpm dev
+pnpm dev --filter=web
 
 # Testing
-npm run test
-npm run test:e2e
-npm run type-check
+pnpm test
+pnpm test:e2e
+pnpm type-check
 
 # Build
-npm run build
-npm run build --filter=auth-service
+pnpm build
+pnpm build --filter=auth-service
 
 # Docker
 docker-compose up

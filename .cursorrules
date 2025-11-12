@@ -223,36 +223,36 @@ apps/mobile/
 #### Full Monorepo Validation
 ```bash
 # 1. Type check everything
-npm run type-check
+pnpm type-check
 
 # 2. Lint everything
-npm run lint
+pnpm lint
 
 # 3. Unit tests for everything
-npm run test
+pnpm test
 
 # 4. Build everything (utilizing Turborepo caching)
-npm run build
+pnpm build
 
 # 5. E2E tests
-npm run test:e2e
+pnpm test:e2e
 ```
 
 #### Specific App Validation (Fast Iteration)
 ```bash
 # Web app only
-npm run build --filter=web
-npm run test --filter=web
+pnpm build --filter=web
+pnpm test --filter=web
 
 # Server app only
-npm run build --filter=server
-npm run test --filter=server
+pnpm build --filter=server
+pnpm test --filter=server
 
 # Mobile app only
-npm run test --filter=mobile
+pnpm test --filter=mobile
 
 # Specific package only
-npm run test --filter=@xingu/ui
+pnpm test --filter=@xingu/ui
 ```
 
 **AI Work Rules**:
@@ -732,11 +732,11 @@ This includes:
 
 ### After Writing Code:
 1. Run automated validation:
-   - `npm run type-check`
-   - `npm run lint`
-   - `npm run test`
-   - `npm run build`
-   - `npm run test:e2e` (if needed)
+   - `pnpm type-check`
+   - `pnpm lint`
+   - `pnpm test`
+   - `pnpm build`
+   - `pnpm test:e2e` (if needed)
 2. Fix immediately if failed
 3. Check TODO completion
 4. **Update documentation** (this .cursorrules file):
@@ -769,7 +769,7 @@ This includes:
 
 ### Monorepo & Infrastructure
 - **Tool**: Turborepo
-- **Package Manager**: npm (workspaces)
+- **Package Manager**: pnpm (workspaces)
 - **Language**: TypeScript (Strict Mode)
 - **Containerization**: Docker + Docker Compose
 - **Orchestration**: docker-compose.yml
@@ -1504,13 +1504,13 @@ packages/ui/
 #### Local Development (Without Docker)
 ```bash
 # Install dependencies
-npm install
+pnpm install
 
 # Run all services (Turborepo)
-npm run dev
+pnpm dev
 
 # Run specific service
-npm run dev --filter=auth-service
+pnpm dev --filter=auth-service
 ```
 
 #### Docker Development

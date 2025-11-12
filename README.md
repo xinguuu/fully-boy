@@ -54,7 +54,7 @@ xingu/
 ### Prerequisites
 
 - **Node.js**: 24+
-- **npm**: 10+
+- **pnpm**: 9+
 - **Docker**: Docker Desktop or Docker Engine + Docker Compose
 - **PostgreSQL**: 17+ (or use Docker)
 - **Redis**: Latest (or use Docker)
@@ -67,23 +67,23 @@ git clone https://github.com/your-org/xingu.git
 cd xingu
 
 # 2. Install dependencies
-npm install
+pnpm install
 
 # 3. Set up environment variables
 cp .env.example .env
 # Edit .env with your local database and Redis URLs
 
 # 4. Generate Prisma Client
-npm run db:generate
+pnpm db:generate
 
 # 5. Run database migrations
-npm run db:migrate
+pnpm db:migrate
 
 # 6. Seed database with sample data
-npm run db:seed
+pnpm db:seed
 
 # 7. Start all services in development mode
-npm run dev
+pnpm dev
 
 # Access the application:
 # - Frontend: http://localhost:3000
@@ -125,31 +125,31 @@ docker-compose logs -f auth-service
 
 ```bash
 # Development
-npm run dev                     # Start all services in dev mode
-npm run dev --filter=web        # Start specific service only
+pnpm dev                     # Start all services in dev mode
+pnpm dev --filter=web        # Start specific service only
 
 # Building
-npm run build                   # Build all packages
-npm run build --filter=web      # Build specific package
+pnpm build                   # Build all packages
+pnpm build --filter=web      # Build specific package
 
 # Testing
-npm run test                    # Run all unit tests
-npm run test:e2e                # Run E2E tests
-npm run type-check              # Type check all packages
-npm run lint                    # Lint all packages
+pnpm test                    # Run all unit tests
+pnpm test:e2e                # Run E2E tests
+pnpm type-check              # Type check all packages
+pnpm lint                    # Lint all packages
 
 # Database
-npm run db:generate             # Generate Prisma Client
-npm run db:migrate              # Run migrations
-npm run db:seed                 # Seed database
-npm run db:studio               # Open Prisma Studio
+pnpm db:generate             # Generate Prisma Client
+pnpm db:migrate              # Run migrations
+pnpm db:seed                 # Seed database
+pnpm db:studio               # Open Prisma Studio
 
 # Formatting
-npm run format                  # Format all files
-npm run format:check            # Check formatting
+pnpm format                  # Format all files
+pnpm format:check            # Check formatting
 
 # Cleanup
-npm run clean                   # Clean all build artifacts
+pnpm clean                   # Clean all build artifacts
 ```
 
 ---
@@ -174,7 +174,7 @@ npm run clean                   # Clean all build artifacts
 
 ### Infrastructure
 - **Containerization**: Docker + Docker Compose
-- **Monorepo**: Turborepo + npm workspaces
+- **Monorepo**: Turborepo + pnpm workspaces
 - **Reverse Proxy**: Nginx
 
 ---
@@ -183,13 +183,13 @@ npm run clean                   # Clean all build artifacts
 
 ```bash
 # Unit tests
-npm run test
+pnpm test
 
 # E2E tests
-npm run test:e2e
+pnpm test:e2e
 
 # Coverage
-npm run test --coverage
+pnpm test --coverage
 ```
 
 ---
