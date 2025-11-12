@@ -14,8 +14,8 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@xingu/database": "*",
-    "@xingu/shared": "*",
+    "@xingu/database": "workspace:*",
+    "@xingu/shared": "workspace:*",
     "cors": "^2.8.5",
     "express": "^4.21.2",
     "ioredis": "^5.4.2",
