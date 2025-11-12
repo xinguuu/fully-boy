@@ -5,10 +5,10 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "scripts": {
-    "build": "tsc",
-    "dev": "tsc --watch",
+    "build": "pnpm exec tsc",
+    "dev": "pnpm exec tsc --watch",
     "clean": "rm -rf dist",
-    "type-check": "tsc --noEmit",
+    "type-check": "pnpm exec tsc --noEmit",
     "lint": "eslint src --ext .ts"
   },
   "dependencies": {
