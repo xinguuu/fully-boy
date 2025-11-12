@@ -3,6 +3,23 @@ import { GameService } from '../services/game.service';
 import { prisma } from '../config/database';
 import { NotFoundError, ForbiddenError } from '../middleware/error.middleware';
 
+vi.mock('../config/database', () => ({
+  prisma: {
+    game: {
+      findMany: vi.fn(),
+      findUnique: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
+    },
+    question: {
+      deleteMany: vi.fn(),
+    },
+  },
+  connectDatabase: vi.fn(),
+  disconnectDatabase: vi.fn(),
+}));
+
 describe('GameService', () => {
   let gameService: GameService;
   const mockUserId = 'user-123';

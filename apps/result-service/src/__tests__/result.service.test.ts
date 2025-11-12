@@ -3,6 +3,22 @@ import { ResultService } from '../services/result.service';
 import { prisma } from '../config/database';
 import { NotFoundError } from '../middleware/error.middleware';
 
+vi.mock('../config/database', () => ({
+  prisma: {
+    room: {
+      findUnique: vi.fn(),
+      findMany: vi.fn(),
+    },
+    gameResult: {
+      create: vi.fn(),
+      findUnique: vi.fn(),
+      findMany: vi.fn(),
+    },
+  },
+  connectDatabase: vi.fn(),
+  disconnectDatabase: vi.fn(),
+}));
+
 describe('ResultService', () => {
   let resultService: ResultService;
 
