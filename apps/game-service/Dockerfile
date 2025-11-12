@@ -1,9 +1,10 @@
-FROM node:22-alpine AS base
+FROM node:24-alpine AS base
 WORKDIR /app
 
 FROM base AS builder
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 COPY turbo.json ./
+COPY tsconfig.json ./
 COPY apps/game-service/package.json ./apps/game-service/
 COPY packages/ ./packages/
 
@@ -11,7 +12,10 @@ RUN corepack enable && pnpm install --frozen-lockfile
 
 COPY apps/game-service/ ./apps/game-service/
 
-RUN pnpm build --filter=@xingu/game-service
+RUN pnpm --filter=@xingu/database db:generate && \
+    pnpm --filter=@xingu/shared build && \
+    pnpm --filter=@xingu/database build && \
+    pnpm --filter=@xingu/game-service build
 
 FROM base AS runner
 ENV NODE_ENV=production
