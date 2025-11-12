@@ -43,7 +43,13 @@
       "Bash(pnpm --filter=@xingu/auth-service dev:*)",
       "Bash(pnpm --filter=@xingu/ws-service dev:*)",
       "Bash(curl:*)",
-      "Bash(pnpm --filter=@xingu/game-service test)"
+      "Bash(pnpm --filter=@xingu/game-service test)",
+      "Bash(pnpm --filter=@xingu/room-service test:*)",
+      "Bash(pnpm --filter=@xingu/game-service test run)",
+      "Bash(pnpm --filter=@xingu/result-service test run)",
+      "Bash(pnpm --filter=@xingu/template-service test:*)",
+      "Bash(pnpm --filter=@xingu/template-service --filter=@xingu/game-service --filter=@xingu/room-service --filter=@xingu/result-service test run)",
+      "Bash(pnpm:*)"
     ],
     "deny": [],
     "ask": []

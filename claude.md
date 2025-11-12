@@ -504,6 +504,60 @@ This includes:
 
 ## 📋 Recent Changes
 
+### 2025-11-13: Unit Test Implementation (4 Backend Services)
+
+- **Status**: ✅ Complete
+- **Summary**: Implemented comprehensive unit tests for 4 backend services, achieving 93 total tests passing
+- **Changes**:
+  1. ✅ **Test Infrastructure Setup**:
+     - Configured Vitest with proper mock setup for all services
+     - Fixed Prisma Client import pattern for testability
+     - Established factory-based mock pattern in test files
+  2. ✅ **Service Test Coverage** (93 tests total):
+     - `template-service`: 18 tests (controller + service) ✅
+     - `game-service`: 26 tests (CRUD operations, authorization) ✅
+     - `room-service`: 28 tests (PIN generation, participant management) ✅
+     - `result-service`: 21 tests (statistics, leaderboard) ✅
+  3. ✅ **Critical Bug Fixes**:
+     - Fixed Prisma import in `room-service/src/services/room.service.ts`
+     - Fixed Prisma import in `result-service/src/services/result.service.ts`
+     - Changed from `const prisma = new PrismaClient()` to `import { prisma } from '../config/database'`
+  4. ✅ **Validation Results**:
+     - All 93 tests passing in parallel execution
+     - Type-check: 11/11 packages ✅
+     - Build: 5/5 Express services ✅ (auth-service has pnpm hoisting issue)
+
+- **Key Pattern Established**:
+  ```typescript
+  // ✅ Testable pattern (allows mocking)
+  import { prisma } from '../config/database';
+
+  // ❌ Non-testable pattern
+  const prisma = new PrismaClient();
+  ```
+
+- **Test Structure**:
+  - Mock setup in each test file with factory functions
+  - Setup files only contain beforeAll/afterAll hooks
+  - Controller tests: verify request/response handling
+  - Service tests: verify business logic and error handling
+
+- **Files Modified**:
+  - `apps/game-service/src/__tests__/game.service.test.ts`: Added vi.mock()
+  - `apps/room-service/src/services/room.service.ts`: Fixed Prisma import
+  - `apps/room-service/src/__tests__/room.service.test.ts`: Added vi.mock()
+  - `apps/result-service/src/services/result.service.ts`: Fixed Prisma import
+  - `apps/result-service/src/__tests__/result.service.test.ts`: Added vi.mock()
+
+- **Known Issues**:
+  - `auth-service` (NestJS): pnpm hoisting issue with `has-flag` module
+  - `web` (Next.js): pnpm hoisting issue with `jest-worker` module
+
+- **Next Steps**:
+  - Add unit tests for auth-service and ws-service
+  - Add E2E integration tests
+  - Resolve pnpm hoisting issues for NestJS and Next.js
+
 ### 2025-11-13: Local Development Environment Setup (Hybrid Docker)
 
 - **Status**: ✅ Complete
@@ -701,17 +755,18 @@ This includes:
 - **Code**: ✅ **All 6 backend services fully implemented and running**
 - **Database**: ✅ Prisma schema complete (7 tables) + migrations applied
 - **API**: ✅ **All REST endpoints implemented and validated**
+- **Testing**: ✅ **93 unit tests passing** (4/6 services complete)
 - **Development Environment**: ✅ **Fully operational** (all services running + health checks passing)
 
 ### What's Working
 - ✅ Project documentation (overview, IA, PRD, architecture, design)
 - ✅ **6-Service MSA** - ALL services running locally:
   - ✅ `auth-service` (Port 3001): NestJS + Redis + Prisma - RUNNING
-  - ✅ `template-service` (Port 3002): Express + Redis caching - RUNNING (18 tests passing)
-  - ✅ `game-service` (Port 3003): Express CRUD + Redis + Prisma - RUNNING
-  - ✅ `room-service` (Port 3004): Express + PIN generation + Redis + Prisma - RUNNING
+  - ✅ `template-service` (Port 3002): Express + Redis caching - RUNNING + **18 tests passing** ✅
+  - ✅ `game-service` (Port 3003): Express CRUD + Redis + Prisma - RUNNING + **26 tests passing** ✅
+  - ✅ `room-service` (Port 3004): Express + PIN generation + Redis + Prisma - RUNNING + **28 tests passing** ✅
   - ✅ `ws-service` (Port 3005): Socket.io + Redis Pub/Sub + Prisma - RUNNING
-  - ✅ `result-service` (Port 3006): Express + statistics + Redis + Prisma - RUNNING
+  - ✅ `result-service` (Port 3006): Express + statistics + Redis + Prisma - RUNNING + **21 tests passing** ✅
 - ✅ **Database Infrastructure** (Docker):
   - PostgreSQL 17 (Port 5432) - healthy
   - Redis (Port 6379) - healthy
@@ -723,6 +778,11 @@ This includes:
 - ✅ Development rules and guidelines
 - ✅ Turborepo monorepo structure with cache
 - ✅ **All services passing health checks**
+- ✅ **Testing Infrastructure**:
+  - Vitest configured for all services
+  - 93 unit tests passing (4 services)
+  - Parallel test execution working
+  - Mock patterns established for Prisma and Redis
 
 ### Backend Implementation Status
 
@@ -730,10 +790,12 @@ This includes:
 |---------|-----|---------|-------|----------|--------|
 | auth-service | ✅ | ✅ | ⬜ | ✅ | 95% |
 | template-service | ✅ | ✅ | ✅ (18 tests) | ✅ | 100% |
-| game-service | ✅ | ✅ | ⬜ | ✅ | 95% |
-| room-service | ✅ | ✅ | ⬜ | ✅ | 95% |
-| result-service | ✅ | ✅ | ⬜ | ✅ | 95% |
+| game-service | ✅ | ✅ | ✅ (26 tests) | ✅ | 100% |
+| room-service | ✅ | ✅ | ✅ (28 tests) | ✅ | 100% |
+| result-service | ✅ | ✅ | ✅ (21 tests) | ✅ | 100% |
 | ws-service | ✅ | ✅ | ⬜ | ✅ | 95% |
+
+**🏆 Total: 93 unit tests passing across 4 services**
 
 ### Next Steps
 
@@ -741,9 +803,10 @@ This includes:
 
 1. ✅ Implement all REST API endpoints
 2. ✅ Set up local development environment
-3. 🟡 Add unit tests for remaining services (game/room/result/auth/ws)
-4. ⬜ Implement authentication middleware integration across services
-5. ⬜ Add API request/response validation with Zod
+3. ✅ Add unit tests for 4 core services (93 tests total)
+4. ⬜ Add unit tests for auth-service and ws-service
+5. ⬜ Implement authentication middleware integration across services
+6. ⬜ Add API request/response validation with Zod
 
 #### Phase 2: WebSocket & Real-time
 
