@@ -1,9 +1,7 @@
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../config/database';
 import { redis } from '../config/redis';
 import { NotFoundError, ConflictError } from '../middleware/error.middleware';
 import type { CreateRoomDto, RoomResponse, JoinRoomDto, Participant } from '../types/room.types';
-
-const prisma = new PrismaClient();
 
 const REDIS_PARTICIPANT_PREFIX = 'room:participants:';
 const REDIS_PARTICIPANT_TTL = 7200;

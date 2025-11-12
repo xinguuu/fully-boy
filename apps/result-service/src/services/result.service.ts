@@ -1,8 +1,7 @@
-import { PrismaClient, Prisma } from '@prisma/client';
+import { prisma } from '../config/database';
+import { Prisma } from '@prisma/client';
 import { NotFoundError } from '../middleware/error.middleware';
 import type { CreateResultDto, ResultResponse } from '../types/result.types';
-
-const prisma = new PrismaClient();
 
 export class ResultService {
   async createResult(dto: CreateResultDto): Promise<ResultResponse> {
