@@ -15,8 +15,8 @@
   },
   "dependencies": {
     "@socket.io/redis-adapter": "^8.3.0",
-    "@xingu/database": "*",
-    "@xingu/shared": "*",
+    "@xingu/database": "workspace:*",
+    "@xingu/shared": "workspace:*",
     "ioredis": "^5.4.2",
     "socket.io": "^4.8.1",
     "zod": "^3.23.8"
