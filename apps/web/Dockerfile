@@ -3,17 +3,17 @@ WORKDIR /app
 
 FROM base AS deps
 RUN apk add --no-cache libc6-compat
-COPY package*.json ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY turbo.json ./
-COPY apps/web/package*.json ./apps/web/
+COPY apps/web/package.json ./apps/web/
 COPY packages/ ./packages/
-RUN npm ci
+RUN corepack enable && pnpm install --frozen-lockfile
 
 FROM base AS builder
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-RUN npm run build --filter=@xingu/web
+RUN pnpm build --filter=@xingu/web
 
 FROM base AS runner
 ENV NODE_ENV=production
