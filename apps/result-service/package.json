@@ -5,7 +5,7 @@
   "description": "Game results and statistics service",
   "scripts": {
     "build": "pnpm exec tsc",
-    "dev": "tsx watch src/index.ts",
+    "dev": "dotenv -e ../../.env -- tsx watch src/index.ts",
     "start": "node dist/index.js",
     "lint": "eslint src --ext .ts",
     "type-check": "pnpm exec tsc --noEmit",
