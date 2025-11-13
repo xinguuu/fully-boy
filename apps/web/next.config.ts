@@ -7,7 +7,6 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: false,
   },
   experimental: {
-    reactCompiler: false,
     ppr: false,
   },
   async rewrites() {
