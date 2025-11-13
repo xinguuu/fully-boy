@@ -1,6 +1,7 @@
-import axios, { type AxiosInstance, type AxiosRequestConfig } from 'axios';
+import axios, { type AxiosInstance, type AxiosRequestConfig, type AxiosError } from 'axios';
+import { tokenManager } from '../auth/token-manager';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
 export class ApiClient {
   private client: AxiosInstance;
@@ -14,7 +15,7 @@ export class ApiClient {
     });
 
     this.client.interceptors.request.use((config) => {
-      const token = this.getToken();
+      const token = tokenManager.getAccessToken();
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       }
@@ -23,27 +24,23 @@ export class ApiClient {
 
     this.client.interceptors.response.use(
       (response) => response,
-      async (error) => {
+      async (error: AxiosError) => {
         if (error.response?.status === 401) {
-          this.clearToken();
-          if (typeof window !== 'undefined') {
-            window.location.href = '/login';
+          tokenManager.clearTokens();
+          if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
+            window.location.href = `/login?redirect=${encodeURIComponent(window.location.pathname)}`;
           }
+        } else if (error.response && process.env.NODE_ENV === 'development') {
+          console.error('API Error:', {
+            status: error.response.status,
+            data: error.response.data,
+            url: error.config?.url,
+            method: error.config?.method?.toUpperCase(),
+          });
         }
         return Promise.reject(error);
       }
     );
-  }
-
-  private getToken(): string | null {
-    if (typeof window === 'undefined') return null;
-    return localStorage.getItem('access_token');
-  }
-
-  private clearToken(): void {
-    if (typeof window === 'undefined') return;
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
   }
 
   async get<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
@@ -67,8 +64,4 @@ export class ApiClient {
   }
 }
 
-export const authClient = new ApiClient(`${API_BASE_URL}/api/auth`);
-export const templateClient = new ApiClient(`${API_BASE_URL}/api/templates`);
-export const gameClient = new ApiClient(`${API_BASE_URL}/api/games`);
-export const roomClient = new ApiClient(`${API_BASE_URL}/api/rooms`);
-export const resultClient = new ApiClient(`${API_BASE_URL}/api/results`);
+export const apiClient = new ApiClient(API_BASE_URL);
