@@ -18,7 +18,7 @@ export function middleware(request: NextRequest) {
   }
 
   if (accessToken && isAuthRoute) {
-    return NextResponse.redirect(new URL('/dashboard', request.url));
+    return NextResponse.redirect(new URL('/browse', request.url));
   }
 
   return NextResponse.next();
@@ -26,7 +26,7 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/dashboard/:path*',
+    '/browse/:path*',
     '/games/:path*',
     '/templates/:path*',
     '/rooms/:path*',

@@ -33,7 +33,7 @@ export default function SignupPage() {
   const onSubmit = async (data: SignupFormData) => {
     try {
       await signup.mutateAsync(data);
-      router.push('/dashboard');
+      router.push('/browse');
     } catch (error) {
       console.error('Signup failed:', error);
     }
