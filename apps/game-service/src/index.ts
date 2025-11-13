@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import { apiRateLimiter } from '@xingu/shared';
@@ -5,6 +6,9 @@ import { connectDatabase, disconnectDatabase } from './config/database';
 import { disconnectRedis } from './config/redis';
 import { errorMiddleware, notFoundMiddleware } from './middleware/error.middleware';
 import gameRoutes from './routes/game.routes';
+
+console.log('🔍 [DEBUG] JWT_SECRET loaded:', process.env.JWT_SECRET ? 'YES ✅' : 'NO ❌');
+console.log('🔍 [DEBUG] DATABASE_URL loaded:', process.env.DATABASE_URL ? 'YES ✅' : 'NO ❌');
 
 const app = express();
 
