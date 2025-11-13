@@ -1,0 +1,82 @@
+# ===================================
+# 🚀 Optimized Dockerfile with pnpm deploy
+# Result Service (Express + Redis + Prisma)
+# ===================================
+
+FROM node:24-alpine AS base
+RUN corepack enable
+WORKDIR /app
+
+# ===================================
+# Stage 1: Dependencies installer
+# ===================================
+FROM base AS installer
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
+COPY turbo.json ./
+COPY tsconfig.json ./
+
+# Copy workspace packages
+COPY packages/shared/package.json ./packages/shared/
+COPY packages/database/package.json ./packages/database/
+COPY packages/config/package.json ./packages/config/
+
+# Copy result-service package.json
+COPY apps/result-service/package.json ./apps/result-service/
+
+# Install all dependencies (for building)
+RUN pnpm install --frozen-lockfile
+
+# ===================================
+# Stage 2: Builder
+# ===================================
+FROM installer AS builder
+
+# Copy source code
+COPY packages/ ./packages/
+COPY apps/result-service/ ./apps/result-service/
+
+# Build shared packages first
+RUN pnpm --filter=@xingu/database db:generate && \
+    pnpm --filter=@xingu/shared build && \
+    pnpm --filter=@xingu/database build
+
+# Build result-service
+RUN pnpm --filter=@xingu/result-service build
+
+# ===================================
+# Stage 3: Deploy (pnpm deploy magic ✨)
+# ===================================
+FROM builder AS deployer
+
+# 🎯 Extract ONLY result-service dependencies
+RUN pnpm --filter=@xingu/result-service --prod deploy --legacy /app/deploy
+
+# Copy built files
+COPY --from=builder /app/apps/result-service/dist /app/deploy/dist
+
+# Copy Prisma generated client
+COPY --from=builder /app/packages/database/node_modules/.prisma /app/deploy/node_modules/.prisma
+
+# ===================================
+# Stage 4: Production runner
+# ===================================
+FROM base AS runner
+ENV NODE_ENV=production
+
+RUN apk add --no-cache curl && \
+    addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 expressjs
+
+# 🎯 Copy ONLY the deployed output
+COPY --from=deployer --chown=expressjs:nodejs /app/deploy /app
+
+USER expressjs
+WORKDIR /app
+
+EXPOSE 3006
+ENV PORT=3006
+
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:3006/health || exit 1
+
+CMD ["node", "dist/index.js"]
