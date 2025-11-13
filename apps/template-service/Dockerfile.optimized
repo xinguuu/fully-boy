@@ -8,60 +8,55 @@ RUN corepack enable
 WORKDIR /app
 
 # ===================================
-# Stage 1: Dependencies installer
+# Stage 1: Dependencies setup
 # ===================================
 FROM base AS installer
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
-COPY turbo.json ./
-COPY tsconfig.json ./
 
-# Copy workspace packages (only package.json for dependency resolution)
+# pnpm 설정 파일 복사
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
+
+# Workspace packages (package.json만)
 COPY packages/shared/package.json ./packages/shared/
 COPY packages/database/package.json ./packages/database/
 COPY packages/config/package.json ./packages/config/
 
-# Copy template-service package.json
+# 서비스 package.json
 COPY apps/template-service/package.json ./apps/template-service/
 
-# Install all dependencies (for building)
+# Prisma schema 복사 (generate 전에 필요)
+COPY packages/database/prisma ./packages/database/prisma
+
+# Dependencies 설치 (workspace 포함)
 RUN pnpm install --frozen-lockfile
 
+# Prisma Client 생성
+RUN pnpm --filter=@xingu/database db:generate
+
 # ===================================
-# Stage 2: Builder
+# Stage 2: Add built code
 # ===================================
 FROM installer AS builder
 
-# Copy source code
-COPY packages/ ./packages/
-COPY apps/template-service/ ./apps/template-service/
+# 빌드된 workspace 패키지 복사 (로컬에서 미리 빌드)
+COPY packages/shared/dist ./packages/shared/dist
+COPY packages/database/dist ./packages/database/dist
 
-# Build shared packages first
-RUN pnpm --filter=@xingu/database db:generate && \
-    pnpm --filter=@xingu/shared build && \
-    pnpm --filter=@xingu/database build
-
-# Build template-service
-RUN pnpm --filter=@xingu/template-service build
+# 빌드된 서비스 코드 복사
+COPY apps/template-service/dist ./apps/template-service/dist
 
 # ===================================
-# Stage 3: Deploy (pnpm deploy magic ✨)
+# Stage 3: Deploy (production only)
 # ===================================
 FROM builder AS deployer
 
-# 🎯 Extract ONLY template-service dependencies (production only)
-# pnpm deploy automatically includes:
-# - @xingu/shared, @xingu/database (workspace deps)
-# - All runtime dependencies from package.json
-# - Prisma Client (generated in node_modules)
-# Note: --legacy flag required for pnpm v10+ to deploy workspace packages
+# pnpm deploy: 필요한 dependencies만 추출
 RUN pnpm --filter=@xingu/template-service --prod deploy --legacy /app/deploy
 
-# Copy built files
-COPY --from=builder /app/apps/template-service/dist /app/deploy/dist
+# 빌드 파일 복사
+RUN cp -r apps/template-service/dist /app/deploy/dist
 
-# Copy workspace packages' built files
-COPY --from=builder /app/packages/shared/dist /app/deploy/node_modules/@xingu/shared/dist
-COPY --from=builder /app/packages/database/dist /app/deploy/node_modules/@xingu/database/dist
+# Prisma Client 복사 (.prisma 폴더)
+RUN cp -r node_modules/.pnpm/@prisma+client@*/node_modules/.prisma /app/deploy/node_modules/.pnpm/@prisma+client@*/node_modules/ 2>/dev/null || true
 
 # ===================================
 # Stage 4: Production runner

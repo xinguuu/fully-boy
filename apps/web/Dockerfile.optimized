@@ -40,14 +40,12 @@ FROM installer AS builder
 COPY packages/ ./packages/
 COPY apps/web/ ./apps/web/
 
-# Build shared packages first
-RUN pnpm --filter=@xingu/database db:generate && \
-    pnpm --filter=@xingu/shared build && \
-    pnpm --filter=@xingu/database build
+# Prisma 생성
+RUN pnpm --filter=@xingu/database db:generate
 
-# Build Next.js with standalone output
-# (Next.js will automatically create optimized bundle in .next/standalone)
-RUN pnpm --filter=@xingu/web build
+# Turborepo로 빌드 (자동으로 의존성 순서 처리)
+# Next.js는 standalone output으로 최적화된 번들 생성
+RUN pnpm turbo build --filter=@xingu/web...
 
 # ===================================
 # Stage 3: Deploy (pnpm deploy + Next.js standalone)
