@@ -512,6 +512,43 @@ This includes:
 
 ## 📋 Recent Changes
 
+### 2025-11-13: Browse Page Authentication Protection - Fixed 401 Errors! 🔒
+
+- **Status**: ✅ Complete
+- **Summary**: Fixed Browse page authentication flow to properly handle unauthenticated users and redirect to login
+- **Root Cause**: Browse page was calling `useCurrentUser()` hook without checking if user was logged in first, causing 401 errors
+- **Changes**:
+  1. ✅ **Browse Page Protection** ([apps/web/src/app/browse/page.tsx](apps/web/src/app/browse/page.tsx)):
+     - Added `useEffect` to check for valid token on mount
+     - Automatically redirects to `/login?redirect=/browse` if no valid token
+     - Added loading state while fetching user data
+     - Added error handling to prevent page render without authenticated user
+  2. ✅ **Improved API Error Handling** ([apps/web/src/lib/api/client.ts](apps/web/src/lib/api/client.ts)):
+     - 401 errors now redirect with query parameter for return path
+     - Error logging only shows in development mode
+     - Added request method to error logs for better debugging
+     - Prevents redirect loop by checking current pathname
+
+- **Files Modified**:
+  - `apps/web/src/app/browse/page.tsx`: Added authentication protection with loading/error states
+  - `apps/web/src/lib/api/client.ts`: Improved error interceptor with redirect parameter
+
+- **Validation Results**:
+  - ✅ TypeScript type-check: Passing
+  - ✅ Login API: Working (returns JWT tokens)
+  - ✅ Browse page: Redirects to login when not authenticated
+  - ✅ No more console errors for expected 401 responses
+
+- **User Flow**:
+  1. Visit `/browse` without being logged in → Auto-redirect to `/login?redirect=/browse`
+  2. Login successfully → Tokens saved to localStorage
+  3. Auto-redirect back to `/browse` page
+  4. Browse page loads with user data
+
+**Next Step**: User should login first, then access Browse page - authentication flow now working correctly!
+
+---
+
 ### 2025-11-13: Frontend Authentication Fixed - Login/Signup Working! 🔐
 
 - **Status**: ✅ Complete
