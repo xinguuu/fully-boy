@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import { apiRateLimiter } from '@xingu/shared';
 import { connectDatabase, disconnectDatabase } from './config/database';
 import { disconnectRedis } from './config/redis';
 import { errorMiddleware, notFoundMiddleware } from './middleware/error.middleware';
@@ -15,6 +16,7 @@ app.use(
 );
 
 app.use(express.json());
+app.use(apiRateLimiter);
 
 app.get('/health', (_req, res) => {
   res.json({ status: 'Room Service is healthy!' });

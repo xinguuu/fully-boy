@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import { apiRateLimiter } from '@xingu/shared';
 import { disconnectRedis } from './config/redis';
 import { errorMiddleware, notFoundMiddleware } from './middleware/error.middleware';
 import templateRoutes from './routes/template.routes';
@@ -14,6 +15,7 @@ app.use(
 );
 
 app.use(express.json());
+app.use(apiRateLimiter);
 
 app.get('/health', (_req, res) => {
   res.json({ status: 'Template Service is healthy!' });
