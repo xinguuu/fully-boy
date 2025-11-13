@@ -365,6 +365,8 @@ export default function NotFound() {
 10. **No ignoring accessibility (a11y)**
 11. **No work completion without documentation update**
 12. **No redundant comments that repeat obvious code**
+13. **ALWAYS follow docs/02-ia.md (Information Architecture) for UI structure and user flows**
+14. **ALWAYS follow docs/05-design-guide.md for colors, typography, and component styling**
 
 ---
 
@@ -503,6 +505,63 @@ This includes:
 ---
 
 ## 📋 Recent Changes
+
+### 2025-11-13: Homepage (PIN Entry) Complete - Kahoot-style Design! 🎮
+
+- **Status**: ✅ Complete
+- **Summary**: Built minimalist Kahoot-style homepage with Korean text following IA and Design Guide specifications
+- **Changes**:
+  1. ✅ **Tailwind Config Updated** ([apps/web/tailwind.config.ts](apps/web/tailwind.config.ts)):
+     - Added Xingu brand colors (Primary Orange #FF6B35, Secondary Blue #0EA5E9, Accent Lime #84CC16)
+     - Added Pretendard font family (Korean-optimized)
+     - Added custom animations (fade-in, slide-up, scale-in, shimmer, ripple)
+     - Added hero text size (64px) for large branding
+     - Added semantic colors (success, warning, error, info with light/dark variants)
+     - Added dark mode colors (dark-1, dark-2, dark-3)
+  2. ✅ **Homepage Component** ([apps/web/src/app/page.tsx](apps/web/src/app/page.tsx)):
+     - Minimalist Kahoot-style layout with centered PIN input
+     - "게임 만들기" button (top-right) redirects to login
+     - Korean text throughout ("파티를 더 즐겁게!")
+     - Gradient background with decorative blur elements
+     - Large 6-digit PIN input (numeric-only, mobile keyboard optimized)
+     - QR code entry option display
+     - All Korean labels: "게임 PIN 입력", "입장하기", "또는 QR 코드로 입장"
+  3. ✅ **Design Guide Compliance**:
+     - All interactive elements have `cursor-pointer`
+     - Hover states: `scale-105` + `shadow-lg` (200ms transition)
+     - Active states: `scale-100`
+     - Disabled states: gray background + `cursor-not-allowed`
+     - Focus states: ring-2 with primary color + ring-offset-2
+     - Input hover: border color change
+     - Input focus: primary border + ring-4
+     - Loading spinner animation with Korean text "입장 중..."
+  4. ✅ **Responsive Design**:
+     - Mobile-first approach with breakpoints (sm, md, lg)
+     - Touch-optimized button sizes (48px+ height)
+     - Proper spacing on all devices
+     - Hero text scales: 6xl (mobile) → 7xl (tablet) → 8xl (desktop)
+  5. ✅ **Critical Rules Added to CLAUDE.md**:
+     - Rule 13: ALWAYS follow docs/02-ia.md for UI structure and user flows
+     - Rule 14: ALWAYS follow docs/05-design-guide.md for colors, typography, styling
+
+- **Files Created/Modified**:
+  - `apps/web/tailwind.config.ts`: Complete Xingu design system tokens
+  - `apps/web/src/app/page.tsx`: Korean homepage with PIN entry
+  - `CLAUDE.md`: Added rules 13-14 for IA and Design Guide compliance
+
+- **Validation Results**:
+  - ✅ TypeScript type-check: Passing
+  - ✅ All design tokens working
+  - ✅ Animations rendering correctly
+  - ✅ Korean text displaying properly
+
+- **User Flow**:
+  - Participant: Enter 6-digit PIN → Click "입장하기" → Redirect to `/room/:pin`
+  - Organizer: Click "게임 만들기" → Redirect to `/login`
+
+**Next Step**: Build Browse Page (둘러보기) with 2 tabs (Browse Templates / My Games) following IA structure
+
+---
 
 ### 2025-11-13: Frontend Foundation Complete - Ready for Development! 🎨
 
@@ -1389,15 +1448,16 @@ This includes:
 ### Project Stage
 - **Architecture**: ✅ **6-Service MSA** defined and documented
 - **Infrastructure**: ✅ **Full Docker Containerization** (All 6 backend services + PostgreSQL + Redis + Nginx containerized)
-- **Documentation**: ✅ **Up to date** (CLAUDE.md updated)
+- **Documentation**: ✅ **Up to date** (CLAUDE.md updated with IA + Design Guide rules)
 - **Backend**: ✅ **All 6 backend services fully implemented and running** (100% complete)
-- **Frontend**: ✅ **Foundation complete** (API client, auth, state management, UI components)
+- **Frontend**: ✅ **Homepage complete** + **Foundation ready** (API client, auth, state management, UI components, Xingu design system)
 - **Database**: ✅ Prisma schema complete (7 tables) + migrations applied
 - **API**: ✅ **All REST endpoints implemented and validated**
 - **Authentication**: ✅ **JWT middleware integrated across all services** (backend + frontend)
 - **Testing**: ✅ **138 unit tests passing** (6/6 services complete - 100% coverage) 🎉
 - **Docker**: ✅ **6/6 services healthy** (optimized images with pnpm deploy, 503-557MB) 🎉
 - **Development Environment**: ✅ **Fully operational** (all containers + frontend dev server ready)
+- **Design System**: ✅ **Xingu brand colors, typography, animations configured** (Tailwind + Design Guide)
 
 ### What's Working
 - ✅ Project documentation (overview, IA, PRD, architecture, design)
@@ -1478,6 +1538,8 @@ This includes:
 
 | Component | Status | Details |
 |-----------|--------|---------|
+| **Design System** | ✅ Complete | Xingu brand colors, Pretendard font, animations (Tailwind config) |
+| **Homepage (PIN Entry)** | ✅ Complete | Kahoot-style, Korean text, responsive, Design Guide compliant |
 | **API Client Layer** | ✅ Complete | All 6 backend services (auth, template, game, room, result, ws) |
 | **Authentication** | ✅ Complete | Token management, protected routes, auto-redirect |
 | **State Management** | ✅ Complete | TanStack Query + Zustand stores |
@@ -1489,6 +1551,8 @@ This includes:
 | **Production Build** | ⚠️ Blocked | Next.js 15 + React 19 compatibility issue |
 
 **Frontend Stack**: Next.js 15 + React 19 + TypeScript + TanStack Query + Zustand + Tailwind + Shadcn UI
+
+**Design System**: Xingu brand colors (Orange #FF6B35, Blue #0EA5E9, Lime #84CC16) + Pretendard font + Custom animations
 
 ### Next Steps
 
@@ -1521,14 +1585,23 @@ This includes:
    - ✅ React Query hooks for all APIs
    - ✅ UI components (Shadcn style)
    - ✅ Login and Signup pages
-10. ⬜ Build core pages:
-   - ⬜ Templates browser page
-   - ⬜ My Games dashboard
+10. ✅ Design System + Homepage - COMPLETE
+   - ✅ Xingu brand colors configured (Primary Orange, Secondary Blue, Accent Lime)
+   - ✅ Pretendard font setup + custom animations
+   - ✅ Homepage (PIN Entry) - Kahoot-style, Korean text
+   - ✅ Added CLAUDE.md rules 13-14 for IA + Design Guide compliance
+11. ⬜ Build core pages (following IA structure):
+   - ⬜ Browse Page (둘러보기) - 2 tabs (Browse Templates / My Games)
+   - ⬜ Edit Screen (편집 화면) - Mandatory intermediate step
    - ⬜ Game creator/editor
-11. ⬜ WebSocket client integration (live gameplay)
-12. ⬜ Results and analytics pages
-13. ⬜ E2E testing with Playwright
-14. ⬜ Performance optimization
+12. ⬜ Build game flow pages:
+   - ⬜ PIN Issued (room created) - Waiting screen
+   - ⬜ Waiting Room (대기실) - Pre-game lobby
+   - ⬜ Live Game (게임 진행) - WebSocket gameplay
+   - ⬜ Results (최종 결과) - Final results + statistics
+13. ⬜ WebSocket client integration (live gameplay)
+14. ⬜ E2E testing with Playwright
+15. ⬜ Performance optimization
 
 ### Known Issues
 

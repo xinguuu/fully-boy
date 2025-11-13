@@ -53,7 +53,7 @@
       "Bash(docker build:*)",
       "Bash(docker stop:*)",
       "Bash(docker rm:*)",
-      "Bash(docker logs:*)"
+      "Bash(.env)"
     ],
     "deny": [],
     "ask": []
