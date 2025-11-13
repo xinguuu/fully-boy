@@ -2,6 +2,7 @@ import { Server, Socket } from 'socket.io';
 import { WS_EVENTS } from '@xingu/shared';
 import { prisma } from '../config/database';
 import { roomStateService } from '../services/room-state.service';
+import { scoreCalculator } from '../services/score-calculator.service';
 
 export function setupGameHandlers(io: Server, socket: Socket) {
   socket.on(WS_EVENTS.START_GAME, async (data: { pin: string }) => {
@@ -157,9 +158,14 @@ export function setupGameHandlers(io: Server, socket: Socket) {
 
   socket.on(
     WS_EVENTS.SUBMIT_ANSWER,
-    async (data: { pin: string; questionIndex: number; answer: unknown }) => {
+    async (data: {
+      pin: string;
+      questionIndex: number;
+      answer: unknown;
+      responseTimeMs: number;
+    }) => {
       try {
-        const { pin, questionIndex, answer } = data;
+        const { pin, questionIndex, answer, responseTimeMs } = data;
 
         const state = await roomStateService.getRoomState(pin);
 
@@ -196,21 +202,73 @@ export function setupGameHandlers(io: Server, socket: Socket) {
           return;
         }
 
+        // Get question details for score calculation
+        const room = await prisma.room.findUnique({
+          where: { pin },
+          include: {
+            game: {
+              include: {
+                questions: {
+                  orderBy: { order: 'asc' },
+                },
+              },
+            },
+          },
+        });
+
+        if (!room) {
+          socket.emit(WS_EVENTS.ERROR, {
+            code: 'ROOM_NOT_FOUND',
+            message: 'Room not found',
+          });
+          return;
+        }
+
+        const question = room.game.questions[questionIndex];
+        if (!question) {
+          socket.emit(WS_EVENTS.ERROR, {
+            code: 'QUESTION_NOT_FOUND',
+            message: 'Question not found',
+          });
+          return;
+        }
+
+        // Calculate score
+        const isCorrect = scoreCalculator.checkAnswer(question, answer);
+        const questionDuration = (question.data as any).duration || 30; // Default 30s
+        const scoreResult = scoreCalculator.calculateScore({
+          isCorrect,
+          responseTimeMs,
+          questionDuration,
+        });
+
         const updatedPlayer = {
           ...player,
+          score: player.score + scoreResult.points,
           answers: {
             ...player.answers,
-            [questionIndex]: answer,
+            [questionIndex]: {
+              answer,
+              isCorrect,
+              points: scoreResult.points,
+              responseTimeMs,
+              submittedAt: new Date(),
+            },
           },
         };
 
         await roomStateService.updatePlayer(pin, socket.id, updatedPlayer);
 
+        // Send confirmation to player with score
         socket.emit(WS_EVENTS.ANSWER_RECEIVED, {
           questionIndex,
           answer,
+          isCorrect,
+          points: scoreResult.points,
+          breakdown: scoreResult.breakdown,
         });
 
+        // Notify others that player answered (without revealing correctness)
         socket.to(`room:${pin}`).emit(WS_EVENTS.ANSWER_SUBMITTED, {
           playerId: socket.id,
           playerNickname: player.nickname,
@@ -218,7 +276,7 @@ export function setupGameHandlers(io: Server, socket: Socket) {
         });
 
         console.log(
-          `Player ${player.nickname} answered question ${questionIndex} in room ${pin}`,
+          `Player ${player.nickname} answered question ${questionIndex} in room ${pin}: ${isCorrect ? 'CORRECT' : 'WRONG'} (+${scoreResult.points} pts)`,
         );
       } catch (error) {
         console.error('Error submitting answer:', error);
@@ -229,6 +287,117 @@ export function setupGameHandlers(io: Server, socket: Socket) {
       }
     },
   );
+
+  socket.on(WS_EVENTS.END_QUESTION, async (data: { pin: string; questionIndex: number }) => {
+    try {
+      const { pin, questionIndex } = data;
+
+      const state = await roomStateService.getRoomState(pin);
+
+      if (!state) {
+        socket.emit(WS_EVENTS.ERROR, {
+          code: 'ROOM_NOT_FOUND',
+          message: 'Room not found',
+        });
+        return;
+      }
+
+      const player = state.players[socket.id];
+      if (!player || !player.isOrganizer) {
+        socket.emit(WS_EVENTS.ERROR, {
+          code: 'NOT_ORGANIZER',
+          message: 'Only organizer can end questions',
+        });
+        return;
+      }
+
+      if (state.status !== 'playing') {
+        socket.emit(WS_EVENTS.ERROR, {
+          code: 'INVALID_STATE',
+          message: 'Game not in progress',
+        });
+        return;
+      }
+
+      // Get question details
+      const room = await prisma.room.findUnique({
+        where: { pin },
+        include: {
+          game: {
+            include: {
+              questions: {
+                orderBy: { order: 'asc' },
+              },
+            },
+          },
+        },
+      });
+
+      if (!room) {
+        socket.emit(WS_EVENTS.ERROR, {
+          code: 'ROOM_NOT_FOUND',
+          message: 'Room not found',
+        });
+        return;
+      }
+
+      const question = room.game.questions[questionIndex];
+      if (!question) {
+        socket.emit(WS_EVENTS.ERROR, {
+          code: 'QUESTION_NOT_FOUND',
+          message: 'Question not found',
+        });
+        return;
+      }
+
+      // Collect all answers and calculate results
+      const playersList = Object.values(state.players);
+      const results = playersList.map((p) => {
+        const answerData = p.answers[questionIndex] as any;
+        return {
+          playerId: p.id,
+          nickname: p.nickname,
+          answer: answerData?.answer,
+          isCorrect: answerData?.isCorrect || false,
+          points: answerData?.points || 0,
+          responseTimeMs: answerData?.responseTimeMs,
+          currentScore: p.score,
+        };
+      });
+
+      // Generate current leaderboard
+      const leaderboard = playersList
+        .sort((a, b) => b.score - a.score)
+        .map((p, index) => ({
+          rank: index + 1,
+          playerId: p.id,
+          nickname: p.nickname,
+          score: p.score,
+        }));
+
+      // Broadcast results to all players
+      io.to(`room:${pin}`).emit(WS_EVENTS.QUESTION_ENDED, {
+        questionIndex,
+        correctAnswer: (question.data as any).correctAnswer,
+        results,
+        leaderboard,
+        statistics: {
+          totalAnswers: results.filter((r) => r.answer !== undefined).length,
+          correctAnswers: results.filter((r) => r.isCorrect).length,
+          averageResponseTime:
+            results.reduce((sum, r) => sum + (r.responseTimeMs || 0), 0) / results.length,
+        },
+      });
+
+      console.log(`Question ${questionIndex} ended in room ${pin}`);
+    } catch (error) {
+      console.error('Error ending question:', error);
+      socket.emit(WS_EVENTS.ERROR, {
+        code: 'INTERNAL_ERROR',
+        message: 'Internal server error',
+      });
+    }
+  });
 
   socket.on(WS_EVENTS.END_GAME, async (data: { pin: string }) => {
     try {
