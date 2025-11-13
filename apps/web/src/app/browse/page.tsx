@@ -1,47 +1,131 @@
 'use client';
 
-import { useState } from 'react';
-import { useTemplates, useGames } from '@/lib/hooks';
-import { Search, User } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-
-type Tab = 'templates' | 'myGames';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { Search, User, ChevronDown, Star, Users, Clock, Eye } from 'lucide-react';
+import { useTemplates, useGames, useCurrentUser } from '@/lib/hooks';
+import { tokenManager } from '@/lib/auth/token-manager';
+import type { Game } from '@xingu/shared';
 
 export default function BrowsePage() {
-  const [activeTab, setActiveTab] = useState<Tab>('templates');
+  const router = useRouter();
+  const { data: user, isLoading: userLoading, isError: userError } = useCurrentUser();
+  const { data: templatesResponse } = useTemplates();
+  const { data: myGames = [] } = useGames();
+
+  useEffect(() => {
+    if (!tokenManager.hasValidToken()) {
+      router.push('/login?redirect=/browse');
+    }
+  }, [router]);
+
+  if (userLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-primary-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">로딩 중...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (userError || !user) {
+    return null;
+  }
+
+  const [activeTab, setActiveTab] = useState<'browse' | 'myGames'>('browse');
   const [searchQuery, setSearchQuery] = useState('');
+  const [filter, setFilter] = useState('all');
+  const [sortBy, setSortBy] = useState('popular');
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [favorites, setFavorites] = useState<Set<string>>(new Set());
+
+  const templates = templatesResponse?.templates || [];
+  const favoriteGames = myGames.filter((game) => favorites.has(game.id));
+
+  const handleCreateRoom = (templateId: string) => {
+    router.push(`/edit/${templateId}`);
+  };
+
+  const handlePreview = (templateId: string) => {
+    console.log('Preview template:', templateId);
+  };
+
+  const toggleFavorite = (templateId: string) => {
+    console.log('Toggle favorite:', templateId);
+    setFavorites((prev) => {
+      const newFavorites = new Set(prev);
+      if (newFavorites.has(templateId)) {
+        newFavorites.delete(templateId);
+      } else {
+        newFavorites.add(templateId);
+      }
+      return newFavorites;
+    });
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            {/* Logo */}
-            <div className="flex items-center gap-2">
-              <span className="text-2xl font-bold text-primary-500">🎮 Xingu</span>
-            </div>
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+          {/* Logo */}
+          <button
+            onClick={() => router.push('/')}
+            className="text-2xl font-bold text-primary-500 hover:text-primary-600 transition-colors cursor-pointer"
+          >
+            🎮 Xingu
+          </button>
 
-            {/* Search */}
-            <div className="flex-1 max-w-md mx-8">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <Input
-                  type="text"
-                  placeholder="게임 검색..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
-                />
+          {/* Search Bar */}
+          <div className="flex-1 max-w-md mx-8">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
+              <input
+                type="text"
+                placeholder="게임 검색..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full h-10 pl-10 pr-4 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder:text-gray-400 transition-all duration-200 hover:border-gray-400 focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 focus:outline-none cursor-text"
+              />
+            </div>
+          </div>
+
+          {/* Profile Dropdown */}
+          <div className="relative">
+            <button
+              onClick={() => setShowProfileMenu(!showProfileMenu)}
+              className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
+            >
+              <User className="w-5 h-5 text-gray-600" />
+              <span className="text-sm font-medium text-gray-700">
+                {user?.name || user?.email || '프로필'}
+              </span>
+              <ChevronDown className="w-4 h-4 text-gray-600" />
+            </button>
+
+            {showProfileMenu && (
+              <div className="absolute top-full right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-xl py-2 z-50 animate-slide-down">
+                <button className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 transition-colors cursor-pointer">
+                  내 정보
+                </button>
+                <button className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 transition-colors cursor-pointer">
+                  설정
+                </button>
+                <div className="h-px bg-gray-200 my-1"></div>
+                <button
+                  onClick={() => {
+                    localStorage.removeItem('access_token');
+                    localStorage.removeItem('refresh_token');
+                    router.push('/');
+                  }}
+                  className="w-full px-4 py-2 text-left text-sm text-error hover:bg-error-light transition-colors cursor-pointer"
+                >
+                  로그아웃
+                </button>
               </div>
-            </div>
-
-            {/* Profile */}
-            <Button variant="outline" className="gap-2">
-              <User className="w-4 h-4" />
-              <span>프로필</span>
-            </Button>
+            )}
           </div>
         </div>
       </header>
@@ -50,224 +134,268 @@ export default function BrowsePage() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Tabs */}
         <div className="border-b border-gray-200 mb-8">
-          <nav className="-mb-px flex space-x-8">
+          <nav className="flex gap-6">
             <button
-              onClick={() => setActiveTab('templates')}
-              className={`
-                py-4 px-1 border-b-2 font-medium text-sm transition-colors
-                ${
-                  activeTab === 'templates'
-                    ? 'border-primary-500 text-primary-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }
-              `}
+              onClick={() => setActiveTab('browse')}
+              className={`pb-3 px-1 border-b-2 font-semibold transition-colors cursor-pointer ${
+                activeTab === 'browse'
+                  ? 'border-primary-500 text-primary-500'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
             >
               둘러보기
             </button>
             <button
               onClick={() => setActiveTab('myGames')}
-              className={`
-                py-4 px-1 border-b-2 font-medium text-sm transition-colors
-                ${
-                  activeTab === 'myGames'
-                    ? 'border-primary-500 text-primary-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }
-              `}
+              className={`pb-3 px-1 border-b-2 font-semibold transition-colors cursor-pointer ${
+                activeTab === 'myGames'
+                  ? 'border-primary-500 text-primary-500'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
             >
-              내 게임
+              내 게임 ({myGames.length})
             </button>
           </nav>
         </div>
 
-        {/* Tab Content */}
-        {activeTab === 'templates' ? (
-          <BrowseTemplatesTab searchQuery={searchQuery} />
-        ) : (
-          <MyGamesTab searchQuery={searchQuery} />
+        {/* Filters & Sort */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-4">
+            <span className="text-sm font-medium text-gray-700">필터:</span>
+            <button
+              onClick={() => setFilter('all')}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all cursor-pointer ${
+                filter === 'all'
+                  ? 'bg-primary-500 text-white'
+                  : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              📱 전체
+            </button>
+            <button
+              onClick={() => setFilter('icebreaking')}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all cursor-pointer ${
+                filter === 'icebreaking'
+                  ? 'bg-primary-500 text-white'
+                  : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              🎉 아이스브레이킹
+            </button>
+            <button
+              onClick={() => setFilter('time')}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all cursor-pointer ${
+                filter === 'time'
+                  ? 'bg-primary-500 text-white'
+                  : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              ⏱️ 전체
+            </button>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-gray-700">정렬:</span>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="px-4 py-2 border border-gray-300 rounded-lg bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary-500"
+            >
+              <option value="popular">인기순</option>
+              <option value="newest">최신순</option>
+              <option value="name">이름순</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Browse Tab Content */}
+        {activeTab === 'browse' && (
+          <div>
+            {/* Favorites Section */}
+            {favoriteGames.length > 0 && (
+              <div className="mb-12">
+                <h2 className="text-xl font-bold text-gray-900 mb-4">⭐ 즐겨찾기 ({favoriteGames.length})</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {favoriteGames.map((game) => (
+                    <GameCard
+                      key={game.id}
+                      game={game}
+                      isFavorite={favorites.has(game.id)}
+                      onCreateRoom={handleCreateRoom}
+                      onPreview={handlePreview}
+                      onToggleFavorite={toggleFavorite}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* All Templates Section */}
+            <div>
+              <h2 className="text-xl font-bold text-gray-900 mb-4">전체 게임 ({templates.length})</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {templates.map((template) => (
+                  <GameCard
+                    key={template.id}
+                    game={template}
+                    isFavorite={favorites.has(template.id)}
+                    onCreateRoom={handleCreateRoom}
+                    onPreview={handlePreview}
+                    onToggleFavorite={toggleFavorite}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* My Games Tab Content */}
+        {activeTab === 'myGames' && (
+          <div>
+            {myGames.length === 0 ? (
+              <div className="text-center py-16">
+                <p className="text-gray-500 mb-4">아직 만든 게임이 없습니다</p>
+                <button
+                  onClick={() => setActiveTab('browse')}
+                  className="px-6 py-3 bg-primary-500 hover:bg-primary-600 text-white font-semibold rounded-lg transition-all hover:scale-105 cursor-pointer"
+                >
+                  게임 둘러보기
+                </button>
+              </div>
+            ) : (
+              <>
+                {/* Favorites */}
+                {favoriteGames.length > 0 && (
+                  <div className="mb-12">
+                    <h2 className="text-xl font-bold text-gray-900 mb-4">⭐ 즐겨찾기 ({favoriteGames.length})</h2>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {favoriteGames.map((game) => (
+                        <GameCard
+                          key={game.id}
+                          game={game}
+                          isFavorite={favorites.has(game.id)}
+                          isMyGame={true}
+                          onCreateRoom={handleCreateRoom}
+                          onPreview={handlePreview}
+                          onToggleFavorite={toggleFavorite}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Other Games */}
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900 mb-4">
+                    기타 게임 ({myGames.length - favoriteGames.length})
+                  </h2>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {myGames
+                      .filter((game) => !favorites.has(game.id))
+                      .map((game) => (
+                        <GameCard
+                          key={game.id}
+                          game={game}
+                          isFavorite={favorites.has(game.id)}
+                          isMyGame={true}
+                          onCreateRoom={handleCreateRoom}
+                          onPreview={handlePreview}
+                          onToggleFavorite={toggleFavorite}
+                        />
+                      ))}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
         )}
       </main>
     </div>
   );
 }
 
-function BrowseTemplatesTab({ searchQuery }: { searchQuery: string }) {
-  const { data: templateData, isLoading } = useTemplates();
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto mb-4"></div>
-          <p className="text-gray-500">템플릿을 불러오는 중...</p>
-        </div>
-      </div>
-    );
-  }
-
-  const templates = templateData?.templates || [];
-  const filteredTemplates = templates.filter((template) =>
-    template.title.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  return (
-    <div className="space-y-6">
-      {/* Filters */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <span className="text-sm text-gray-600">필터:</span>
-          <Button variant="outline" size="sm">
-            📱 전체
-          </Button>
-          <Button variant="outline" size="sm">
-            🎉 아이스브레이킹
-          </Button>
-          <Button variant="outline" size="sm">
-            ⏱️ 전체
-          </Button>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-gray-600">정렬:</span>
-          <Button variant="outline" size="sm">
-            인기순 ▼
-          </Button>
-        </div>
-      </div>
-
-      {/* Template Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredTemplates?.map((template) => (
-          <div
-            key={template.id}
-            className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-shadow"
-          >
-            <div className="flex items-start justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">{template.title}</h3>
-              <button className="text-2xl hover:scale-110 transition-transform">☆</button>
-            </div>
-
-            <p className="text-sm text-gray-600 mb-4">{template.description}</p>
-
-            <div className="space-y-2 mb-4">
-              <div className="flex items-center gap-2 text-sm text-gray-500">
-                <span>📱 모바일 불필요</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm text-gray-500">
-                <span>⏱️ 10분</span>
-                <span>•</span>
-                <span>👥 30명</span>
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <Button className="w-full">방 생성하기</Button>
-              <Button variant="outline" className="w-full">
-                👁️ 미리보기
-              </Button>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {filteredTemplates?.length === 0 && (
-        <div className="text-center py-12">
-          <p className="text-gray-500">검색 결과가 없습니다.</p>
-        </div>
-      )}
-    </div>
-  );
+interface GameCardProps {
+  game: Game;
+  isFavorite: boolean;
+  isMyGame?: boolean;
+  onCreateRoom: (id: string) => void;
+  onPreview: (id: string) => void;
+  onToggleFavorite: (id: string) => void;
 }
 
-function MyGamesTab({ searchQuery }: { searchQuery: string }) {
-  const { data: games, isLoading } = useGames();
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto mb-4"></div>
-          <p className="text-gray-500">내 게임을 불러오는 중...</p>
-        </div>
-      </div>
-    );
-  }
-
-  const filteredGames = games?.filter((game) =>
-    game.title.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
+function GameCard({ game, isFavorite, isMyGame, onCreateRoom, onPreview, onToggleFavorite }: GameCardProps) {
   return (
-    <div className="space-y-6">
-      {/* Filters */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <span className="text-sm text-gray-600">필터:</span>
-          <Button variant="outline" size="sm">
-            ⭐ 즐겨찾기만
-          </Button>
-          <Button variant="outline" size="sm">
-            최근 플레이순
-          </Button>
-          <Button variant="outline" size="sm">
-            이름순 ▼
-          </Button>
-        </div>
-      </div>
-
-      {/* Games Count */}
-      <p className="text-sm text-gray-600">총 {filteredGames?.length || 0}개 게임</p>
-
-      {/* Games Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredGames?.map((game) => (
-          <div
-            key={game.id}
-            className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-shadow"
+    <div className="group bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm transition-all duration-300 hover:shadow-xl hover:scale-[1.02] hover:-translate-y-1 hover:border-primary-200">
+      {/* Card Header */}
+      <div className="p-6">
+        <div className="flex items-start justify-between mb-3">
+          <h3 className="text-xl font-semibold text-gray-900 group-hover:text-primary-500 transition-colors">
+            🎮 {game.title}
+          </h3>
+          <button
+            onClick={() => onToggleFavorite(game.id)}
+            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors cursor-pointer"
+            aria-label={isFavorite ? '즐겨찾기 해제' : '즐겨찾기 추가'}
           >
-            <div className="flex items-start justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">{game.title}</h3>
-              <button className="text-2xl hover:scale-110 transition-transform">⭐</button>
-            </div>
-
-            <p className="text-sm text-gray-600 mb-4">{game.description}</p>
-
-            <div className="space-y-2 mb-4">
-              <div className="flex items-center gap-2 text-sm text-gray-500">
-                <span>📱 모바일 불필요</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm text-gray-500">
-                <span>⏱️ 10분</span>
-                <span>•</span>
-                <span>👥 30명</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm text-gray-500">
-                <span>🎮 0회 플레이</span>
-                <span>•</span>
-                <span>마지막: -</span>
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <Button className="w-full">방 생성하기</Button>
-              <div className="flex gap-2">
-                <Button variant="outline" className="flex-1">
-                  ✏️ 편집
-                </Button>
-                <Button variant="outline" className="flex-1 text-red-500 hover:text-red-600">
-                  🗑️ 삭제
-                </Button>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {filteredGames?.length === 0 && (
-        <div className="text-center py-12">
-          <p className="text-gray-500">아직 생성한 게임이 없습니다.</p>
-          <Button className="mt-4">새 게임 만들기</Button>
+            <Star
+              className={`w-5 h-5 transition-colors ${
+                isFavorite ? 'fill-yellow-400 text-yellow-400' : 'text-gray-400 hover:text-yellow-400'
+              }`}
+            />
+          </button>
         </div>
-      )}
+
+        <p className="text-sm text-gray-600 mb-4 line-clamp-2">{game.description || '게임 설명이 없습니다'}</p>
+
+        {/* Meta Info */}
+        <div className="flex items-center gap-4 text-sm text-gray-500 mb-4">
+          <span className="flex items-center gap-1">
+            📱 {game.needsMobile ? '모바일 필요' : '모바일 불필요'}
+          </span>
+          <span className="flex items-center gap-1">
+            <Clock className="w-4 h-4" />
+            {game.duration || 10}분
+          </span>
+          <span className="flex items-center gap-1">
+            <Users className="w-4 h-4" />
+            {game.maxPlayers || 30}명
+          </span>
+        </div>
+
+        <div className="flex items-center gap-1 text-sm text-gray-500 mb-4">
+          <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+          <span className="font-medium">4.5</span>
+          <span>({game.favoriteCount || 0})</span>
+        </div>
+
+        {/* Action Buttons */}
+        <button
+          onClick={() => onCreateRoom(game.id)}
+          className="w-full bg-primary-500 hover:bg-primary-600 active:bg-primary-700 text-white font-semibold py-3 rounded-lg transition-all duration-200 hover:scale-105 hover:shadow-lg active:scale-100 cursor-pointer mb-2"
+        >
+          방 생성하기
+        </button>
+
+        <button
+          onClick={() => onPreview(game.id)}
+          className="w-full flex items-center justify-center gap-2 bg-transparent border border-gray-300 text-gray-700 font-medium py-2 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
+        >
+          <Eye className="w-4 h-4" />
+          미리보기
+        </button>
+
+        {/* My Game Actions */}
+        {isMyGame && (
+          <div className="flex gap-2 mt-2">
+            <button className="flex-1 text-sm text-primary-500 hover:text-primary-600 font-medium py-2 rounded-lg hover:bg-primary-50 transition-colors cursor-pointer">
+              ✏️ 편집
+            </button>
+            <button className="flex-1 text-sm text-error hover:text-error-dark font-medium py-2 rounded-lg hover:bg-error-light transition-colors cursor-pointer">
+              🗑️ 삭제
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

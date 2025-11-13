@@ -5,15 +5,15 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useSignup } from '@/lib/hooks';
+import { useSignup } from '@/lib/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 
 const signupSchema = z.object({
   email: z.string().email('Invalid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
-  name: z.string().min(2, 'Name must be at least 2 characters').optional(),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
+  name: z.string().min(1, 'Name is required').optional(),
 });
 
 type SignupFormData = z.infer<typeof signupSchema>;
@@ -91,11 +91,12 @@ export default function SignupPage() {
               {errors.password && (
                 <p className="text-sm text-red-500">{errors.password.message}</p>
               )}
+              <p className="text-xs text-gray-500">Must be at least 8 characters</p>
             </div>
 
             {signup.isError && (
               <div className="rounded-md bg-red-50 p-3 text-sm text-red-800">
-                Failed to create account. Email may already be in use.
+                Email already exists or signup failed
               </div>
             )}
           </CardContent>
