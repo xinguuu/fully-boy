@@ -1,0 +1,86 @@
+# ===================================
+# Global .dockerignore for Monorepo
+# ===================================
+# Prevents unnecessary files from being included in Docker build context
+# Reduces build time and prevents COPY errors
+
+# Node modules (will be installed via pnpm)
+node_modules
+**/node_modules
+
+# Build outputs (will be generated during Docker build)
+dist
+**/dist
+build
+**/build
+.next
+**/.next
+out
+**/out
+
+# Test files
+**/*.test.ts
+**/*.test.tsx
+**/*.test.js
+**/*.spec.ts
+**/*.spec.tsx
+**/*.spec.js
+**/__tests__
+**/__mocks__
+coverage
+**/coverage
+.vitest
+**/.vitest
+
+# Environment files (use Docker secrets or ENV vars)
+.env
+.env.*
+!.env.example
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Documentation
+*.md
+!README.md
+docs
+
+# CI/CD
+.github
+.gitlab-ci.yml
+.travis.yml
+
+# Logs
+logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Cache
+.cache
+.turbo
+**/.turbo
+.eslintcache
+
+# Temporary files
+tmp
+temp
+*.tmp
+
+# Development files
+*.local
+.prettierrc
+.eslintrc
+tsconfig.tsbuildinfo
