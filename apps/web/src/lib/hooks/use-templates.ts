@@ -1,17 +1,17 @@
 import { useQuery } from '@tanstack/react-query';
-import { templateApi, type TemplateListParams } from '../api';
+import { templatesApi } from '../api/templates';
 
-export function useTemplates(params?: TemplateListParams) {
+export function useTemplates() {
   return useQuery({
-    queryKey: ['templates', params],
-    queryFn: () => templateApi.list(params),
+    queryKey: ['templates'],
+    queryFn: templatesApi.getTemplates,
   });
 }
 
 export function useTemplate(id: string) {
   return useQuery({
     queryKey: ['template', id],
-    queryFn: () => templateApi.getById(id),
+    queryFn: () => templatesApi.getTemplate(id),
     enabled: !!id,
   });
 }
