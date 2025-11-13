@@ -18,28 +18,7 @@ export const API_ENDPOINTS = {
   },
 } as const;
 
-export const WS_EVENTS = {
-  CONNECTION: 'connection',
-  DISCONNECT: 'disconnect',
-  JOIN_ROOM: 'join-room',
-  JOINED_ROOM: 'joined-room',
-  PARTICIPANT_JOINED: 'participant-joined',
-  PARTICIPANT_LEFT: 'participant-left',
-  START_GAME: 'start-game',
-  GAME_STARTED: 'game-started',
-  SUBMIT_ANSWER: 'submit-answer',
-  ANSWER_RECEIVED: 'answer-received',
-  ANSWER_SUBMITTED: 'answer-submitted',
-  REVEAL_ANSWER: 'reveal-answer',
-  ANSWER_REVEALED: 'answer-revealed',
-  NEXT_QUESTION: 'next-question',
-  QUESTION_STARTED: 'question-started',
-  END_GAME: 'end-game',
-  GAME_ENDED: 'game-ended',
-  ERROR: 'error',
-  REJOIN_ROOM: 'rejoin-room',
-  REJOINED_ROOM: 'rejoined-room',
-} as const;
+export * from './websocket';
 
 export const ERROR_CODES = {
   VALIDATION_ERROR: 'VALIDATION_ERROR',
