@@ -25,18 +25,19 @@ export class ApiClient {
     this.client.interceptors.response.use(
       (response) => response,
       async (error: AxiosError) => {
-        if (error.response?.status === 401) {
-          tokenManager.clearTokens();
-          if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
-            window.location.href = `/login?redirect=${encodeURIComponent(window.location.pathname)}`;
-          }
-        } else if (error.response && process.env.NODE_ENV === 'development') {
+        if (error.response) {
           console.error('API Error:', {
             status: error.response.status,
             data: error.response.data,
             url: error.config?.url,
-            method: error.config?.method?.toUpperCase(),
           });
+        }
+
+        if (error.response?.status === 401) {
+          tokenManager.clearTokens();
+          if (typeof window !== 'undefined') {
+            window.location.href = '/login';
+          }
         }
         return Promise.reject(error);
       }

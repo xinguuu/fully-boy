@@ -1,38 +1,16 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Search, User, ChevronDown, Star, Users, Clock, Eye } from 'lucide-react';
 import { useTemplates, useGames, useCurrentUser } from '@/lib/hooks';
-import { tokenManager } from '@/lib/auth/token-manager';
 import type { Game } from '@xingu/shared';
 
 export default function BrowsePage() {
   const router = useRouter();
-  const { data: user, isLoading: userLoading, isError: userError } = useCurrentUser();
+  const { data: user } = useCurrentUser();
   const { data: templatesResponse } = useTemplates();
   const { data: myGames = [] } = useGames();
-
-  useEffect(() => {
-    if (!tokenManager.hasValidToken()) {
-      router.push('/login?redirect=/browse');
-    }
-  }, [router]);
-
-  if (userLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-primary-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">로딩 중...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (userError || !user) {
-    return null;
-  }
 
   const [activeTab, setActiveTab] = useState<'browse' | 'myGames'>('browse');
   const [searchQuery, setSearchQuery] = useState('');
