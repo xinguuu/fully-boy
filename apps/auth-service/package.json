@@ -19,6 +19,7 @@
     "@nestjs/jwt": "^10.2.0",
     "@nestjs/passport": "^11.0.5",
     "@nestjs/platform-express": "^10.4.15",
+    "@nestjs/throttler": "^6.4.0",
     "@types/passport-jwt": "^4.0.1",
     "@xingu/database": "workspace:*",
     "@xingu/shared": "workspace:*",
