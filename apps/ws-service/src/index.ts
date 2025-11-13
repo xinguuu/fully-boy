@@ -6,6 +6,7 @@ import { connectDatabase, disconnectDatabase } from './config/database';
 import { redisPub, redisSub, disconnectRedis } from './config/redis';
 import { setupRoomHandlers } from './handlers/room.handler';
 import { setupGameHandlers } from './handlers/game.handler';
+import { wsAuthMiddleware } from './middleware/ws-auth.middleware';
 
 const httpServer = createServer((req, res) => {
   if (req.url === '/health' && req.method === 'GET') {
@@ -22,6 +23,8 @@ const io = new Server(httpServer, {
 });
 
 io.adapter(createAdapter(redisPub, redisSub));
+
+io.use(wsAuthMiddleware);
 
 io.on(WS_EVENTS.CONNECTION, (socket) => {
   console.log(`Client connected: ${socket.id}`);

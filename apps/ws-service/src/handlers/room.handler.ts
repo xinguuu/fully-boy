@@ -3,13 +3,15 @@ import { WS_EVENTS } from '@xingu/shared';
 import { prisma } from '../config/database';
 import { roomStateService } from '../services/room-state.service';
 import { Player } from '../types/room.types';
+import { AuthenticatedSocket } from '../middleware/ws-auth.middleware';
 
 export function setupRoomHandlers(io: Server, socket: Socket) {
   socket.on(
     WS_EVENTS.JOIN_ROOM,
-    async (data: { pin: string; nickname: string; isOrganizer: boolean }) => {
+    async (data: { pin: string; nickname: string }) => {
       try {
-        const { pin, nickname, isOrganizer } = data;
+        const authSocket = socket as AuthenticatedSocket;
+        const { pin, nickname } = data;
 
         const room = await prisma.room.findUnique({
           where: { pin },
@@ -65,6 +67,9 @@ export function setupRoomHandlers(io: Server, socket: Socket) {
           });
           return;
         }
+
+        const isOrganizer =
+          authSocket.user !== undefined && authSocket.user.id === room.organizerId;
 
         const player: Player = {
           id: socket.id,
