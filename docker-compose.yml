@@ -73,7 +73,7 @@ services:
   web:
     build:
       context: .
-      dockerfile: ./apps/web/Dockerfile
+      dockerfile: ./apps/web/Dockerfile.optimized
     container_name: xingu-web
     environment:
       - NODE_ENV=production
@@ -104,7 +104,7 @@ services:
   auth-service:
     build:
       context: .
-      dockerfile: ./apps/auth-service/Dockerfile
+      dockerfile: ./apps/auth-service/Dockerfile.optimized
     container_name: xingu-auth-service
     environment:
       - NODE_ENV=production
@@ -137,7 +137,7 @@ services:
   template-service:
     build:
       context: .
-      dockerfile: ./apps/template-service/Dockerfile
+      dockerfile: ./apps/template-service/Dockerfile.optimized
     container_name: xingu-template-service
     environment:
       - NODE_ENV=production
@@ -164,7 +164,7 @@ services:
   game-service:
     build:
       context: .
-      dockerfile: ./apps/game-service/Dockerfile
+      dockerfile: ./apps/game-service/Dockerfile.optimized
     container_name: xingu-game-service
     environment:
       - NODE_ENV=production
@@ -194,7 +194,7 @@ services:
   room-service:
     build:
       context: .
-      dockerfile: ./apps/room-service/Dockerfile
+      dockerfile: ./apps/room-service/Dockerfile.optimized
     container_name: xingu-room-service
     environment:
       - NODE_ENV=production
@@ -224,12 +224,14 @@ services:
   ws-service:
     build:
       context: .
-      dockerfile: ./apps/ws-service/Dockerfile
+      dockerfile: ./apps/ws-service/Dockerfile.optimized
     container_name: xingu-ws-service
     environment:
       - NODE_ENV=production
       - PORT=3005
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/xingu?schema=public
       - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=${JWT_SECRET:-change-me-in-production}
       - CORS_ORIGIN=http://localhost
     ports:
       - '3005:3005'
@@ -246,7 +248,7 @@ services:
   result-service:
     build:
       context: .
-      dockerfile: ./apps/result-service/Dockerfile
+      dockerfile: ./apps/result-service/Dockerfile.optimized
     container_name: xingu-result-service
     environment:
       - NODE_ENV=production
