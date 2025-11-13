@@ -50,7 +50,10 @@
       "Bash(pnpm --filter=@xingu/template-service test:*)",
       "Bash(pnpm --filter=@xingu/template-service --filter=@xingu/game-service --filter=@xingu/room-service --filter=@xingu/result-service test run)",
       "Bash(pnpm:*)",
-      "Bash(docker build:*)"
+      "Bash(docker build:*)",
+      "Bash(docker stop:*)",
+      "Bash(docker rm:*)",
+      "Bash(docker logs:*)"
     ],
     "deny": [],
     "ask": []
