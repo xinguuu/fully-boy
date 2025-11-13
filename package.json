@@ -9,6 +9,8 @@
   ],
   "scripts": {
     "dev": "turbo run dev",
+    "dev:backend": "turbo run dev --filter=!@xingu/web",
+    "dev:web": "turbo run dev --filter=@xingu/web",
     "build": "turbo run build",
     "test": "turbo run test",
     "test:e2e": "turbo run test:e2e",
