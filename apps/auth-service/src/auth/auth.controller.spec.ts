@@ -1,8 +1,9 @@
-import { describe, it, expect, beforeEach, afterEach, vi, type Mock } from 'vitest';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+
+type Mock = jest.Mock;
 
 describe('AuthController', () => {
   let controller: AuthController;
@@ -30,16 +31,17 @@ describe('AuthController', () => {
   const mockCurrentUser = {
     id: 'user-1',
     email: 'test@example.com',
+    name: 'Test User',
     role: 'user',
   };
 
   beforeEach(async () => {
     const mockAuthService = {
-      signup: vi.fn(),
-      login: vi.fn(),
-      logout: vi.fn(),
-      refresh: vi.fn(),
-      getCurrentUser: vi.fn(),
+      signup: jest.fn(),
+      login: jest.fn(),
+      logout: jest.fn(),
+      refresh: jest.fn(),
+      getCurrentUser: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -47,7 +49,7 @@ describe('AuthController', () => {
       providers: [{ provide: AuthService, useValue: mockAuthService }],
     })
       .overrideGuard(JwtAuthGuard)
-      .useValue({ canActivate: vi.fn(() => true) })
+      .useValue({ canActivate: jest.fn(() => true) })
       .compile();
 
     controller = module.get<AuthController>(AuthController);
@@ -55,7 +57,7 @@ describe('AuthController', () => {
   });
 
   afterEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
   describe('signup', () => {

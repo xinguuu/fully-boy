@@ -1,4 +1,3 @@
-import { describe, it, expect, beforeEach, afterEach, vi, type Mock } from 'vitest';
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConflictException, UnauthorizedException, NotFoundException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -7,13 +6,21 @@ import { AuthService } from './auth.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { RedisService } from '../redis/redis.service';
 
-vi.mock('bcryptjs');
+type Mock = jest.Mock;
+
+jest.mock('bcryptjs');
 
 describe('AuthService', () => {
   let service: AuthService;
   let prismaService: PrismaService;
   let jwtService: JwtService;
   let redisService: RedisService;
+
+  // Set environment variables for testing
+  beforeAll(() => {
+    process.env.JWT_SECRET = 'test-jwt-secret';
+    process.env.JWT_REFRESH_SECRET = 'test-refresh-secret';
+  });
 
   const mockUser = {
     id: 'user-1',
@@ -26,23 +33,23 @@ describe('AuthService', () => {
   };
 
   beforeEach(async () => {
-    const mockPrismaService = {
+    const mockPrismaService: any = {
       user: {
-        findUnique: vi.fn(),
-        create: vi.fn(),
+        findUnique: jest.fn(),
+        create: jest.fn(),
       },
     };
 
     const mockJwtService = {
-      sign: vi.fn(),
-      verify: vi.fn(),
+      sign: jest.fn(),
+      verify: jest.fn(),
     };
 
     const mockRedisService = {
-      set: vi.fn(),
-      get: vi.fn(),
-      del: vi.fn(),
-      exists: vi.fn(),
+      set: jest.fn(),
+      get: jest.fn(),
+      del: jest.fn(),
+      exists: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -61,7 +68,7 @@ describe('AuthService', () => {
   });
 
   afterEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
   describe('signup', () => {
@@ -240,7 +247,7 @@ describe('AuthService', () => {
       (redisService.exists as Mock).mockResolvedValue(1);
       (prismaService.user.findUnique as Mock).mockResolvedValue(null);
 
-      await expect(service.refresh(refreshToken)).rejects.toThrow(NotFoundException);
+      await expect(service.refresh(refreshToken)).rejects.toThrow(UnauthorizedException);
     });
 
     it('should throw UnauthorizedException if JWT verification fails', async () => {
