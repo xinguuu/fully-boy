@@ -54,8 +54,9 @@ RUN pnpm --filter=@xingu/room-service --prod deploy --legacy /app/deploy
 # Copy built files
 COPY --from=builder /app/apps/room-service/dist /app/deploy/dist
 
-# Copy Prisma generated client (needed at runtime)
-COPY --from=builder /app/packages/database/node_modules/.prisma /app/deploy/node_modules/.prisma
+# Copy workspace packages' built files
+COPY --from=builder /app/packages/shared/dist /app/deploy/node_modules/@xingu/shared/dist
+COPY --from=builder /app/packages/database/dist /app/deploy/node_modules/@xingu/database/dist
 
 # ===================================
 # Stage 4: Production runner

@@ -52,7 +52,10 @@ RUN pnpm --filter=@xingu/game-service --prod deploy --legacy /app/deploy
 
 # Copy built files
 COPY --from=builder /app/apps/game-service/dist /app/deploy/dist
-COPY --from=builder /app/packages/database/node_modules/.prisma /app/deploy/node_modules/.prisma
+
+# Copy workspace packages' built files
+COPY --from=builder /app/packages/shared/dist /app/deploy/node_modules/@xingu/shared/dist
+COPY --from=builder /app/packages/database/dist /app/deploy/node_modules/@xingu/database/dist
 
 # ===================================
 # Stage 4: Production runner

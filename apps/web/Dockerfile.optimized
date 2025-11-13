@@ -62,10 +62,12 @@ COPY --from=builder /app/apps/web/.next/standalone /app/deploy-standalone
 
 # Copy static assets (not included in standalone)
 COPY --from=builder /app/apps/web/.next/static /app/deploy-standalone/apps/web/.next/static
-COPY --from=builder /app/apps/web/public /app/deploy-standalone/apps/web/public
 
-# Copy Prisma client if needed
-COPY --from=builder /app/packages/database/node_modules/.prisma /app/deploy-standalone/node_modules/.prisma
+# Copy public folder if it exists (optional for Next.js)
+# COPY --from=builder /app/apps/web/public /app/deploy-standalone/apps/web/public
+
+# Copy workspace packages' built files
+COPY --from=builder /app/packages/shared/dist /app/deploy-standalone/node_modules/@xingu/shared/dist
 
 # ===================================
 # Stage 4: Production runner
