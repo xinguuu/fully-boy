@@ -1,22 +1,50 @@
 import { apiClient } from './client';
-import type { Game } from '@xingu/shared';
+import type { Game, GameType, Category } from '@xingu/shared';
 
 export interface CreateGameRequest {
   title: string;
   description?: string;
-  emoji?: string;
+  thumbnail?: string;
+  gameType: GameType;
+  category: Category;
+  isPublic?: boolean;
+  duration: number;
+  minPlayers?: number;
+  maxPlayers?: number;
+  needsMobile: boolean;
+  settings: Record<string, unknown>;
   questions: Array<{
-    type: string;
-    text: string;
-    options?: string[];
-    correctAnswer: string;
-    timeLimit: number;
-    points: number;
+    order: number;
+    content: string;
+    data: Record<string, unknown>;
+    imageUrl?: string;
+    videoUrl?: string;
+    audioUrl?: string;
   }>;
-  tags?: string[];
+  sourceGameId?: string;
 }
 
-export interface UpdateGameRequest extends Partial<CreateGameRequest> {}
+export interface UpdateGameRequest {
+  title?: string;
+  description?: string;
+  thumbnail?: string;
+  category?: Category;
+  isPublic?: boolean;
+  duration?: number;
+  minPlayers?: number;
+  maxPlayers?: number;
+  needsMobile?: boolean;
+  settings?: Record<string, unknown>;
+  questions?: Array<{
+    id?: string;
+    order: number;
+    content: string;
+    data: Record<string, unknown>;
+    imageUrl?: string;
+    videoUrl?: string;
+    audioUrl?: string;
+  }>;
+}
 
 export const gamesApi = {
   getMyGames: async (): Promise<Game[]> => {
