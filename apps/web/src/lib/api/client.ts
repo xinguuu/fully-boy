@@ -25,20 +25,35 @@ export class ApiClient {
     this.client.interceptors.response.use(
       (response) => response,
       async (error: AxiosError) => {
-        if (error.response) {
-          console.error('API Error:', {
-            status: error.response.status,
-            data: error.response.data,
-            url: error.config?.url,
-          });
+        // Only log errors in development mode
+        if (process.env.NODE_ENV === 'development') {
+          if (error.response) {
+            // API responded with error status
+            console.error('API Error:', error.config?.method?.toUpperCase(), error.config?.url);
+            console.error('Status:', error.response.status, error.response.statusText);
+            console.error('Response:', error.response.data);
+          } else if (error.request) {
+            // Request was made but no response received
+            console.error('Network Error:', error.config?.method?.toUpperCase(), error.config?.url);
+            console.error('Message:', error.message);
+          } else {
+            // Error in request setup
+            console.error('Request Setup Error:', error.message);
+          }
         }
 
+        // Handle 401 Unauthorized - clear tokens and redirect to login
         if (error.response?.status === 401) {
           tokenManager.clearTokens();
           if (typeof window !== 'undefined') {
-            window.location.href = '/login';
+            const currentPath = window.location.pathname;
+            // Don't redirect if already on login page
+            if (currentPath !== '/login') {
+              window.location.href = `/login?redirect=${encodeURIComponent(currentPath)}`;
+            }
           }
         }
+
         return Promise.reject(error);
       }
     );

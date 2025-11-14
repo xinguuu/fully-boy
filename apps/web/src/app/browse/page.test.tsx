@@ -99,6 +99,11 @@ describe('BrowsePage', () => {
       error: null,
       refetch: vi.fn(),
     } as any);
+
+    vi.mocked(hooks.useCreateGame).mockReturnValue({
+      mutateAsync: vi.fn(),
+      isPending: false,
+    } as any);
   });
 
   it('renders header with logo, search bar, and profile', () => {
@@ -229,13 +234,35 @@ describe('BrowsePage', () => {
     });
   });
 
-  it('navigates to edit page when "방 생성하기" button clicked', () => {
+  it('duplicates template and navigates to edit page when "템플릿으로 시작하기" button clicked', async () => {
+    const mockCreateGame = vi.fn().mockResolvedValue({ id: 'new-game-id' });
+
+    vi.mocked(hooks.useCreateGame).mockReturnValue({
+      mutateAsync: mockCreateGame,
+      isPending: false,
+    } as any);
+
     render(<BrowsePage />);
 
-    const createRoomButtons = screen.getAllByText('방 생성하기');
+    const createRoomButtons = screen.getAllByText('템플릿으로 시작하기');
     fireEvent.click(createRoomButtons[0]);
 
-    expect(mockPush).toHaveBeenCalledWith('/edit/template-1');
+    await waitFor(() => {
+      expect(mockCreateGame).toHaveBeenCalledWith({
+        title: '밸런스 게임 (복사본)',
+        description: '재미있는 밸런스 게임',
+        gameType: 'BALANCE_GAME',
+        category: 'ICE_BREAKING',
+        duration: 10,
+        minPlayers: 2,
+        maxPlayers: 30,
+        needsMobile: false,
+        settings: {},
+        questions: [],
+        sourceGameId: 'template-1',
+      });
+      expect(mockPush).toHaveBeenCalledWith('/edit/new-game-id');
+    });
   });
 
   it('shows empty state in myGames tab when no games', () => {
@@ -285,14 +312,14 @@ describe('BrowsePage', () => {
     expect(screen.getByText('내가 만든 게임')).toBeInTheDocument();
   });
 
-  it('shows edit and delete buttons for my games', () => {
+  it('shows edit button for my games', () => {
     render(<BrowsePage />);
 
     const myGamesTab = screen.getByText(/내 게임/);
     fireEvent.click(myGamesTab);
 
-    expect(screen.getByText(/편집/)).toBeInTheDocument();
-    expect(screen.getByText(/삭제/)).toBeInTheDocument();
+    const editButtons = screen.getAllByRole('button', { name: /편집/ });
+    expect(editButtons.length).toBeGreaterThan(0);
   });
 
   it('displays user email when name is not available', () => {

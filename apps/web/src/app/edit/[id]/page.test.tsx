@@ -7,6 +7,7 @@ import * as hooks from '@/lib/hooks';
 const mockPush = vi.fn();
 const mockBack = vi.fn();
 const mockMutateAsync = vi.fn();
+const mockCreateRoomMutateAsync = vi.fn();
 
 vi.mock('next/navigation', () => ({
   useParams: () => ({ id: 'test-game-id' }),
@@ -48,6 +49,11 @@ const mockGame: Game = {
 describe('EditPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+
+    vi.mocked(hooks.useCreateRoom).mockReturnValue({
+      mutateAsync: mockCreateRoomMutateAsync,
+      isPending: false,
+    } as any);
   });
 
   it('shows loading spinner when isLoading is true', () => {
@@ -122,7 +128,7 @@ describe('EditPage', () => {
 
     render(<EditPage />);
 
-    const titleInput = screen.getByLabelText('게임 제목');
+    const titleInput = screen.getByLabelText(/게임 제목/);
     fireEvent.change(titleInput, { target: { value: '새로운 제목' } });
 
     await waitFor(() => {
@@ -193,7 +199,7 @@ describe('EditPage', () => {
 
     render(<EditPage />);
 
-    const timeLimitSelect = screen.getByLabelText('질문당 시간');
+    const timeLimitSelect = screen.getByLabelText(/질문당 제한 시간/);
     fireEvent.change(timeLimitSelect, { target: { value: '60' } });
 
     await waitFor(() => {
@@ -287,7 +293,7 @@ describe('EditPage', () => {
     });
   });
 
-  it('calls updateGame and shows alert on save and create room', async () => {
+  it('calls updateGame and createRoom on save and create room', async () => {
     vi.mocked(hooks.useGame).mockReturnValue({
       data: mockGame,
       isLoading: false,
@@ -296,13 +302,21 @@ describe('EditPage', () => {
     } as any);
 
     mockMutateAsync.mockResolvedValue(mockGame);
+    mockCreateRoomMutateAsync.mockResolvedValue({
+      id: 'room-id',
+      pin: '123456',
+      gameId: 'test-game-id',
+      organizerId: 'test-user-id',
+      status: 'waiting',
+      createdAt: new Date(),
+      expiresAt: new Date(),
+      participantCount: 0,
+    });
 
     vi.mocked(hooks.useUpdateGame).mockReturnValue({
       mutateAsync: mockMutateAsync,
       isPending: false,
     } as any);
-
-    global.alert = vi.fn();
 
     render(<EditPage />);
 
@@ -316,10 +330,11 @@ describe('EditPage', () => {
         settings: { timeLimit: 30, soundEnabled: true },
         questions: [],
       });
-      expect(global.alert).toHaveBeenCalledWith(
-        '게임이 저장되었습니다. 방 생성 기능은 곧 추가됩니다.'
-      );
-      expect(mockPush).toHaveBeenCalledWith('/browse');
+      expect(mockCreateRoomMutateAsync).toHaveBeenCalledWith({
+        gameId: 'test-game-id',
+        expiresInMinutes: 60,
+      });
+      expect(mockPush).toHaveBeenCalledWith('/room/123456/waiting');
     });
   });
 });
