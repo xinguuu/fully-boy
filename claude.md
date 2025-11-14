@@ -512,6 +512,99 @@ This includes:
 
 ## 📋 Recent Changes
 
+### 2025-11-14: Edit Screen Complete - Game Customization Ready! ✏️
+
+- **Status**: ✅ Complete (with TDD)
+- **Summary**: Implemented comprehensive Edit Screen for game customization following IA and Design Guide specifications with full test coverage
+- **Changes**:
+  1. ✅ **Edit Screen Page Component** ([apps/web/src/app/edit/[id]/page.tsx](apps/web/src/app/edit/[id]/page.tsx)):
+     - Dynamic route with game ID parameter
+     - Game info editing (title, description)
+     - Game settings section (time limit, sound effects)
+     - Questions list with add/edit/delete functionality
+     - Drag-and-drop question ordering support (UI ready)
+     - Multiple-choice question editing with options
+     - Save and "Save & Create Room" action buttons
+  2. ✅ **Updated Frontend API Types** ([apps/web/src/lib/api/games.ts](apps/web/src/lib/api/games.ts)):
+     - Aligned `CreateGameRequest` with backend DTO schema
+     - Aligned `UpdateGameRequest` with backend DTO schema
+     - Questions structure: `order`, `content`, `data`, `imageUrl`, `videoUrl`, `audioUrl`
+     - Settings as `Record<string, unknown>` for flexibility
+  3. ✅ **Design Guide Compliance**:
+     - All interactive elements have `cursor-pointer`
+     - Hover states: `hover:border-gray-400`, `hover:bg-gray-50`
+     - Focus states: `focus:border-primary-500`, `focus:ring-4`
+     - Transition durations: 200ms for inputs, 150ms for buttons
+     - Proper disabled states with `cursor-not-allowed`
+  4. ✅ **Backend Integration**:
+     - Uses `useGame(id)` hook to fetch game data
+     - Uses `useUpdateGame(id)` hook for saving changes
+     - Questions stored as array with `order`, `content`, `data` fields
+     - Settings managed as flexible key-value object
+  5. ✅ **Comprehensive Test Coverage** ([apps/web/src/app/edit/[id]/page.test.tsx](apps/web/src/app/edit/[id]/page.test.tsx)):
+     - **11 unit tests passing** (Vitest + React Testing Library)
+     - Loading state tests (spinner visibility)
+     - Error state tests (game not found)
+     - Data rendering tests (title, description, meta info)
+     - Form input tests (title, description, settings)
+     - Questions CRUD tests (add, delete)
+     - Save action tests (API call verification)
+     - Mock patterns for hooks: `vi.mocked(hooks.useGame)`
+  6. ✅ **Test Infrastructure Setup**:
+     - Installed Vitest 4.0.8 + @vitest/ui + @testing-library/react
+     - Created `apps/web/vitest.config.ts` for Next.js compatibility
+     - Created `apps/web/src/__tests__/setup.ts` for global test setup
+     - Added test scripts: `test`, `test:ui`, `test:run` to package.json
+
+- **Files Created**:
+  - `apps/web/src/app/edit/[id]/page.tsx`: Complete Edit Screen implementation (390 lines)
+  - `apps/web/src/app/edit/[id]/page.test.tsx`: Comprehensive test suite (11 tests)
+  - `apps/web/vitest.config.ts`: Vitest configuration for Next.js
+  - `apps/web/src/__tests__/setup.ts`: Test environment setup
+
+- **Files Modified**:
+  - `apps/web/src/lib/api/games.ts`: Updated request types to match backend DTOs
+  - `apps/web/package.json`: Added test scripts and dependencies
+
+- **Validation Results**:
+  - ✅ TypeScript type-check: Passing (all types resolved)
+  - ✅ Frontend types aligned with backend Prisma schema
+  - ✅ UpdateGameDto validation compatible
+  - ✅ **All 11 unit tests passing** ✅
+
+- **Test Summary** (11 tests):
+  | Test Category | Tests | Status |
+  |---------------|-------|--------|
+  | Loading/Error States | 2 ✅ | Passing |
+  | Data Rendering | 1 ✅ | Passing |
+  | Form Inputs | 4 ✅ | Passing (title, description, sound, time limit) |
+  | Questions CRUD | 2 ✅ | Passing (add, delete) |
+  | Save Actions | 2 ✅ | Passing (save, save+create room) |
+  | **TOTAL** | **11 tests** | **100% passing** |
+
+- **Key Features**:
+  - **Game Info Editing**: Title, description fields with proper validation
+  - **Settings Management**: Time limit selector, sound effects toggle
+  - **Questions CRUD**: Add, edit, delete questions with order management
+  - **Multiple Choice Support**: Dynamic option fields for each question
+  - **Empty State**: Friendly message when no questions exist
+  - **Loading States**: Spinner during save operations
+  - **Error Handling**: Try-catch with console error logging
+  - **Responsive Design**: Mobile-first with proper spacing
+
+- **User Flow**:
+  1. Browse page → Click "방 생성하기" on a game card
+  2. Edit Screen loads with game data
+  3. Edit title, description, questions, settings
+  4. Click "저장" to save changes → Redirect to Browse
+  5. OR click "저장하고 방 생성" → Save + Alert (room creation pending)
+
+**TDD Compliance**: ✅ All code written with test coverage following CLAUDE.md Rule #2
+
+**Next Step**: Implement Waiting Room (대기실) - PIN issued screen where participants join before game starts
+
+---
+
 ### 2025-11-13: Browse Page Authentication Protection - Fixed 401 Errors! 🔒
 
 - **Status**: ✅ Complete
@@ -1875,11 +1968,12 @@ This includes:
 | **Design System** | ✅ Complete | Xingu brand colors, Pretendard font, animations (Tailwind config) |
 | **Homepage (PIN Entry)** | ✅ Complete | Kahoot-style, Korean text, responsive, Design Guide compliant, navigation working |
 | **Browse Page (둘러보기)** | ✅ Complete | 2 tabs (Browse/My Games), filters, sorting, favorites, GameCard component |
-| **API Client Layer** | ✅ Complete | JWT-based, automatic token injection, 401 handling |
+| **Edit Screen (편집 화면)** | ✅ Complete | Game info editing, settings, questions CRUD, backend DTO aligned |
+| **API Client Layer** | ✅ Complete | JWT-based, automatic token injection, 401 handling, backend-aligned types |
 | **Authentication** | ✅ Working | Login/Signup functional, tokens in localStorage, API tested ✅ |
 | **State Management** | ✅ Complete | TanStack Query + token management |
-| **React Hooks** | ✅ Complete | useLogin, useSignup, useLogout, useCurrentUser, useTemplates, useGames |
-| **UI Components** | ✅ Complete | Button, Input, Card, Header (Shadcn style) |
+| **React Hooks** | ✅ Complete | useLogin, useSignup, useLogout, useCurrentUser, useTemplates, useGames, useUpdateGame |
+| **UI Components** | ✅ Complete | Button, Input, Card, Header, Textarea, Toggle (Shadcn style) |
 | **Auth Pages** | ✅ Working | Login/Signup validated with backend DTOs (password min 8) |
 | **Type Safety** | ✅ Passing | TypeScript strict mode, all types resolved, 0 errors |
 | **Dev Server** | ✅ Running | http://localhost:3000 (functional with hot reload) |
@@ -1927,8 +2021,8 @@ This includes:
    - ✅ Added CLAUDE.md rules 13-14 for IA + Design Guide compliance
 11. 🔄 Build core pages (following IA structure):
    - ✅ Browse Page (둘러보기) - 2 tabs (Browse Templates / My Games) - COMPLETE
-   - ⬜ Edit Screen (편집 화면) - Mandatory intermediate step
-   - ⬜ Game creator/editor
+   - ✅ Edit Screen (편집 화면) - Game customization complete - COMPLETE
+   - ⬜ Room API integration (createRoom hook + backend endpoint)
 12. ⬜ Build game flow pages:
    - ⬜ PIN Issued (room created) - Waiting screen
    - ⬜ Waiting Room (대기실) - Pre-game lobby
