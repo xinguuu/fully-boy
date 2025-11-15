@@ -53,7 +53,11 @@
       "Bash(docker build:*)",
       "Bash(docker stop:*)",
       "Bash(docker rm:*)",
-      "Bash(.env)"
+      "Bash(.env)",
+      "Bash(npx playwright install chromium)",
+      "Bash(docker ps:*)",
+      "Bash(npx playwright test:*)",
+      "Bash(nul)"
     ],
     "deny": [],
     "ask": []

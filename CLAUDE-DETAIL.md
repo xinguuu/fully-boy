@@ -497,6 +497,75 @@ docker-compose down      # Stop all
 
 ## 📋 Recent Changes
 
+### 2025-11-15: Browser-Based E2E Testing with Playwright 🎭
+
+- **Status**: ✅ Complete
+- **Summary**: Implemented comprehensive browser-based E2E testing infrastructure using Playwright
+- **Test Coverage**: 18 tests across 3 test suites (auth, browse, game-flow)
+- **Files Created**:
+  1. ✅ [apps/web/e2e/auth.spec.ts](apps/web/e2e/auth.spec.ts) - 5 authentication flow tests
+  2. ✅ [apps/web/e2e/browse.spec.ts](apps/web/e2e/browse.spec.ts) - 11 browse page interaction tests
+  3. ✅ [apps/web/e2e/game-flow.spec.ts](apps/web/e2e/game-flow.spec.ts) - 2 full game flow tests
+  4. ✅ [apps/web/playwright.config.ts](apps/web/playwright.config.ts) - Playwright configuration
+  5. ✅ [apps/web/e2e/README.md](apps/web/e2e/README.md) - Comprehensive testing guide
+
+**Key Features**:
+- ✨ **Real Browser Testing**: Chromium-based tests simulating actual user interactions
+- ✨ **Multi-User Scenarios**: Host + Participant simultaneous testing
+- ✨ **Test Isolation**: Unique email generation for each test run
+- ✨ **Auto Screenshots**: Failure cases automatically captured
+- ✨ **UI Mode**: Interactive debugging with `test:e2e:ui`
+
+**Technical Stack**:
+- **Framework**: Playwright 1.56.1
+- **Browser**: Chromium (headless + headed modes)
+- **Scripts Added**: `test:e2e`, `test:e2e:ui`, `test:e2e:debug`
+- **Test Strategy**: Sequential execution (workers=1) to avoid race conditions
+
+**Test Categories**:
+1. **Authentication Tests** (5 tests):
+   - Signup flow with validation
+   - Login flow with token management
+   - Error handling (invalid credentials, password validation)
+   - Navigation between auth pages
+
+2. **Browse Page Tests** (11 tests):
+   - Template display and search
+   - Tab switching (Browse ↔ My Games)
+   - Favorites toggle
+   - Profile menu interactions
+   - Logout flow
+   - Template filtering and sorting
+
+3. **Game Flow Tests** (2 tests):
+   - Complete game creation → participant join → gameplay → results
+   - Session reconnection handling
+
+**Known Issues Found**:
+- ⚠️ **Next.js Dev Mode Performance**: First page load takes 30+ seconds
+- ⚠️ **Auth Service Dependency**: Tests require all 6 backend services running
+- ⚠️ **Test Data Cleanup**: No automatic cleanup (manual DB reset needed)
+
+**Running E2E Tests**:
+```bash
+# All tests
+pnpm --filter=@xingu/web test:e2e
+
+# Interactive UI mode (recommended for debugging)
+pnpm --filter=@xingu/web test:e2e:ui
+
+# Specific test file
+cd apps/web && npx playwright test auth.spec.ts
+```
+
+**Next Steps**:
+- [ ] Add automatic test data cleanup
+- [ ] Optimize Next.js dev mode loading time
+- [ ] Add more game flow scenarios (multiple questions, edge cases)
+- [ ] Integrate with GitHub Actions CI
+
+---
+
 ### 2025-11-15: Documentation Sync with Codebase 🔄
 
 - **Status**: ✅ Complete

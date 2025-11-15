@@ -220,7 +220,7 @@ async getOrCreateTags(tagNames: string[]): Promise<Tag[]>
 - **Infrastructure**: ✅ Docker + PostgreSQL + Redis ready
 - **Backend**: ✅ **100% Complete** (138 unit tests + 10 E2E tests passing)
 - **Frontend**: ✅ **Foundation + Core Pages Complete**
-- **Testing**: ✅ 138 unit tests + 10 E2E tests (100% passing)
+- **Testing**: ✅ 138 backend unit tests + 10 backend E2E tests + 18 browser E2E tests (Playwright)
 
 ### Backend Services (100% Complete)
 
@@ -256,6 +256,7 @@ async getOrCreateTags(tagNames: string[]): Promise<Tag[]>
 - ✅ Session management (tab close recovery)
 - ✅ Frontend auth (login/signup working)
 - ✅ Next.js dev server (http://localhost:3000)
+- ✅ Browser E2E testing (Playwright with 18 tests)
 
 ### Known Issues
 
@@ -273,7 +274,8 @@ pnpm dev --filter=web             # Frontend only
 
 # Testing
 pnpm test                         # Unit tests
-node test-websocket.js            # E2E WebSocket test
+node test-websocket.js            # Backend E2E WebSocket test
+pnpm --filter=@xingu/web test:e2e # Browser E2E tests (Playwright)
 
 # Validation
 pnpm type-check                   # Type check all
@@ -322,7 +324,7 @@ chore: Build/config
 ### Immediate Tasks
 
 1. ✅ ~~Build Results Page (final leaderboard)~~ - Integrated in Live Game page
-2. ⬜ E2E testing with real participants (browser)
+2. ✅ ~~E2E testing with real participants (browser)~~ - Playwright tests complete (18 tests)
 3. ⬜ Production build verification (Next.js 16)
 4. ⬜ Performance optimization (Lighthouse >90)
 
