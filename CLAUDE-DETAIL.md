@@ -746,6 +746,35 @@ cd apps/web && npx playwright test auth.spec.ts
 
 ---
 
+### 2025-11-16: Reusable Dropdown Components - Unified UX! 🎨
+
+- **Status**: ✅ Complete (with TDD)
+- **Components Created**:
+  1. **Select Component**: Native dropdown wrapper with design guide styling (12 tests passing)
+  2. **DropdownMenu Component**: Custom dropdown menu with flexible trigger (19 tests passing)
+  3. **DropdownButton Component**: Predefined button-style trigger variant
+
+**Features**:
+- ✅ Design guide compliance (hover, focus, error states)
+- ✅ Accessibility (keyboard navigation, ARIA labels, ESC to close)
+- ✅ TypeScript strict mode (fully typed)
+- ✅ 31 unit tests passing (100% coverage)
+- ✅ Applied to browse page (sort dropdown + profile menu)
+
+**Files Created**:
+- `apps/web/src/components/ui/Select.tsx` (92 lines)
+- `apps/web/src/components/ui/DropdownMenu.tsx` (180 lines)
+- `apps/web/src/components/ui/Select.test.tsx` (94 lines, 12 tests)
+- `apps/web/src/components/ui/DropdownMenu.test.tsx` (171 lines, 19 tests)
+- `apps/web/src/components/ui/index.ts` (export barrel)
+
+**Files Modified**:
+- `apps/web/src/app/browse/page.tsx` (replaced inline dropdowns with components)
+
+**Testing**: 31/31 tests passing (Rule 2 compliance)
+
+---
+
 ### 2025-11-15: Game Start Flow Fixed - WebSocket Organizer Auth! 🎮
 
 - **Status**: ✅ Complete

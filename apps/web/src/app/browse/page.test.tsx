@@ -21,7 +21,6 @@ vi.mock('lucide-react', () => ({
   Star: ({ className }: { className?: string }) => <div data-testid="star-icon" className={className} />,
   Users: () => <div data-testid="users-icon" />,
   Clock: () => <div data-testid="clock-icon" />,
-  Eye: () => <div data-testid="eye-icon" />,
 }));
 
 const mockUser = {
@@ -234,35 +233,13 @@ describe('BrowsePage', () => {
     });
   });
 
-  it('duplicates template and navigates to edit page when "템플릿으로 시작하기" button clicked', async () => {
-    const mockCreateGame = vi.fn().mockResolvedValue({ id: 'new-game-id' });
-
-    vi.mocked(hooks.useCreateGame).mockReturnValue({
-      mutateAsync: mockCreateGame,
-      isPending: false,
-    } as any);
-
+  it('navigates to edit page with template ID when "방 생성하기" button clicked', () => {
     render(<BrowsePage />);
 
-    const createRoomButtons = screen.getAllByText('템플릿으로 시작하기');
+    const createRoomButtons = screen.getAllByText('방 생성하기');
     fireEvent.click(createRoomButtons[0]);
 
-    await waitFor(() => {
-      expect(mockCreateGame).toHaveBeenCalledWith({
-        title: '밸런스 게임 (복사본)',
-        description: '재미있는 밸런스 게임',
-        gameType: 'BALANCE_GAME',
-        category: 'ICE_BREAKING',
-        duration: 10,
-        minPlayers: 2,
-        maxPlayers: 30,
-        needsMobile: false,
-        settings: {},
-        questions: [],
-        sourceGameId: 'template-1',
-      });
-      expect(mockPush).toHaveBeenCalledWith('/edit/new-game-id');
-    });
+    expect(mockPush).toHaveBeenCalledWith('/edit/new?templateId=template-1');
   });
 
   it('shows empty state in myGames tab when no games', () => {
@@ -312,14 +289,14 @@ describe('BrowsePage', () => {
     expect(screen.getByText('내가 만든 게임')).toBeInTheDocument();
   });
 
-  it('shows edit button for my games', () => {
+  it('shows delete button for my games', () => {
     render(<BrowsePage />);
 
     const myGamesTab = screen.getByText(/내 게임/);
     fireEvent.click(myGamesTab);
 
-    const editButtons = screen.getAllByRole('button', { name: /편집/ });
-    expect(editButtons.length).toBeGreaterThan(0);
+    const deleteButtons = screen.getAllByRole('button', { name: /삭제/ });
+    expect(deleteButtons.length).toBeGreaterThan(0);
   });
 
   it('displays user email when name is not available', () => {
@@ -335,16 +312,15 @@ describe('BrowsePage', () => {
     expect(screen.getByText('test@example.com')).toBeInTheDocument();
   });
 
-  it('logs preview action when preview button clicked', () => {
-    const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-
+  it('navigates to edit page when "방 생성하기" clicked in myGames tab', () => {
     render(<BrowsePage />);
 
-    const previewButtons = screen.getAllByText('미리보기');
-    fireEvent.click(previewButtons[0]);
+    const myGamesTab = screen.getByText(/내 게임/);
+    fireEvent.click(myGamesTab);
 
-    expect(consoleSpy).toHaveBeenCalledWith('Preview template:', 'template-1');
+    const createRoomButtons = screen.getAllByText('방 생성하기');
+    fireEvent.click(createRoomButtons[0]);
 
-    consoleSpy.mockRestore();
+    expect(mockPush).toHaveBeenCalledWith('/edit/my-game-1');
   });
 });

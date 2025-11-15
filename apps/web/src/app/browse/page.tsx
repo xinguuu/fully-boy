@@ -2,9 +2,10 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search, User, ChevronDown, Star, Users, Clock, Eye } from 'lucide-react';
+import { Search, User, Star, Users, Clock } from 'lucide-react';
 import { useTemplates, useGames, useCurrentUser } from '@/lib/hooks';
 import type { Game } from '@xingu/shared';
+import { Select, DropdownMenu } from '@/components/ui';
 
 export default function BrowsePage() {
   const router = useRouter();
@@ -16,7 +17,6 @@ export default function BrowsePage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState('all');
   const [sortBy, setSortBy] = useState('popular');
-  const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
 
   const templates = templatesResponse?.templates || [];
@@ -28,10 +28,6 @@ export default function BrowsePage() {
     } else {
       router.push(`/edit/new?templateId=${gameId}`);
     }
-  };
-
-  const handlePreview = (templateId: string) => {
-    console.log('Preview template:', templateId);
   };
 
   const toggleFavorite = (templateId: string) => {
@@ -75,40 +71,41 @@ export default function BrowsePage() {
           </div>
 
           {/* Profile Dropdown */}
-          <div className="relative">
-            <button
-              onClick={() => setShowProfileMenu(!showProfileMenu)}
-              className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
-            >
-              <User className="w-5 h-5 text-gray-600" />
-              <span className="text-sm font-medium text-gray-700">
-                {user?.name || user?.email || '프로필'}
-              </span>
-              <ChevronDown className="w-4 h-4 text-gray-600" />
-            </button>
-
-            {showProfileMenu && (
-              <div className="absolute top-full right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-xl py-2 z-50 animate-slide-down">
-                <button className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 transition-colors cursor-pointer">
-                  내 정보
-                </button>
-                <button className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 transition-colors cursor-pointer">
-                  설정
-                </button>
-                <div className="h-px bg-gray-200 my-1"></div>
-                <button
-                  onClick={() => {
-                    localStorage.removeItem('access_token');
-                    localStorage.removeItem('refresh_token');
-                    router.push('/');
-                  }}
-                  className="w-full px-4 py-2 text-left text-sm text-error hover:bg-error-light transition-colors cursor-pointer"
-                >
-                  로그아웃
-                </button>
-              </div>
-            )}
-          </div>
+          <DropdownMenu
+            trigger={
+              <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer">
+                <User className="w-5 h-5 text-gray-600" />
+                <span className="text-sm font-medium text-gray-700">
+                  {user?.name || user?.email || '프로필'}
+                </span>
+              </button>
+            }
+            items={[
+              {
+                label: '내 정보',
+                onClick: () => {
+                  console.log('Profile clicked');
+                },
+              },
+              {
+                label: '설정',
+                onClick: () => {
+                  console.log('Settings clicked');
+                },
+              },
+              {
+                label: '로그아웃',
+                onClick: () => {
+                  localStorage.removeItem('access_token');
+                  localStorage.removeItem('refresh_token');
+                  router.push('/');
+                },
+                variant: 'danger',
+                separator: true,
+              },
+            ]}
+            align="right"
+          />
         </div>
       </header>
 
@@ -178,15 +175,15 @@ export default function BrowsePage() {
 
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium text-gray-700">정렬:</span>
-            <select
+            <Select
               value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary-500"
-            >
-              <option value="popular">인기순</option>
-              <option value="newest">최신순</option>
-              <option value="name">이름순</option>
-            </select>
+              onChange={setSortBy}
+              options={[
+                { value: 'popular', label: '인기순' },
+                { value: 'newest', label: '최신순' },
+                { value: 'name', label: '이름순' },
+              ]}
+            />
           </div>
         </div>
 
@@ -204,7 +201,6 @@ export default function BrowsePage() {
                       game={game}
                       isFavorite={favorites.has(game.id)}
                       onCreateRoom={handleCreateRoom}
-                      onPreview={handlePreview}
                       onToggleFavorite={toggleFavorite}
                     />
                   ))}
@@ -222,7 +218,6 @@ export default function BrowsePage() {
                     game={template}
                     isFavorite={favorites.has(template.id)}
                     onCreateRoom={handleCreateRoom}
-                    onPreview={handlePreview}
                     onToggleFavorite={toggleFavorite}
                   />
                 ))}
@@ -258,7 +253,6 @@ export default function BrowsePage() {
                           isFavorite={favorites.has(game.id)}
                           isMyGame={true}
                           onCreateRoom={handleCreateRoom}
-                          onPreview={handlePreview}
                           onToggleFavorite={toggleFavorite}
                         />
                       ))}
@@ -281,7 +275,6 @@ export default function BrowsePage() {
                           isFavorite={favorites.has(game.id)}
                           isMyGame={true}
                           onCreateRoom={handleCreateRoom}
-                          onPreview={handlePreview}
                           onToggleFavorite={toggleFavorite}
                         />
                       ))}
@@ -301,11 +294,10 @@ interface GameCardProps {
   isFavorite: boolean;
   isMyGame?: boolean;
   onCreateRoom: (id: string) => void;
-  onPreview: (id: string) => void;
   onToggleFavorite: (id: string) => void;
 }
 
-function GameCard({ game, isFavorite, isMyGame, onCreateRoom, onPreview, onToggleFavorite }: GameCardProps) {
+function GameCard({ game, isFavorite, isMyGame, onCreateRoom, onToggleFavorite }: GameCardProps) {
   return (
     <div className="group bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm transition-all duration-300 hover:shadow-xl hover:scale-[1.02] hover:-translate-y-1 hover:border-primary-200">
       {/* Card Header */}
@@ -350,32 +342,19 @@ function GameCard({ game, isFavorite, isMyGame, onCreateRoom, onPreview, onToggl
           <span>({game.favoriteCount || 0})</span>
         </div>
 
-        {/* Action Buttons */}
+        {/* Main Action Button */}
         <button
           onClick={() => onCreateRoom(game.id)}
-          className="w-full bg-primary-500 hover:bg-primary-600 active:bg-primary-700 text-white font-semibold py-3 rounded-lg transition-all duration-200 hover:scale-105 hover:shadow-lg active:scale-100 cursor-pointer mb-2"
+          className="w-full bg-primary-500 hover:bg-primary-600 active:bg-primary-700 text-white font-semibold py-3 rounded-lg transition-all duration-200 hover:scale-105 hover:shadow-lg active:scale-100 cursor-pointer"
         >
-          {isMyGame ? '편집' : '템플릿으로 시작하기'}
+          방 생성하기
         </button>
 
-        <button
-          onClick={() => onPreview(game.id)}
-          className="w-full flex items-center justify-center gap-2 bg-transparent border border-gray-300 text-gray-700 font-medium py-2 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
-        >
-          <Eye className="w-4 h-4" />
-          미리보기
-        </button>
-
-        {/* My Game Actions */}
+        {/* Delete Action - My Games Only */}
         {isMyGame && (
-          <div className="flex gap-2 mt-2">
-            <button className="flex-1 text-sm text-primary-500 hover:text-primary-600 font-medium py-2 rounded-lg hover:bg-primary-50 transition-colors cursor-pointer">
-              ✏️ 편집
-            </button>
-            <button className="flex-1 text-sm text-error hover:text-error-dark font-medium py-2 rounded-lg hover:bg-error-light transition-colors cursor-pointer">
-              🗑️ 삭제
-            </button>
-          </div>
+          <button className="w-full flex items-center justify-center gap-1 mt-2 text-sm text-error hover:text-error-dark font-medium py-2 rounded-lg hover:bg-error-light border border-error/20 transition-colors cursor-pointer">
+            🗑️ 삭제
+          </button>
         )}
       </div>
     </div>
