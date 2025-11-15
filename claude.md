@@ -202,8 +202,9 @@ async getOrCreateTags(tagNames: string[]): Promise<Tag[]>
 1. Run validation: `pnpm type-check && pnpm test && pnpm build`
 2. Fix immediately if failed
 3. Check TODO completion
-4. **Update CLAUDE-DETAIL.md "Recent Changes"**
-5. Move to next TODO
+4. **Update CLAUDE-DETAIL.md "Recent Changes"** (모든 작업 완료 시)
+5. **Update CLAUDE.md "Current Status" / "Next Steps"** (중요한 프로젝트 변경 시)
+6. Move to next TODO
 
 ### Work Session Completion (MANDATORY)
 - ✅ All validation checks passed
