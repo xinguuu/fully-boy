@@ -20,10 +20,10 @@ export const wsAuthMiddleware = (socket: AuthenticatedSocket, next: (err?: Error
 
     const jwtSecret = process.env.JWT_SECRET || 'xingu-secret-key-change-in-production';
 
-    const decoded = jwt.verify(token, jwtSecret) as AuthenticatedUser;
+    const decoded = jwt.verify(token, jwtSecret) as { sub: string; email: string; role: string };
 
     socket.user = {
-      id: decoded.id,
+      id: decoded.sub,
       email: decoded.email,
       role: decoded.role,
     };
