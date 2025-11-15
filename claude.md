@@ -106,10 +106,40 @@ xingu/
 - **Session Store**: Redis
 
 ### Infrastructure
-- **Containerization**: Docker + Docker Compose
-- **Orchestration**: Docker Compose (dev) / Kubernetes (prod)
-- **Reverse Proxy**: Nginx
+- **Containerization**: Docker + Multi-stage builds
+- **Orchestration**: Kubernetes (GKE/EKS/AKS) with Helm charts
+- **Service Mesh**: Istio (traffic management, security, observability)
+- **API Gateway**: Kong (rate limiting, authentication, routing)
+- **Reverse Proxy**: Nginx Ingress Controller
+- **Load Balancer**: Cloud Load Balancer (L7) + Health checks
 - **Monorepo**: Turborepo + pnpm workspaces
+- **CDN**: CloudFlare (static assets, DDoS protection)
+
+### Monitoring & Observability
+- **APM**: New Relic / Datadog (application performance monitoring)
+- **Metrics**: Prometheus + Grafana (time-series metrics, dashboards)
+- **Logging**: ELK Stack (Elasticsearch, Logstash, Kibana) or Loki + Grafana
+- **Distributed Tracing**: Jaeger / Zipkin (request flow tracking)
+- **Error Tracking**: Sentry (real-time error monitoring)
+- **Uptime Monitoring**: UptimeRobot / Pingdom (external monitoring)
+- **Alerting**: PagerDuty / Opsgenie (incident management)
+
+### CI/CD Pipeline
+- **Version Control**: GitHub with branch protection rules
+- **CI/CD**: GitHub Actions (build, test, deploy)
+- **Container Registry**: Docker Hub / AWS ECR / GCR
+- **Artifact Storage**: GitHub Packages / Nexus
+- **Infrastructure as Code**: Terraform / Pulumi
+- **GitOps**: ArgoCD / Flux (Kubernetes deployment)
+- **Secret Management**: HashiCorp Vault / AWS Secrets Manager
+
+### Security Tools
+- **SSL/TLS**: Let's Encrypt (auto-renewal) + Cert Manager
+- **WAF**: CloudFlare WAF / AWS WAF (web application firewall)
+- **SAST**: SonarQube (static code analysis)
+- **DAST**: OWASP ZAP (dynamic security testing)
+- **Dependency Scanning**: Snyk / Dependabot (vulnerability detection)
+- **Container Scanning**: Trivy / Clair (image vulnerability scanning)
 
 ---
 
@@ -351,18 +381,296 @@ export default function NotFound() {
 
 ---
 
+## 🚀 Production Readiness (Staged Growth)
+
+> **철학**: "Perfect is the enemy of good" - 완벽한 인프라보다 **안정적으로 동작하는 서비스**를 먼저, **사용자 증가에 따라 점진적 확장**
+
+---
+
+### 📍 Phase 1: Launch Ready (지금 - 사용자 0~100명)
+
+**목표**: 버그 없이 안정적으로 동작하고, 문제 발생시 빠르게 알 수 있음
+
+#### Must-Have ✅
+
+**Security Basics:**
+- HTTPS only (Let's Encrypt 무료 인증서)
+- JWT authentication (access 15min, refresh 7 days)
+- Password hashing (bcrypt cost 12)
+- Rate limiting (100 req/min per IP)
+- Input validation (Zod schemas 전 엔드포인트)
+- CORS whitelist (production domain only)
+
+**Simple Deployment:**
+- Docker Compose (단일 서버 or VPS)
+- 환경변수 관리 (.env files)
+- GitHub Actions (PR마다 build + test 자동 실행)
+- 수동 배포 (ssh + docker-compose up -d)
+
+**Basic Monitoring:**
+- **Sentry** (에러 트래킹 - 무료 플랜 5,000 events/월)
+- **UptimeRobot** (서비스 다운 알림 - 무료)
+- **Daily DB backup** (cron job → S3/Dropbox)
+- 서버 디스크/메모리 알림 (hosting provider 기본 기능)
+
+**Performance Essentials:**
+- Next.js production build (자동 최적화)
+- Redis caching (template list 1hr TTL)
+- Database indexes (foreign keys + 자주 조회 컬럼)
+- 이미지 최적화 (WebP, Next.js Image)
+
+#### Nice-to-Have (나중에)
+- Nginx reverse proxy → Docker Compose로도 충분
+- Grafana dashboard → 트래픽 생기면
+- CDN (CloudFlare) → 사용자 늘어나면
+
+**예상 비용**: $20~50/월 (VPS + DB hosting)
+
+---
+
+### 📍 Phase 2: Growth (사용자 100~1,000명)
+
+**트리거**: 동시 접속 50명 이상 or 응답 속도 500ms 초과
+
+**Upgrade:**
+- 🔄 단일 서버 → **수평 확장** (web 2 replicas)
+- 🔄 SQLite/Supabase → **전용 PostgreSQL** (managed service)
+- 🔄 Redis 단일 → **Redis 2 replicas**
+- 🔄 CDN 추가 (CloudFlare 무료 플랜)
+- 🔄 Prometheus + Grafana (기본 메트릭)
+
+**예상 비용**: $100~200/월
+
+---
+
+### 📍 Phase 3: Scale Up (사용자 1,000~10,000명)
+
+**트리거**: 서버 비용이 매출 30% 초과 or 주간 다운타임 발생
+
+**Upgrade:**
+- 🔄 Docker Compose → **Kubernetes** (GKE/EKS)
+- 🔄 Auto-scaling (CPU/Memory 기반)
+- 🔄 Multi-AZ deployment
+- 🔄 APM (New Relic/Datadog)
+- 🔄 99.9% SLA target
+
+**예상 비용**: $500~1,000/월
+
+---
+
+### 🎯 Launch Checklist (Phase 1)
+
+**배포 전 필수:**
+- [ ] SSL 인증서 발급 (certbot)
+- [ ] Sentry 프로젝트 생성 + DSN 설정
+- [ ] UptimeRobot HTTP 모니터링 설정
+- [ ] 프로덕션 .env 파일 작성
+- [ ] Database 백업 스크립트 (daily)
+- [ ] 404/500 에러 페이지 커스터마이징
+- [ ] GitHub Actions CI 설정
+- [ ] CORS whitelist 확인
+
+**런칭 직후:**
+- [ ] Google Analytics or Vercel Analytics
+- [ ] 주간 백업 복구 테스트
+- [ ] 기본 대시보드 (active users, games played)
+
+---
+
+### 💡 Anti-Patterns (피할 것)
+
+**❌ 초기에 하지 말 것:**
+- Kubernetes 도입 (복잡도 10배, 사용자 없으면 의미 없음)
+- Service Mesh (트래픽 1000 RPS 이하면 불필요)
+- Multi-region (한국만 타겟이면 서울 1개 region으로 충분)
+- 100개 메트릭 추적 (핵심만: 에러율, 응답속도, 사용자수)
+- 완벽한 CI/CD (주 1회 배포면 수동도 OK)
+
+**✅ 집중할 것:**
+- 버그 없는 코드 (테스트 >80% 커버리지)
+- 빠른 응답 (API <500ms)
+- 명확한 에러 메시지
+- 10분 내 배포 가능한 프로세스
+- 핵심 3가지 메트릭 (에러, 속도, 사용자)
+
+---
+
+### 🔐 Security Requirements (All Phases)
+
+**Authentication & Authorization:**
+- **JWT Expiry**: Access token 15 min, Refresh token 7 days
+- **Password Policy**: Min 8 chars, uppercase + lowercase + number + special char
+- **Rate Limiting**: 100 req/min per IP (API), 5 req/min (auth endpoints)
+- **Session Management**: Redis-based with auto-expiry
+- **Multi-factor Authentication (MFA)**: TOTP-based (optional for users)
+
+**Data Protection:**
+- **Encryption at Rest**: AES-256 for sensitive data (PII, passwords)
+- **Encryption in Transit**: TLS 1.3 only (disable TLS 1.2)
+- **Password Hashing**: bcrypt with cost factor 12
+- **PII Masking**: Mask emails (a***@example.com), phone numbers (***-****-1234)
+- **Data Retention**: Delete inactive accounts after 2 years (GDPR compliance)
+
+**API Security:**
+- **CORS**: Whitelist only production domains
+- **CSRF Protection**: SameSite cookies + CSRF tokens
+- **SQL Injection**: Parameterized queries only (Prisma ORM enforced)
+- **XSS Protection**: Content Security Policy (CSP) headers
+- **Input Validation**: Zod schemas for all API endpoints
+- **Output Sanitization**: DOMPurify for user-generated content
+
+**Infrastructure Security:**
+- **Container Scanning**: Trivy/Clair before deployment (no CRITICAL vulnerabilities)
+- **Secret Rotation**: Rotate secrets every 90 days
+- **Least Privilege**: Services run as non-root users
+- **Network Policies**: Deny all by default, allow only necessary traffic
+- **Audit Logging**: Log all authentication, authorization, and data changes
+
+**Compliance:**
+- **GDPR**: Right to erasure, data portability, consent management
+- **개인정보보호법 (Korea)**: Data minimization, consent, breach notification
+- **OWASP Top 10**: Regular security audits and penetration testing
+
+### Disaster Recovery & Backup
+
+**Backup Strategy:**
+- **Database Backups**: Daily full backup + hourly incremental
+- **Backup Retention**: 30 days (rolling window)
+- **Backup Location**: Multi-region (primary + secondary)
+- **Backup Encryption**: AES-256
+- **Restore Testing**: Monthly restore drills
+
+**High Availability:**
+- **Multi-AZ Deployment**: Services across 3 availability zones
+- **Database Replication**: Primary + 2 read replicas (different AZs)
+- **Redis Replication**: 1 primary + 2 replicas
+- **Failover Time**: < 60 seconds (automated)
+
+**Disaster Recovery:**
+- **RTO (Recovery Time Objective)**: < 4 hours
+- **RPO (Recovery Point Objective)**: < 15 minutes (data loss tolerance)
+- **DR Site**: Separate region (cold standby)
+- **Failover Runbook**: Documented and tested quarterly
+
+### Monitoring & Alerting (Production)
+
+**Health Checks:**
+- **Liveness Probe**: `/health/live` (is service running?)
+- **Readiness Probe**: `/health/ready` (can service accept traffic?)
+- **Startup Probe**: `/health/startup` (has service initialized?)
+- **Probe Interval**: 10 seconds
+- **Probe Timeout**: 5 seconds
+
+**Metrics to Monitor:**
+- **Golden Signals**: Latency, Traffic, Errors, Saturation
+- **Service Metrics**: Request rate, error rate, response time (P50/P95/P99)
+- **Infrastructure Metrics**: CPU, Memory, Disk I/O, Network I/O
+- **Database Metrics**: Connections, query time, deadlocks, replication lag
+- **Cache Metrics**: Hit rate, miss rate, evictions, memory usage
+- **Business Metrics**: Active users, games played, error rate by feature
+
+**Alerting Rules:**
+- **P0 (Critical)**: Service down, error rate > 5%, p95 latency > 1s
+- **P1 (High)**: Error rate > 2%, p95 latency > 500ms, disk > 80%
+- **P2 (Medium)**: Cache hit rate < 70%, CPU > 80%, memory > 85%
+- **Alert Fatigue Prevention**: Max 3 alerts per hour, auto-resolve after fix
+
+**On-Call Rotation:**
+- **Primary On-Call**: 24/7 coverage
+- **Secondary On-Call**: Escalation after 15 minutes
+- **Post-Mortem**: Required for all P0 incidents within 48 hours
+
+### Database Optimization (Production)
+
+**Schema Design:**
+- **Indexing**: All foreign keys + frequently queried columns
+- **Partitioning**: Time-based partitioning for `game_results` table (monthly)
+- **Denormalization**: Leaderboard cached in Redis (refresh every 5 min)
+- **Archiving**: Move old data (> 1 year) to cold storage
+
+**Query Optimization:**
+- **N+1 Prevention**: Use `include` in Prisma queries
+- **Query Plan Analysis**: `EXPLAIN ANALYZE` for slow queries (> 100ms)
+- **Connection Pooling**: PgBouncer (transaction mode)
+- **Read/Write Splitting**: Reads to replicas, writes to primary
+
+**Database Maintenance:**
+- **Vacuum**: Auto-vacuum enabled (analyze threshold 50 rows)
+- **Index Rebuild**: Monthly for heavily updated tables
+- **Statistics Update**: Daily `ANALYZE` runs
+- **Schema Migrations**: Zero-downtime with blue-green deployment
+
+### Caching Strategy
+
+**Cache Layers:**
+1. **CDN Cache**: Static assets (images, CSS, JS) - 1 year TTL
+2. **Browser Cache**: API responses (Cache-Control headers) - 5 min
+3. **Redis Cache**:
+   - Template list: 1 hour TTL
+   - User sessions: 7 days TTL
+   - Game state: 2 hours TTL (room expiry)
+   - Leaderboard: 5 minutes TTL
+
+**Cache Invalidation:**
+- **Write-Through**: Update cache immediately after DB write
+- **TTL-based**: Automatic expiry based on data freshness requirements
+- **Tag-based**: Invalidate related cache keys on update
+- **Stale-While-Revalidate**: Serve stale data while fetching fresh
+
+**Cache Warming:**
+- **Popular Templates**: Pre-load top 20 templates on deployment
+- **User Sessions**: Keep active sessions in memory (LRU eviction)
+
+### Deployment Strategy
+
+**CI/CD Pipeline:**
+1. **Code Push** → GitHub
+2. **Pre-commit Hooks**: Lint, type-check, format
+3. **CI Checks**: Build, test, security scan (Snyk/Trivy)
+4. **Merge to main** → Auto-deploy to staging
+5. **Manual Approval** → Deploy to production
+6. **Post-deploy**: Smoke tests, health checks
+
+**Deployment Patterns:**
+- **Blue-Green Deployment**: Zero-downtime deployments
+- **Canary Releases**: 10% traffic → 50% → 100% (15 min intervals)
+- **Rollback**: Instant rollback on error rate > 1%
+- **Feature Flags**: LaunchDarkly / Flagsmith for gradual rollouts
+
+**Release Schedule:**
+- **Hotfixes**: Immediate (critical bugs only)
+- **Minor Releases**: Weekly (Friday 2pm KST)
+- **Major Releases**: Monthly (first Friday of month)
+- **Maintenance Window**: Saturday 2am-4am KST (minimal traffic)
+
+### API Versioning & Documentation
+
+**Versioning Strategy:**
+- **URL Versioning**: `/api/v1/games`, `/api/v2/games`
+- **Version Support**: Current + previous version (6 months)
+- **Deprecation Notice**: 3 months before sunsetting
+- **Breaking Changes**: Major version bump only
+
+**API Documentation:**
+- **OpenAPI/Swagger**: Auto-generated from code
+- **Interactive Docs**: Swagger UI at `/api/docs`
+- **Changelog**: Detailed release notes for each version
+- **Client SDKs**: Auto-generated TypeScript SDK
+
+---
+
 ## 🚨 CRITICAL RULES (Absolute)
 
 1. **No coding without TODOs**
-2. **No code without tests**
+2. **No code without tests** (min 80% coverage for production)
 3. **No next task until build/test pass**
 4. **No `any` type** (use `unknown`)
-5. **No `console.log` in production code**
+5. **No `console.log` in production code** (use structured logging)
 6. **No hardcoding** (use environment variables or constants)
 7. **No files over 500 lines** (must split)
 8. **No complex logic without meaningful comments** (avoid redundant comments)
 9. **No missing async error handling**
-10. **No ignoring accessibility (a11y)**
+10. **No ignoring accessibility (a11y)** (WCAG 2.1 AA compliance)
 11. **No work completion without documentation update**
 12. **No redundant comments that repeat obvious code**
 13. **ALWAYS follow docs/02-ia.md (Information Architecture) for UI structure and user flows**
@@ -373,6 +681,17 @@ export default function NotFound() {
     - Check controller endpoints for HTTP methods, status codes, error responses
     - Verify Zod schemas and NestJS validation pipes before implementing forms
     - **Frontend validation must match backend validation** (e.g., password min length, email format)
+16. **No deployment without passing ALL checks**:
+    - ✅ Type-check (0 errors)
+    - ✅ Lint (0 warnings)
+    - ✅ Unit tests (>80% coverage)
+    - ✅ E2E tests (all critical flows passing)
+    - ✅ Security scan (no CRITICAL vulnerabilities)
+    - ✅ Performance budget (Lighthouse score >90)
+17. **No production secrets in code** (use secret management tools)
+18. **No unencrypted PII** (encrypt at rest and in transit)
+19. **No single point of failure** (min 2 replicas for all services)
+20. **No skipping error tracking** (Sentry integration mandatory)
 
 ---
 
