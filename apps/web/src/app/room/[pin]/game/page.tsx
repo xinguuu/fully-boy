@@ -10,8 +10,12 @@ export default function LiveGamePage() {
   const router = useRouter();
   const pin = params.pin as string;
 
-  const [nickname, setNickname] = useState('');
-  const [hasJoined, setHasJoined] = useState(false);
+  // Try to get nickname from sessionStorage (if joined via REST API)
+  const storedNickname =
+    typeof window !== 'undefined' ? sessionStorage.getItem(`room_${pin}_nickname`) : null;
+
+  const [nickname, setNickname] = useState(storedNickname || '');
+  const [hasJoined, setHasJoined] = useState(!!storedNickname);
   const [answerStartTime, setAnswerStartTime] = useState<number | null>(null);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [showResults, setShowResults] = useState(false);
@@ -29,7 +33,7 @@ export default function LiveGamePage() {
     nextQuestion,
     submitAnswer,
     endQuestion,
-  } = useGameSocket({ pin });
+  } = useGameSocket({ pin, nickname: storedNickname || undefined, autoJoin: !!storedNickname });
 
   const currentPlayer = roomState && players.find((p) => p.nickname === nickname);
   const isOrganizer = currentPlayer?.isOrganizer || false;
