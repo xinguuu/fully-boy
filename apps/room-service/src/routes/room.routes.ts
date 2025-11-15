@@ -13,6 +13,8 @@ router.post('/:pin/join', optionalAuthenticateJWT, asyncHandler(roomController.j
 
 router.get('/:pin/participants', optionalAuthenticateJWT, asyncHandler(roomController.getParticipants.bind(roomController)));
 
+router.get('/session/:sessionId', asyncHandler(roomController.validateSession.bind(roomController)));
+
 router.delete('/:pin', authMiddleware, asyncHandler(roomController.deleteRoom.bind(roomController)));
 
 export default router;

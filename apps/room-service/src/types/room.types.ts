@@ -26,3 +26,20 @@ export interface Participant {
   deviceId: string;
   joinedAt: Date;
 }
+
+export interface ParticipantSession {
+  sessionId: string;
+  roomPin: string;
+  nickname: string;
+  deviceId: string;
+  joinedAt: string;
+  currentQuestionIndex: number;
+  score: number;
+}
+
+export interface JoinRoomResponse {
+  sessionId: string;
+  nickname: string;
+  deviceId: string;
+  participant: Participant;
+}

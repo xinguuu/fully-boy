@@ -21,6 +21,7 @@ export const WS_EVENTS = {
   JOINED_ROOM: 'joined-room', // To joiner
   PARTICIPANT_JOINED: 'participant-joined', // To others
   PARTICIPANT_LEFT: 'participant-left',
+  SESSION_RESTORED: 'session-restored', // Session recovery confirmation
   GAME_STARTED: 'game-started',
   QUESTION_STARTED: 'question-started',
   ANSWER_RECEIVED: 'answer-received', // Confirmation to submitter

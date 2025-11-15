@@ -1,17 +1,20 @@
 import { Server, Socket } from 'socket.io';
 import { WS_EVENTS } from '@xingu/shared';
 import { prisma } from '../config/database';
+import { redis } from '../config/redis';
 import { roomStateService } from '../services/room-state.service';
 import { Player } from '../types/room.types';
 import { AuthenticatedSocket } from '../middleware/ws-auth.middleware';
 
+const REDIS_SESSION_PREFIX = 'participant:session:';
+
 export function setupRoomHandlers(io: Server, socket: Socket) {
   socket.on(
     WS_EVENTS.JOIN_ROOM,
-    async (data: { pin: string; nickname: string }) => {
+    async (data: { pin: string; nickname: string; sessionId?: string }) => {
       try {
         const authSocket = socket as AuthenticatedSocket;
-        const { pin, nickname } = data;
+        const { pin, nickname, sessionId } = data;
 
         const room = await prisma.room.findUnique({
           where: { pin },
@@ -42,6 +45,25 @@ export function setupRoomHandlers(io: Server, socket: Socket) {
           return;
         }
 
+        let existingSession = null;
+        let restoredScore = 0;
+        let restoredQuestionIndex = 0;
+
+        if (sessionId) {
+          const sessionKey = `${REDIS_SESSION_PREFIX}${sessionId}`;
+          const sessionData = await redis.get(sessionKey);
+
+          if (sessionData) {
+            const session = JSON.parse(sessionData);
+
+            if (session.roomPin === pin) {
+              existingSession = session;
+              restoredScore = session.score || 0;
+              restoredQuestionIndex = session.currentQuestionIndex || 0;
+            }
+          }
+        }
+
         let state = await roomStateService.getRoomState(pin);
 
         if (!state) {
@@ -60,7 +82,7 @@ export function setupRoomHandlers(io: Server, socket: Socket) {
         const existingNickname = Object.values(state.players).find(
           (p) => p.nickname === nickname,
         );
-        if (existingNickname) {
+        if (existingNickname && !existingSession) {
           socket.emit(WS_EVENTS.ERROR, {
             code: 'DUPLICATE_NICKNAME',
             message: 'Nickname already taken',
@@ -75,7 +97,7 @@ export function setupRoomHandlers(io: Server, socket: Socket) {
           id: socket.id,
           nickname,
           socketId: socket.id,
-          score: 0,
+          score: restoredScore,
           answers: {},
           isOrganizer,
           joinedAt: new Date(),
@@ -97,6 +119,20 @@ export function setupRoomHandlers(io: Server, socket: Socket) {
           room: state,
           game: room.game,
         });
+
+        if (existingSession) {
+          socket.emit(WS_EVENTS.SESSION_RESTORED, {
+            sessionId,
+            currentQuestionIndex: restoredQuestionIndex,
+            score: restoredScore,
+            nickname,
+            message: 'Session restored successfully',
+          });
+
+          console.log(
+            `Session restored for ${nickname} in room ${pin} (score: ${restoredScore}, questionIndex: ${restoredQuestionIndex})`,
+          );
+        }
 
         socket.to(`room:${pin}`).emit(WS_EVENTS.PARTICIPANT_JOINED, {
           player,

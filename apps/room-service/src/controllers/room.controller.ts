@@ -70,6 +70,23 @@ export class RoomController {
     await roomService.deleteRoom(pin, req.user.id);
     res.status(204).send();
   }
+
+  async validateSession(req: Request, res: Response): Promise<void> {
+    const { sessionId } = req.params;
+
+    if (!sessionId) {
+      throw new ValidationError('Session ID is required');
+    }
+
+    const session = await roomService.getSession(sessionId);
+
+    if (!session) {
+      res.status(200).json({ isValid: false, session: null });
+      return;
+    }
+
+    res.status(200).json({ isValid: true, session });
+  }
 }
 
 export const roomController = new RoomController();

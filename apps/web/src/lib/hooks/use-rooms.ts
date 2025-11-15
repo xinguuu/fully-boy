@@ -41,6 +41,16 @@ export function useJoinRoom(pin: string) {
   });
 }
 
+export function useValidateSession(sessionId: string) {
+  return useQuery({
+    queryKey: ['session', sessionId],
+    queryFn: () => roomsApi.validateSession(sessionId),
+    enabled: !!sessionId,
+    staleTime: 0,
+    retry: false,
+  });
+}
+
 export function useDeleteRoom() {
   const queryClient = useQueryClient();
 

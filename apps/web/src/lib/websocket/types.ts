@@ -80,6 +80,7 @@ export interface QuestionStatistics {
 export interface JoinRoomPayload {
   pin: string;
   nickname: string;
+  sessionId?: string;
 }
 
 export interface StartGamePayload {

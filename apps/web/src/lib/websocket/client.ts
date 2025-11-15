@@ -87,8 +87,8 @@ class WebSocketClient {
     }
   }
 
-  joinRoom(pin: string, nickname: string): void {
-    this.emit(WS_EVENTS.JOIN_ROOM, { pin, nickname });
+  joinRoom(pin: string, nickname: string, sessionId?: string): void {
+    this.emit(WS_EVENTS.JOIN_ROOM, { pin, nickname, sessionId });
   }
 
   startGame(pin: string): void {

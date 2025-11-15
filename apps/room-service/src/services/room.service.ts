@@ -1,9 +1,18 @@
+import { randomUUID } from 'crypto';
 import { prisma } from '../config/database';
 import { redis } from '../config/redis';
 import { NotFoundError, ConflictError } from '../middleware/error.middleware';
-import type { CreateRoomDto, RoomResponse, JoinRoomDto, Participant } from '../types/room.types';
+import type {
+  CreateRoomDto,
+  RoomResponse,
+  JoinRoomDto,
+  Participant,
+  ParticipantSession,
+  JoinRoomResponse,
+} from '../types/room.types';
 
 const REDIS_PARTICIPANT_PREFIX = 'room:participants:';
+const REDIS_SESSION_PREFIX = 'participant:session:';
 const REDIS_PARTICIPANT_TTL = 7200;
 
 export class RoomService {
@@ -100,7 +109,7 @@ export class RoomService {
     };
   }
 
-  async joinRoom(pin: string, dto: JoinRoomDto): Promise<Participant> {
+  async joinRoom(pin: string, dto: JoinRoomDto): Promise<JoinRoomResponse> {
     const room = await this.getRoomByPIN(pin);
 
     if (room.status !== 'WAITING') {
@@ -114,6 +123,8 @@ export class RoomService {
       throw new ConflictError('Device already joined this room');
     }
 
+    const sessionId = randomUUID();
+
     const participant: Participant = {
       id: `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       nickname: dto.nickname,
@@ -121,11 +132,29 @@ export class RoomService {
       joinedAt: new Date(),
     };
 
-    const key = `${REDIS_PARTICIPANT_PREFIX}${pin}`;
-    await redis.lpush(key, JSON.stringify(participant));
-    await redis.expire(key, REDIS_PARTICIPANT_TTL);
+    const participantSession: ParticipantSession = {
+      sessionId,
+      roomPin: pin,
+      nickname: dto.nickname,
+      deviceId: dto.deviceId,
+      joinedAt: new Date().toISOString(),
+      currentQuestionIndex: 0,
+      score: 0,
+    };
 
-    return participant;
+    const participantKey = `${REDIS_PARTICIPANT_PREFIX}${pin}`;
+    await redis.lpush(participantKey, JSON.stringify(participant));
+    await redis.expire(participantKey, REDIS_PARTICIPANT_TTL);
+
+    const sessionKey = `${REDIS_SESSION_PREFIX}${sessionId}`;
+    await redis.setex(sessionKey, REDIS_PARTICIPANT_TTL, JSON.stringify(participantSession));
+
+    return {
+      sessionId,
+      nickname: dto.nickname,
+      deviceId: dto.deviceId,
+      participant,
+    };
   }
 
   async getParticipants(pin: string): Promise<Participant[]> {
@@ -133,6 +162,38 @@ export class RoomService {
     const data = await redis.lrange(key, 0, -1);
 
     return data.map((item) => JSON.parse(item));
+  }
+
+  async getSession(sessionId: string): Promise<ParticipantSession | null> {
+    const key = `${REDIS_SESSION_PREFIX}${sessionId}`;
+    const data = await redis.get(key);
+
+    if (!data) {
+      return null;
+    }
+
+    return JSON.parse(data);
+  }
+
+  async updateSessionProgress(
+    sessionId: string,
+    questionIndex: number,
+    score: number
+  ): Promise<void> {
+    const session = await this.getSession(sessionId);
+
+    if (!session) {
+      throw new NotFoundError('Session not found or expired');
+    }
+
+    const updatedSession: ParticipantSession = {
+      ...session,
+      currentQuestionIndex: questionIndex,
+      score,
+    };
+
+    const key = `${REDIS_SESSION_PREFIX}${sessionId}`;
+    await redis.setex(key, REDIS_PARTICIPANT_TTL, JSON.stringify(updatedSession));
   }
 
   async deleteRoom(pin: string, organizerId: string): Promise<void> {

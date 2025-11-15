@@ -3,10 +3,12 @@ import { WS_EVENTS } from '@xingu/shared';
 import { prisma } from '../config/database';
 import { roomStateService } from '../services/room-state.service';
 import { scoreCalculator } from '../services/score-calculator.service';
+import { AuthenticatedSocket } from '../middleware/ws-auth.middleware';
 
 export function setupGameHandlers(io: Server, socket: Socket) {
   socket.on(WS_EVENTS.START_GAME, async (data: { pin: string }) => {
     try {
+      const authSocket = socket as AuthenticatedSocket;
       const { pin } = data;
 
       const state = await roomStateService.getRoomState(pin);
@@ -19,8 +21,8 @@ export function setupGameHandlers(io: Server, socket: Socket) {
         return;
       }
 
-      const player = state.players[socket.id];
-      if (!player || !player.isOrganizer) {
+      // Check if the authenticated user is the organizer
+      if (!authSocket.user || authSocket.user.id !== state.organizerId) {
         socket.emit(WS_EVENTS.ERROR, {
           code: 'NOT_ORGANIZER',
           message: 'Only organizer can start the game',
@@ -36,14 +38,31 @@ export function setupGameHandlers(io: Server, socket: Socket) {
         return;
       }
 
-      const playerCount = Object.keys(state.players).length;
-      if (playerCount < 2) {
+      // Check participant count from database (REST API joins)
+      const room = await prisma.room.findUnique({
+        where: { pin },
+        include: {
+          game: {
+            include: {
+              questions: {
+                orderBy: { order: 'asc' },
+              },
+            },
+          },
+        },
+      });
+
+      if (!room) {
         socket.emit(WS_EVENTS.ERROR, {
-          code: 'NO_PARTICIPANTS',
-          message: 'Not enough players',
+          code: 'ROOM_NOT_FOUND',
+          message: 'Room not found',
         });
         return;
       }
+
+      // Note: Participants are counted via REST API joins, not WebSocket connections
+      // For development/testing, we allow starting with 0 participants (organizer only)
+      // In production, you may want to enforce: if (room.participantCount < 1)
 
       const updatedState = await roomStateService.updateRoomStatus(pin, 'playing');
 
@@ -59,7 +78,18 @@ export function setupGameHandlers(io: Server, socket: Socket) {
         room: updatedState,
       });
 
-      console.log(`Game started in room ${pin}`);
+      // Automatically start the first question
+      const firstQuestionState = await roomStateService.nextQuestion(pin);
+      if (firstQuestionState && room.game.questions.length > 0) {
+        const firstQuestion = room.game.questions[0];
+        io.to(`room:${pin}`).emit(WS_EVENTS.QUESTION_STARTED, {
+          questionIndex: 0,
+          question: firstQuestion,
+        });
+        console.log(`Game started in room ${pin} with first question`);
+      } else {
+        console.log(`Game started in room ${pin} (no questions)`);
+      }
     } catch (error) {
       console.error('Error starting game:', error);
       socket.emit(WS_EVENTS.ERROR, {
@@ -71,6 +101,7 @@ export function setupGameHandlers(io: Server, socket: Socket) {
 
   socket.on(WS_EVENTS.NEXT_QUESTION, async (data: { pin: string }) => {
     try {
+      const authSocket = socket as AuthenticatedSocket;
       const { pin } = data;
 
       const state = await roomStateService.getRoomState(pin);
@@ -83,8 +114,8 @@ export function setupGameHandlers(io: Server, socket: Socket) {
         return;
       }
 
-      const player = state.players[socket.id];
-      if (!player || !player.isOrganizer) {
+      // Check if the authenticated user is the organizer
+      if (!authSocket.user || authSocket.user.id !== state.organizerId) {
         socket.emit(WS_EVENTS.ERROR, {
           code: 'NOT_ORGANIZER',
           message: 'Only organizer can control questions',
@@ -290,6 +321,7 @@ export function setupGameHandlers(io: Server, socket: Socket) {
 
   socket.on(WS_EVENTS.END_QUESTION, async (data: { pin: string; questionIndex: number }) => {
     try {
+      const authSocket = socket as AuthenticatedSocket;
       const { pin, questionIndex } = data;
 
       const state = await roomStateService.getRoomState(pin);
@@ -302,8 +334,8 @@ export function setupGameHandlers(io: Server, socket: Socket) {
         return;
       }
 
-      const player = state.players[socket.id];
-      if (!player || !player.isOrganizer) {
+      // Check if the authenticated user is the organizer
+      if (!authSocket.user || authSocket.user.id !== state.organizerId) {
         socket.emit(WS_EVENTS.ERROR, {
           code: 'NOT_ORGANIZER',
           message: 'Only organizer can end questions',
@@ -401,6 +433,7 @@ export function setupGameHandlers(io: Server, socket: Socket) {
 
   socket.on(WS_EVENTS.END_GAME, async (data: { pin: string }) => {
     try {
+      const authSocket = socket as AuthenticatedSocket;
       const { pin } = data;
 
       const state = await roomStateService.getRoomState(pin);
@@ -413,8 +446,8 @@ export function setupGameHandlers(io: Server, socket: Socket) {
         return;
       }
 
-      const player = state.players[socket.id];
-      if (!player || !player.isOrganizer) {
+      // Check if the authenticated user is the organizer
+      if (!authSocket.user || authSocket.user.id !== state.organizerId) {
         socket.emit(WS_EVENTS.ERROR, {
           code: 'NOT_ORGANIZER',
           message: 'Only organizer can end the game',

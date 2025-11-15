@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useRoom, useJoinRoom } from '@/lib/hooks';
+import { useRoom, useJoinRoom, useValidateSession } from '@/lib/hooks';
 
 export default function JoinRoomPage() {
   const params = useParams();
@@ -11,9 +11,41 @@ export default function JoinRoomPage() {
 
   const [nickname, setNickname] = useState('');
   const [isJoining, setIsJoining] = useState(false);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [isCheckingSession, setIsCheckingSession] = useState(true);
 
   const { data: room, isLoading: roomLoading, error: roomError } = useRoom(pin);
   const joinRoom = useJoinRoom(pin);
+  const { data: sessionValidation } = useValidateSession(sessionId || '');
+
+  useEffect(() => {
+    const storedSessionId = localStorage.getItem(`room_${pin}_sessionId`);
+    if (storedSessionId) {
+      setSessionId(storedSessionId);
+    } else {
+      setIsCheckingSession(false);
+    }
+  }, [pin]);
+
+  useEffect(() => {
+    if (!sessionId || !sessionValidation) {
+      setIsCheckingSession(false);
+      return;
+    }
+
+    if (sessionValidation.isValid && sessionValidation.session) {
+      const storedNickname = sessionStorage.getItem(`room_${pin}_nickname`);
+      if (!storedNickname) {
+        sessionStorage.setItem(`room_${pin}_nickname`, sessionValidation.session.nickname);
+      }
+
+      router.push(`/room/${pin}/game`);
+    } else {
+      localStorage.removeItem(`room_${pin}_sessionId`);
+      sessionStorage.removeItem(`room_${pin}_nickname`);
+      setIsCheckingSession(false);
+    }
+  }, [sessionValidation, sessionId, pin, router]);
 
   const handleJoin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,10 +70,13 @@ export default function JoinRoomPage() {
         localStorage.setItem('deviceId', deviceId);
       }
 
-      await joinRoom.mutateAsync({
+      const response = await joinRoom.mutateAsync({
         nickname: nickname.trim(),
         deviceId,
       });
+
+      // Store sessionId in localStorage (persists across tabs and page reloads)
+      localStorage.setItem(`room_${pin}_sessionId`, response.sessionId);
 
       // Store nickname in sessionStorage for WebSocket join
       sessionStorage.setItem(`room_${pin}_nickname`, nickname.trim());
@@ -55,11 +90,16 @@ export default function JoinRoomPage() {
     }
   };
 
-  // Loading state
-  if (roomLoading) {
+  // Session checking or room loading state
+  if (isCheckingSession || roomLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-500 to-secondary-500">
-        <div className="text-white text-2xl">로딩 중...</div>
+        <div className="text-white text-center">
+          <div className="text-2xl mb-2">
+            {isCheckingSession ? '세션 확인 중...' : '로딩 중...'}
+          </div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mt-4" />
+        </div>
       </div>
     );
   }

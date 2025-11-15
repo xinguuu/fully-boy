@@ -1,14 +1,30 @@
 'use client';
 
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useRoom, useParticipants } from '@/lib/hooks';
+import { useGameSocket } from '@/lib/hooks/use-game-socket';
+import { useEffect } from 'react';
 
 export default function WaitingRoomPage() {
   const params = useParams();
+  const router = useRouter();
   const pin = params.pin as string;
 
   const { data: room, isLoading: roomLoading } = useRoom(pin);
   const { data: participants = [] } = useParticipants(pin);
+
+  // WebSocket connection for organizer
+  const { isConnected, startGame, roomState } = useGameSocket({
+    pin,
+    autoJoin: false, // Organizer doesn't join as participant
+  });
+
+  // Redirect to game page when game starts
+  useEffect(() => {
+    if (roomState?.status === 'playing') {
+      router.push(`/room/${pin}/game`);
+    }
+  }, [roomState?.status, pin, router]);
 
   if (roomLoading) {
     return (
@@ -61,12 +77,16 @@ export default function WaitingRoomPage() {
 
           <div className="flex gap-4 justify-center">
             <button
+              onClick={() => startGame()}
               className="px-8 py-4 bg-primary-500 text-white text-xl font-bold rounded-xl hover:bg-primary-600 transition-colors cursor-pointer disabled:bg-gray-400 disabled:cursor-not-allowed"
-              disabled={participants.length === 0}
+              disabled={participants.length === 0 || !isConnected}
             >
-              게임 시작
+              {isConnected ? '게임 시작' : '연결 중...'}
             </button>
-            <button className="px-8 py-4 bg-gray-200 text-gray-700 text-xl font-semibold rounded-xl hover:bg-gray-300 transition-colors cursor-pointer">
+            <button
+              onClick={() => router.push('/browse')}
+              className="px-8 py-4 bg-gray-200 text-gray-700 text-xl font-semibold rounded-xl hover:bg-gray-300 transition-colors cursor-pointer"
+            >
               뒤로 가기
             </button>
           </div>

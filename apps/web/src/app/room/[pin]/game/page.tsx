@@ -10,9 +10,11 @@ export default function LiveGamePage() {
   const router = useRouter();
   const pin = params.pin as string;
 
-  // Try to get nickname from sessionStorage (if joined via REST API)
+  // Try to get nickname and sessionId from storage (if joined via REST API)
   const storedNickname =
     typeof window !== 'undefined' ? sessionStorage.getItem(`room_${pin}_nickname`) : null;
+  const storedSessionId =
+    typeof window !== 'undefined' ? localStorage.getItem(`room_${pin}_sessionId`) : null;
 
   const [nickname, setNickname] = useState(storedNickname || '');
   const [hasJoined, setHasJoined] = useState(!!storedNickname);
@@ -29,11 +31,17 @@ export default function LiveGamePage() {
     leaderboard,
     lastAnswer,
     error,
+    sessionRestored: _sessionRestored,
     joinRoom,
     nextQuestion,
     submitAnswer,
     endQuestion,
-  } = useGameSocket({ pin, nickname: storedNickname || undefined, autoJoin: !!storedNickname });
+  } = useGameSocket({
+    pin,
+    nickname: storedNickname || undefined,
+    sessionId: storedSessionId || undefined,
+    autoJoin: !!storedNickname,
+  });
 
   const currentPlayer = roomState && players.find((p) => p.nickname === nickname);
   const isOrganizer = currentPlayer?.isOrganizer || false;
@@ -75,7 +83,21 @@ export default function LiveGamePage() {
     setShowResults(true);
   };
 
-  if (!isConnected || !hasJoined) {
+  // Show loading state if participant already joined via REST but WebSocket is connecting
+  if (storedNickname && !isConnected) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-secondary-50 flex items-center justify-center p-4">
+        <div className="text-center">
+          <div className="animate-spin h-12 w-12 border-4 border-primary-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+          <p className="text-xl font-semibold text-gray-700">게임 연결 중...</p>
+          <p className="text-gray-500 mt-2">잠시만 기다려주세요</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show nickname form if no stored nickname and not joined
+  if (!hasJoined) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-secondary-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full">
@@ -101,10 +123,10 @@ export default function LiveGamePage() {
 
             <button
               type="submit"
-              disabled={!nickname.trim()}
+              disabled={!nickname.trim() || !isConnected}
               className="w-full bg-primary-500 hover:bg-primary-600 active:bg-primary-700 text-white font-semibold px-6 py-3 rounded-lg transition-all duration-200 hover:scale-105 hover:shadow-lg active:scale-100 disabled:bg-gray-300 disabled:cursor-not-allowed disabled:scale-100 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
             >
-              참여하기
+              {isConnected ? '참여하기' : '연결 중...'}
             </button>
           </form>
 
