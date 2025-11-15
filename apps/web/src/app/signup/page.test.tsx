@@ -33,6 +33,7 @@ describe('SignupPage', () => {
       isPaused: false,
       status: 'idle',
       submittedAt: 0,
+      isIdle: true,
     });
   });
 
@@ -99,13 +100,14 @@ describe('SignupPage', () => {
       data: undefined,
       reset: vi.fn(),
       mutate: vi.fn(),
-      variables: undefined,
+      variables: { email: 'test@example.com', password: 'password123', name: 'Test User' },
       context: undefined,
       failureCount: 1,
       failureReason: null,
       isPaused: false,
       status: 'error',
       submittedAt: Date.now(),
+      isIdle: false,
     });
 
     render(<SignupPage />);
@@ -123,13 +125,14 @@ describe('SignupPage', () => {
       data: undefined,
       reset: vi.fn(),
       mutate: vi.fn(),
-      variables: undefined,
+      variables: { email: 'test@example.com', password: 'password123', name: 'Test User' },
       context: undefined,
       failureCount: 0,
       failureReason: null,
       isPaused: false,
       status: 'pending',
       submittedAt: Date.now(),
+      isIdle: false,
     });
 
     render(<SignupPage />);

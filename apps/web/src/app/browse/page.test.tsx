@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import BrowsePage from './page';
 import * as hooks from '@/lib/hooks';
-import type { Game } from '@xingu/shared';
+import { GameType, Category, type Game } from '@xingu/shared';
 
 const mockPush = vi.fn();
 
@@ -35,8 +35,8 @@ const mockTemplates: Game[] = [
     id: 'template-1',
     title: '밸런스 게임',
     description: '재미있는 밸런스 게임',
-    gameType: 'BALANCE_GAME',
-    category: 'ICE_BREAKING',
+    gameType: GameType.BALANCE_GAME,
+    category: Category.ICE_BREAKING,
     isPublic: true,
     duration: 10,
     minPlayers: 2,
@@ -57,8 +57,8 @@ const mockMyGames: Game[] = [
     id: 'my-game-1',
     title: '내 게임',
     description: '내가 만든 게임',
-    gameType: 'BALANCE_GAME',
-    category: 'ICE_BREAKING',
+    gameType: GameType.BALANCE_GAME,
+    category: Category.ICE_BREAKING,
     isPublic: false,
     duration: 15,
     minPlayers: 3,
