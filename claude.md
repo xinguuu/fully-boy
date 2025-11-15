@@ -537,6 +537,12 @@ This includes:
      - Single refresh attempt for multiple concurrent 401 errors
      - Failed requests queued and retried after refresh completes
      - `_retry` flag prevents infinite refresh loops
+  4. ✅ **Bug Fix: Shared Package Server-Side Code Bundling** ([packages/shared/src/index.ts](packages/shared/src/index.ts)):
+     - **Problem**: Frontend build error `Cannot find module 'node:net'` after login
+     - **Root Cause**: `express-rate-limit` (server-only package) was being exported in main shared package and bundled into frontend
+     - **Fix**: Removed `export * from './middleware'` from main index, kept only type exports (`export type { AuthenticatedUser }`)
+     - **Backend Impact**: None - backend services import from `@xingu/shared/middleware` (separate export path)
+     - **Architecture Decision**: Clear separation of server-side and client-side exports in monorepo packages
 
 - **Technical Implementation**:
   ```typescript
@@ -556,6 +562,7 @@ This includes:
 
 - **Files Modified**:
   - `apps/web/src/lib/api/client.ts`: Complete rewrite of response interceptor with refresh logic
+  - `packages/shared/src/index.ts`: Removed server-side middleware exports to prevent frontend bundling issues
 
 - **Validation Results**:
   - ✅ TypeScript type-check: Passing
