@@ -103,6 +103,11 @@ describe('BrowsePage', () => {
       mutateAsync: vi.fn(),
       isPending: false,
     } as any);
+
+    vi.mocked(hooks.useDeleteGame).mockReturnValue({
+      mutateAsync: vi.fn(),
+      isPending: false,
+    } as any);
   });
 
   it('renders header with logo, search bar, and profile', () => {

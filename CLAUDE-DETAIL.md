@@ -667,6 +667,62 @@ images: {
 - ⚠️ **Auth Service Dependency**: Tests require all 6 backend services running
 - ⚠️ **Test Data Cleanup**: No automatic cleanup (manual DB reset needed)
 
+---
+
+### 2025-11-16: Browse Page UI Simplification & Delete Functionality 🎨
+
+- **Status**: ✅ Complete
+- **Summary**: Simplified Browse page GameCard buttons and implemented full delete functionality
+- **Test Coverage**: 20 unit tests passing (Browse page)
+- **Files Modified**:
+  1. ✅ [apps/web/src/app/browse/page.tsx](apps/web/src/app/browse/page.tsx) - Removed duplicate/unnecessary buttons, added delete handler
+  2. ✅ [apps/web/src/app/browse/page.test.tsx](apps/web/src/app/browse/page.test.tsx) - Updated tests for new button structure
+
+**Changes Applied**:
+
+1. **Button Simplification**:
+   - **Removed**: Duplicate edit button (was appearing twice in "My Games")
+   - **Removed**: Preview button (미리보기)
+   - **Kept**: "방 생성하기" (main action) + "🗑️ 삭제" (My Games only)
+   - **Result**: Cleaner, more focused UI with essential actions only
+
+2. **Delete Functionality**:
+   - ✨ **Confirmation Dialog**: "정말 이 게임을 삭제하시겠습니까?"
+   - ✨ **API Integration**: Connected to `useDeleteGame` hook
+   - ✨ **Auto-refresh**: Game list updates automatically after deletion
+   - ✨ **Loading State**: "삭제 중..." text + disabled button during deletion
+   - ✨ **Error Handling**: Alert on failure with retry option
+
+**Technical Implementation**:
+```typescript
+// Delete handler with confirmation and error handling
+const handleDelete = async (gameId: string) => {
+  if (window.confirm('정말 이 게임을 삭제하시겠습니까?')) {
+    try {
+      await deleteGame(gameId);
+      // Query automatically invalidated by useDeleteGame hook
+    } catch (error) {
+      console.error('Failed to delete game:', error);
+      alert('게임 삭제에 실패했습니다. 다시 시도해주세요.');
+    }
+  }
+};
+```
+
+**Final Button Structure**:
+- **Browse Tab Cards**: "방 생성하기" (1 button)
+- **My Games Tab Cards**: "방 생성하기" + "🗑️ 삭제" (2 buttons)
+
+**Validation**:
+- ✅ Type-check: 0 errors
+- ✅ Unit tests: 20/20 passed
+- ✅ Clean imports (removed unused `Eye` icon)
+
+**Impact**:
+- 📉 Reduced UI clutter by removing 2 unnecessary buttons per card
+- 📈 Improved user experience with clear, essential actions
+- ✅ Fully functional delete workflow with proper error handling
+
 **Running E2E Tests**:
 ```bash
 # All tests

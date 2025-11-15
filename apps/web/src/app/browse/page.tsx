@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Search, User, Star, Users, Clock } from 'lucide-react';
-import { useTemplates, useGames, useCurrentUser } from '@/lib/hooks';
+import { useTemplates, useGames, useCurrentUser, useDeleteGame } from '@/lib/hooks';
 import type { Game } from '@xingu/shared';
 import { Select, DropdownMenu } from '@/components/ui';
 
@@ -12,6 +12,7 @@ export default function BrowsePage() {
   const { data: user } = useCurrentUser();
   const { data: templatesResponse } = useTemplates();
   const { data: myGames = [] } = useGames();
+  const { mutateAsync: deleteGame, isPending: isDeleting } = useDeleteGame();
 
   const [activeTab, setActiveTab] = useState<'browse' | 'myGames'>('browse');
   const [searchQuery, setSearchQuery] = useState('');
@@ -41,6 +42,18 @@ export default function BrowsePage() {
       }
       return newFavorites;
     });
+  };
+
+  const handleDelete = async (gameId: string) => {
+    if (window.confirm('정말 이 게임을 삭제하시겠습니까?')) {
+      try {
+        await deleteGame(gameId);
+        // Query will be automatically invalidated by useDeleteGame hook
+      } catch (error) {
+        console.error('Failed to delete game:', error);
+        alert('게임 삭제에 실패했습니다. 다시 시도해주세요.');
+      }
+    }
   };
 
   return (
@@ -254,6 +267,8 @@ export default function BrowsePage() {
                           isMyGame={true}
                           onCreateRoom={handleCreateRoom}
                           onToggleFavorite={toggleFavorite}
+                          onDelete={handleDelete}
+                          isDeleting={isDeleting}
                         />
                       ))}
                     </div>
@@ -276,6 +291,8 @@ export default function BrowsePage() {
                           isMyGame={true}
                           onCreateRoom={handleCreateRoom}
                           onToggleFavorite={toggleFavorite}
+                          onDelete={handleDelete}
+                          isDeleting={isDeleting}
                         />
                       ))}
                   </div>
@@ -295,9 +312,11 @@ interface GameCardProps {
   isMyGame?: boolean;
   onCreateRoom: (id: string) => void;
   onToggleFavorite: (id: string) => void;
+  onDelete?: (id: string) => void;
+  isDeleting?: boolean;
 }
 
-function GameCard({ game, isFavorite, isMyGame, onCreateRoom, onToggleFavorite }: GameCardProps) {
+function GameCard({ game, isFavorite, isMyGame, onCreateRoom, onToggleFavorite, onDelete, isDeleting }: GameCardProps) {
   return (
     <div className="group bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm transition-all duration-300 hover:shadow-xl hover:scale-[1.02] hover:-translate-y-1 hover:border-primary-200">
       {/* Card Header */}
@@ -351,9 +370,13 @@ function GameCard({ game, isFavorite, isMyGame, onCreateRoom, onToggleFavorite }
         </button>
 
         {/* Delete Action - My Games Only */}
-        {isMyGame && (
-          <button className="w-full flex items-center justify-center gap-1 mt-2 text-sm text-error hover:text-error-dark font-medium py-2 rounded-lg hover:bg-error-light border border-error/20 transition-colors cursor-pointer">
-            🗑️ 삭제
+        {isMyGame && onDelete && (
+          <button
+            onClick={() => onDelete(game.id)}
+            disabled={isDeleting}
+            className="w-full flex items-center justify-center gap-1 mt-2 text-sm text-error hover:text-error-dark font-medium py-2 rounded-lg hover:bg-error-light border border-error/20 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isDeleting ? '삭제 중...' : '🗑️ 삭제'}
           </button>
         )}
       </div>
