@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Search, User, ChevronDown, Star, Users, Clock, Eye } from 'lucide-react';
-import { useTemplates, useGames, useCurrentUser, useCreateGame } from '@/lib/hooks';
+import { useTemplates, useGames, useCurrentUser } from '@/lib/hooks';
 import type { Game } from '@xingu/shared';
 
 export default function BrowsePage() {
@@ -11,7 +11,6 @@ export default function BrowsePage() {
   const { data: user } = useCurrentUser();
   const { data: templatesResponse } = useTemplates();
   const { data: myGames = [] } = useGames();
-  const createGame = useCreateGame();
 
   const [activeTab, setActiveTab] = useState<'browse' | 'myGames'>('browse');
   const [searchQuery, setSearchQuery] = useState('');
@@ -19,44 +18,15 @@ export default function BrowsePage() {
   const [sortBy, setSortBy] = useState('popular');
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
-  const [duplicatingGameId, setDuplicatingGameId] = useState<string | null>(null);
 
   const templates = templatesResponse?.templates || [];
   const favoriteGames = myGames.filter((game) => favorites.has(game.id));
 
-  const handleCreateRoom = async (gameId: string) => {
+  const handleCreateRoom = (gameId: string) => {
     if (activeTab === 'myGames') {
       router.push(`/edit/${gameId}`);
     } else {
-      try {
-        setDuplicatingGameId(gameId);
-        const template = templates.find((t) => t.id === gameId);
-        if (!template) {
-          alert('템플릿을 찾을 수 없습니다.');
-          return;
-        }
-
-        const newGame = await createGame.mutateAsync({
-          title: `${template.title} (복사본)`,
-          description: template.description || undefined,
-          gameType: template.gameType,
-          category: template.category,
-          duration: template.duration,
-          minPlayers: template.minPlayers,
-          maxPlayers: template.maxPlayers,
-          needsMobile: template.needsMobile,
-          settings: template.settings || {},
-          questions: [],
-          sourceGameId: gameId,
-        });
-
-        router.push(`/edit/${newGame.id}`);
-      } catch (error) {
-        console.error('Failed to duplicate template:', error);
-        alert('템플릿 복사에 실패했습니다. 다시 시도해주세요.');
-      } finally {
-        setDuplicatingGameId(null);
-      }
+      router.push(`/edit/new?templateId=${gameId}`);
     }
   };
 
@@ -233,7 +203,6 @@ export default function BrowsePage() {
                       key={game.id}
                       game={game}
                       isFavorite={favorites.has(game.id)}
-                      duplicating={duplicatingGameId === game.id}
                       onCreateRoom={handleCreateRoom}
                       onPreview={handlePreview}
                       onToggleFavorite={toggleFavorite}
@@ -252,7 +221,6 @@ export default function BrowsePage() {
                     key={template.id}
                     game={template}
                     isFavorite={favorites.has(template.id)}
-                    duplicating={duplicatingGameId === template.id}
                     onCreateRoom={handleCreateRoom}
                     onPreview={handlePreview}
                     onToggleFavorite={toggleFavorite}
@@ -289,7 +257,6 @@ export default function BrowsePage() {
                           game={game}
                           isFavorite={favorites.has(game.id)}
                           isMyGame={true}
-                          duplicating={duplicatingGameId === game.id}
                           onCreateRoom={handleCreateRoom}
                           onPreview={handlePreview}
                           onToggleFavorite={toggleFavorite}
@@ -313,7 +280,6 @@ export default function BrowsePage() {
                           game={game}
                           isFavorite={favorites.has(game.id)}
                           isMyGame={true}
-                          duplicating={duplicatingGameId === game.id}
                           onCreateRoom={handleCreateRoom}
                           onPreview={handlePreview}
                           onToggleFavorite={toggleFavorite}
@@ -334,13 +300,12 @@ interface GameCardProps {
   game: Game;
   isFavorite: boolean;
   isMyGame?: boolean;
-  duplicating?: boolean;
   onCreateRoom: (id: string) => void;
   onPreview: (id: string) => void;
   onToggleFavorite: (id: string) => void;
 }
 
-function GameCard({ game, isFavorite, isMyGame, duplicating, onCreateRoom, onPreview, onToggleFavorite }: GameCardProps) {
+function GameCard({ game, isFavorite, isMyGame, onCreateRoom, onPreview, onToggleFavorite }: GameCardProps) {
   return (
     <div className="group bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm transition-all duration-300 hover:shadow-xl hover:scale-[1.02] hover:-translate-y-1 hover:border-primary-200">
       {/* Card Header */}
@@ -388,32 +353,9 @@ function GameCard({ game, isFavorite, isMyGame, duplicating, onCreateRoom, onPre
         {/* Action Buttons */}
         <button
           onClick={() => onCreateRoom(game.id)}
-          disabled={duplicating}
-          className="w-full bg-primary-500 hover:bg-primary-600 active:bg-primary-700 text-white font-semibold py-3 rounded-lg transition-all duration-200 hover:scale-105 hover:shadow-lg active:scale-100 cursor-pointer mb-2 disabled:bg-gray-300 disabled:cursor-not-allowed disabled:scale-100"
+          className="w-full bg-primary-500 hover:bg-primary-600 active:bg-primary-700 text-white font-semibold py-3 rounded-lg transition-all duration-200 hover:scale-105 hover:shadow-lg active:scale-100 cursor-pointer mb-2"
         >
-          {duplicating ? (
-            <span className="flex items-center justify-center gap-2">
-              <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                  fill="none"
-                />
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                />
-              </svg>
-              {isMyGame ? '로딩 중...' : '복사 중...'}
-            </span>
-          ) : (
-            isMyGame ? '편집' : '템플릿으로 시작하기'
-          )}
+          {isMyGame ? '편집' : '템플릿으로 시작하기'}
         </button>
 
         <button

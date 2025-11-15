@@ -512,6 +512,167 @@ This includes:
 
 ## 📋 Recent Changes
 
+### 2025-11-15: Edit Page UX Redesign + Draft Mode Implementation 🎨
+
+- **Status**: ✅ Complete
+- **Summary**: Completely redesigned Edit page with modal-based UI for better UX, and implemented draft mode to prevent database pollution from template browsing
+- **Changes**:
+  1. ✅ **Modal-based UI Architecture** (UX Improvement):
+     - Created reusable Dialog component using Radix UI primitives
+     - Moved question editing to dedicated QuestionModal component
+     - Moved game settings to SettingsModal component
+     - Replaced inline editing with clean card-based question preview
+     - Reduced cognitive load - complexity hidden until needed
+  2. ✅ **QuestionModal Component** ([apps/web/src/components/edit/QuestionModal.tsx](apps/web/src/components/edit/QuestionModal.tsx)):
+     - Full question editing interface in modal
+     - Support for 3 question types: 객관식, O/X, 주관식
+     - Circular button UI for selecting correct answer
+     - Multiple choice with A/B/C/D options
+     - Textarea for question content
+     - Save/Cancel actions
+  3. ✅ **SettingsModal Component** ([apps/web/src/components/edit/SettingsModal.tsx](apps/web/src/components/edit/SettingsModal.tsx)):
+     - Time limit selector (10s - 120s options)
+     - Sound effects toggle
+     - Clean modal interface for game settings
+  4. ✅ **Dialog UI Component** ([apps/web/src/components/ui/dialog.tsx](apps/web/src/components/ui/dialog.tsx)):
+     - Radix UI Dialog primitives wrapper
+     - Backdrop blur with fade animations
+     - Accessible close button
+     - DialogHeader, DialogFooter, DialogTitle, DialogDescription
+     - Max height with scroll support
+  5. ✅ **Draft Mode Implementation** (Critical Bug Fix):
+     - **Problem**: "템플릿으로 시작하기" button immediately saved games to DB, leaving garbage data even when user clicked cancel
+     - **Solution**: URL-based draft detection (`/edit/new?templateId=xxx`)
+     - Modified Browse page to navigate instead of creating game
+     - Split Edit page save logic: createGame (draft) vs updateGame (existing)
+     - Only saves to database when user explicitly clicks save button
+  6. ✅ **Edit Page Refactor** ([apps/web/src/app/edit/[id]/page.tsx](apps/web/src/app/edit/[id]/page.tsx)):
+     - Card-based question list with preview (60 char limit)
+     - Click card to open QuestionModal
+     - Draft mode detection: `gameId === 'new' && !!templateId`
+     - Conditional data loading: useGame (existing) vs useTemplate (draft)
+     - Type-safe handling of Game vs Template types
+     - Split save logic based on isDraftMode flag
+  7. ✅ **Browse Page Cleanup** ([apps/web/src/app/browse/page.tsx](apps/web/src/app/browse/page.tsx)):
+     - Removed immediate game creation for templates
+     - Changed to URL navigation: `router.push(/edit/new?templateId=${gameId})`
+     - Removed duplicatingGameId state
+     - Removed loading spinner from template cards
+     - Removed useCreateGame hook import
+
+- **Files Created**:
+  - `apps/web/src/components/ui/dialog.tsx`: Reusable Dialog component (110 lines)
+  - `apps/web/src/components/edit/QuestionModal.tsx`: Question editing modal (280 lines)
+  - `apps/web/src/components/edit/SettingsModal.tsx`: Settings modal (95 lines)
+
+- **Files Modified**:
+  - `apps/web/src/app/edit/[id]/page.tsx`: Modal integration + draft mode logic (450 lines)
+  - `apps/web/src/app/browse/page.tsx`: Removed immediate game creation
+  - `apps/web/src/app/room/[pin]/waiting/page.tsx`: Removed unused variable warning
+
+- **Type Errors Fixed**:
+  1. **useGame/useTemplate hooks**: Changed from passing options object to conditional IDs
+     ```typescript
+     // Before (Error)
+     const { data } = useGame(gameId, { enabled: !isDraftMode });
+
+     // After (Fixed)
+     const { data } = useGame(isDraftMode ? '' : gameId);
+     ```
+  2. **Template questions property**: Added type guard to check isDraftMode before accessing questions
+     ```typescript
+     if (!isDraftMode) {
+       const gameSource = sourceData as GameWithQuestions;
+       if (gameSource.questions && gameSource.questions.length > 0) {
+         setQuestions(gameSource.questions.map((q) => ({ ... })));
+       }
+     }
+     ```
+
+- **Key Code Patterns**:
+
+  ```typescript
+  // Draft Mode Detection
+  const searchParams = useSearchParams();
+  const gameId = params.id as string;
+  const templateId = searchParams.get('templateId');
+  const isDraftMode = gameId === 'new' && !!templateId;
+
+  // Conditional Data Loading
+  const { data: gameData } = useGame(isDraftMode ? '' : gameId);
+  const { data: templateData } = useTemplate(templateId || '');
+  const sourceData = isDraftMode ? templateData : gameData;
+
+  // Split Save Logic
+  const handleSave = async () => {
+    if (isDraftMode) {
+      const newGame = await createGame.mutateAsync({
+        title,
+        description: description || undefined,
+        gameType: sourceData.gameType,
+        category: sourceData.category,
+        sourceGameId: templateId || undefined,
+        // ... all fields from template
+      });
+      router.push(`/edit/${newGame.id}`);
+    } else {
+      await updateGame.mutateAsync({
+        title,
+        description: description || undefined,
+        settings: { timeLimit, soundEnabled },
+        questions: questions.map((q) => ({ ... })),
+      });
+    }
+  };
+  ```
+
+  ```typescript
+  // Card-based Question Preview
+  <div
+    className="group border-2 border-gray-200 rounded-lg p-4 hover:border-primary-300 hover:shadow-md cursor-pointer"
+    onClick={() => handleEditQuestion(qIndex)}
+  >
+    <div className="flex items-center gap-4">
+      <div className="w-10 h-10 rounded-full bg-primary-100 text-primary-600">
+        {qIndex + 1}
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="font-medium text-gray-900 truncate">{preview}</p>
+        <span className="text-xs bg-primary-100 text-primary-700 px-2 py-0.5 rounded-full">
+          정답: {correctAnswerDisplay}
+        </span>
+      </div>
+    </div>
+  </div>
+  ```
+
+- **Validation Results**:
+  - ✅ TypeScript type-check: Passing (all type errors resolved)
+  - ✅ No database pollution: Templates only saved when user clicks save
+  - ✅ Modal UX: Cleaner, less overwhelming interface
+  - ✅ All existing functionality preserved
+
+- **User Flow** (Improved):
+  1. Browse page → Click "템플릿으로 시작하기"
+  2. Navigate to `/edit/new?templateId=xxx` (NO database write)
+  3. Edit page loads template data in draft mode
+  4. User edits game info, questions, settings via modals
+  5. User clicks "저장" → Game created in database (first write)
+  6. OR user clicks "취소" → No database pollution ✅
+
+- **UX Improvements**:
+  - ✨ Reduced visual clutter on edit page
+  - ✨ Modal-based editing reduces cognitive load
+  - ✨ Clear question preview cards with hover effects
+  - ✨ No accidental database writes from browsing
+  - ✨ Explicit save action required
+
+**Design Principle**: "쉽고 간편하게" (Easy and Simple) - Complexity hidden in modals, main page stays clean and focused
+
+**Next Step**: Implement live gameplay page with WebSocket integration
+
+---
+
 ### 2025-11-14: Room API Integration Complete - Create Room Flow Working! 🚀
 
 - **Status**: ✅ Complete (with TDD)

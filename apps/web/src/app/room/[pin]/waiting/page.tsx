@@ -8,7 +8,7 @@ export default function WaitingRoomPage() {
   const pin = params.pin as string;
 
   const { data: room, isLoading: roomLoading } = useRoom(pin);
-  const { data: participants = [], isLoading: participantsLoading } = useParticipants(pin);
+  const { data: participants = [] } = useParticipants(pin);
 
   if (roomLoading) {
     return (
