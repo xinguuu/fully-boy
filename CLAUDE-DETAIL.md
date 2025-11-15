@@ -497,6 +497,127 @@ docker-compose down      # Stop all
 
 ## 📋 Recent Changes
 
+### 2025-11-15: Performance Optimization for Production 🚀
+
+- **Status**: ✅ Complete
+- **Summary**: Comprehensive performance optimizations for Lighthouse >90 target
+- **Impact**: Improved SEO, faster page loads, better user experience, security headers
+- **Files Modified**:
+  1. ✅ [apps/web/next.config.ts](apps/web/next.config.ts) - Added compression, image optimization, security headers
+  2. ✅ [apps/web/src/app/layout.tsx](apps/web/src/app/layout.tsx) - Font optimization, enhanced metadata, viewport config
+  3. ✅ [apps/web/src/app/not-found.tsx](apps/web/src/app/not-found.tsx) - Professional 404 page with navigation
+  4. ✅ [apps/web/src/app/error.tsx](apps/web/src/app/error.tsx) - Enhanced 500 error page with retry logic
+
+**Optimizations Applied**:
+
+1. **Next.js Configuration** ([next.config.ts](apps/web/next.config.ts)):
+   - ✅ Gzip compression enabled (`compress: true`)
+   - ✅ Removed X-Powered-By header (security)
+   - ✅ Image optimization (AVIF, WebP formats)
+   - ✅ Optimized device sizes and image sizes
+   - ✅ Image caching (60s minimum TTL)
+   - ✅ Security headers (X-Frame-Options, X-Content-Type-Options, Referrer-Policy)
+   - ✅ Static asset caching (1 year immutable)
+
+2. **Font Optimization** ([layout.tsx](apps/web/src/app/layout.tsx)):
+   - ✅ Google Fonts Inter with `display: swap`
+   - ✅ CSS variable support (`--font-inter`)
+   - ✅ Prevents FOUT (Flash of Unstyled Text)
+
+3. **SEO & Metadata**:
+   - ✅ Enhanced title templates (`%s | Xingu`)
+   - ✅ OpenGraph tags for social sharing
+   - ✅ Twitter Card metadata
+   - ✅ Robots meta tags for search engines
+   - ✅ Viewport configuration (theme-color, mobile-optimized)
+
+4. **Error Pages**:
+   - ✅ **404 Page**: Professional design with navigation links
+   - ✅ **500 Page**: Error boundary with retry functionality
+   - ✅ Development-only error details display
+
+**Performance Checklist**:
+- ✅ Compression enabled
+- ✅ Image optimization (AVIF/WebP)
+- ✅ Font optimization (display swap)
+- ✅ Security headers configured
+- ✅ Cache-Control headers set
+- ✅ SEO metadata complete
+- ✅ Error pages implemented
+- ✅ Type-check passes (0 errors)
+- ✅ Production build successful (52.9s)
+- ✅ All 9 packages built successfully
+
+**Configuration Details**:
+
+```typescript
+// next.config.ts highlights
+compress: true,                          // Gzip compression
+poweredByHeader: false,                  // Remove X-Powered-By
+images: {
+  formats: ['image/avif', 'image/webp'], // Modern formats
+  minimumCacheTTL: 60,                   // Cache images
+}
+```
+
+**Next Steps**:
+- Lighthouse audit on production build
+- Sentry integration for error tracking
+- Performance monitoring setup
+
+---
+
+### 2025-11-15: Production Build Fix for Next.js 16 ✅
+
+- **Status**: ✅ Complete
+- **Summary**: Fixed Next.js 16 production build issues related to `useSearchParams()` hook requiring Suspense boundaries
+- **Build Result**: All packages build successfully (9/9), Type-check passes (0 errors)
+- **Files Modified**:
+  1. ✅ [apps/web/src/app/login/page.tsx](apps/web/src/app/login/page.tsx) - Converted to Server Component with Suspense
+  2. ✅ [apps/web/src/app/login/LoginForm.tsx](apps/web/src/app/login/LoginForm.tsx) - Created Client Component with useSearchParams
+  3. ✅ [apps/web/src/app/edit/[id]/page.tsx](apps/web/src/app/edit/[id]/page.tsx) - Converted to Server Component with Suspense
+  4. ✅ [apps/web/src/app/edit/[id]/EditForm.tsx](apps/web/src/app/edit/[id]/EditForm.tsx) - Created Client Component with useSearchParams
+
+**Problem Identified**:
+- **Error**: `useSearchParams() should be wrapped in a suspense boundary at page "/login"`
+- **Root Cause**: Next.js 16 requires `useSearchParams()` to be wrapped in `<Suspense>` boundaries to prevent CSR bailout
+- **Impact**: Production build failing with exit code 1
+
+**Solution Applied**:
+- **Pattern**: Separate Client Components with `useSearchParams()` and wrap in Server Component with Suspense
+- **Structure**:
+  ```tsx
+  // page.tsx (Server Component)
+  import { Suspense } from 'react';
+  import Form from './Form';
+
+  export default function Page() {
+    return (
+      <Suspense fallback={<Loading />}>
+        <Form />
+      </Suspense>
+    );
+  }
+
+  // Form.tsx (Client Component)
+  'use client';
+  import { useSearchParams } from 'next/navigation';
+  // ... component logic
+  ```
+
+**Build Validation**:
+- ✅ `pnpm build`: All 9 packages successful (22.5s)
+- ✅ `pnpm type-check`: All 11 tasks successful (12.9s)
+- ✅ 6/6 static pages generated
+- ✅ All routes properly compiled (4 dynamic, 5 static)
+
+**Next Steps**:
+- Performance optimization (Lighthouse >90)
+- Error tracking setup (Sentry)
+- Production deployment preparation
+
+---
+
 ### 2025-11-15: Browser-Based E2E Testing with Playwright 🎭
 
 - **Status**: ✅ Complete

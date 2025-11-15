@@ -57,7 +57,8 @@
       "Bash(npx playwright install chromium)",
       "Bash(docker ps:*)",
       "Bash(npx playwright test:*)",
-      "Bash(nul)"
+      "Bash(nul)",
+      "Bash(npx turbo:*)"
     ],
     "deny": [],
     "ask": []
