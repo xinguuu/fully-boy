@@ -512,6 +512,38 @@ This includes:
 
 ## 📋 Recent Changes
 
+### 2025-11-15: Live Game WebSocket Integration Complete - Real-time Gameplay Working! 🎮
+
+- **Status**: ✅ Complete
+- **Summary**: Implemented complete real-time gameplay with WebSocket integration, Live Game page with Organizer/Participant views, and Timer component
+- **Changes**:
+  1. ✅ **WebSocket Type Definitions** ([apps/web/src/lib/websocket/types.ts](apps/web/src/lib/websocket/types.ts)):
+     - Complete TypeScript interfaces for all WebSocket events
+     - `Player`, `RoomState`, `Question`, `Game`, `LeaderboardEntry` types
+     - Event payloads and responses with full type safety
+  2. ✅ **WebSocket Client** ([apps/web/src/lib/websocket/client.ts](apps/web/src/lib/websocket/client.ts)):
+     - Singleton client with Socket.io + JWT auth
+     - Reconnection logic (5 attempts, 1-5s delay)
+     - Type-safe methods: `joinRoom()`, `startGame()`, `submitAnswer()`
+  3. ✅ **React Hook** ([apps/web/src/lib/hooks/use-game-socket.ts](apps/web/src/lib/hooks/use-game-socket.ts)):
+     - `useGameSocket({ pin, nickname, autoJoin })`
+     - Real-time state: room, players, leaderboard, answers
+     - Auto-join for seamless participant UX
+  4. ✅ **Timer Component** ([apps/web/src/components/game/Timer.tsx](apps/web/src/components/game/Timer.tsx)):
+     - Visual countdown with progress bar
+     - Color coding: primary → warning (30%) → danger (10%)
+  5. ✅ **Live Game Page** ([apps/web/src/app/room/[pin]/game/page.tsx](apps/web/src/app/room/[pin]/game/page.tsx)):
+     - Organizer: Question display, answer distribution, leaderboard, controls
+     - Participant: Question, answer buttons, instant feedback, score
+     - States: Waiting, Playing, Finished with leaderboard
+
+- **Files Created**: 5 files (948 lines total)
+- **Validation**: ✅ Type-check passing, dev server functional
+- **WebSocket Events**: All 10 events implemented (6 client→server, 4 server→client)
+- **Next Step**: E2E testing with ws-service
+
+---
+
 ### 2025-11-15: Edit Page UX Redesign + Draft Mode Implementation 🎨
 
 - **Status**: ✅ Complete
@@ -2333,12 +2365,13 @@ This includes:
 | **Design System** | ✅ Complete | Xingu brand colors, Pretendard font, animations (Tailwind config) |
 | **Homepage (PIN Entry)** | ✅ Complete | Kahoot-style, Korean text, responsive, Design Guide compliant, navigation working |
 | **Browse Page (둘러보기)** | ✅ Complete | 2 tabs (Browse/My Games), filters, sorting, favorites, GameCard component |
-| **Edit Screen (편집 화면)** | ✅ Complete | Game info editing, settings, questions CRUD, backend DTO aligned |
+| **Edit Screen (편집 화면)** | ✅ Complete | Modal-based UX (QuestionModal, SettingsModal), Draft mode (no DB pollution), Card-based questions list |
+| **Waiting Room (대기실)** | ✅ Complete | PIN display, real-time participant list (3s polling), room creation integrated |
 | **API Client Layer** | ✅ Complete | JWT-based, automatic token injection, 401 handling, backend-aligned types |
 | **Authentication** | ✅ Working | Login/Signup functional, tokens in localStorage, API tested ✅ |
 | **State Management** | ✅ Complete | TanStack Query + token management |
 | **React Hooks** | ✅ Complete | useLogin, useSignup, useLogout, useCurrentUser, useTemplates, useGames, useUpdateGame, useCreateRoom, useRoom, useParticipants |
-| **UI Components** | ✅ Complete | Button, Input, Card, Header, Textarea, Toggle (Shadcn style) |
+| **UI Components** | ✅ Complete | Button, Input, Card, Header, Textarea, Toggle, Dialog, QuestionModal, SettingsModal (Shadcn + Radix UI) |
 | **Auth Pages** | ✅ Working | Login/Signup validated with backend DTOs (password min 8) |
 | **Type Safety** | ✅ Passing | TypeScript strict mode, all types resolved, 0 errors |
 | **Dev Server** | ✅ Running | http://localhost:3000 (functional with hot reload) |
@@ -2386,7 +2419,7 @@ This includes:
    - ✅ Added CLAUDE.md rules 13-14 for IA + Design Guide compliance
 11. ✅ Build core pages (following IA structure) - COMPLETE
    - ✅ Browse Page (둘러보기) - 2 tabs (Browse Templates / My Games) - COMPLETE
-   - ✅ Edit Screen (편집 화면) - Game customization complete - COMPLETE
+   - ✅ Edit Screen (편집 화면) - Modal-based UX + Draft mode (no DB pollution) - COMPLETE
    - ✅ Room API integration (createRoom hook + backend endpoint) - COMPLETE
 12. 🔄 Build game flow pages:
    - ✅ Waiting Room (대기실) - Pre-game lobby with PIN display + participant list - COMPLETE

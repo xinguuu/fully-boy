@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
-import { apiRateLimiter } from '@xingu/shared';
+import { apiRateLimiter } from '@xingu/shared/middleware';
 import { disconnectRedis } from './config/redis';
 import { errorMiddleware, notFoundMiddleware } from './middleware/error.middleware';
 import templateRoutes from './routes/template.routes';
