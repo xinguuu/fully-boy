@@ -512,6 +512,68 @@ This includes:
 
 ## 📋 Recent Changes
 
+### 2025-11-15: Automatic Token Refresh - Seamless Authentication UX! 🔄
+
+- **Status**: ✅ Complete
+- **Summary**: Implemented automatic JWT token refresh to prevent unnecessary user logouts when access tokens expire
+- **Problem**: Users were logged out every 15 minutes (access token expiration), causing poor UX
+- **Solution**: Implemented automatic token refresh with retry mechanism and race condition prevention
+- **Changes**:
+  1. ✅ **Enhanced ApiClient with Token Refresh** ([apps/web/src/lib/api/client.ts](apps/web/src/lib/api/client.ts)):
+     - Added separate `refreshClient` instance to avoid circular refresh attempts
+     - Implemented `isRefreshing` flag to prevent concurrent refresh requests
+     - Added `failedQueue` to queue requests during refresh
+     - 401 error interceptor now tries to refresh token before redirecting to login
+     - Retries original failed request with new access token after successful refresh
+  2. ✅ **Automatic Token Refresh Flow**:
+     - **Step 1**: API request receives 401 Unauthorized
+     - **Step 2**: Check if refresh is already in progress (queue if yes)
+     - **Step 3**: Attempt token refresh with stored refresh token
+     - **Step 4**: Update tokens in localStorage on success
+     - **Step 5**: Retry original request with new access token
+     - **Step 6**: Process queued requests with new token
+     - **Fallback**: Redirect to login only if refresh fails
+  3. ✅ **Race Condition Prevention**:
+     - Single refresh attempt for multiple concurrent 401 errors
+     - Failed requests queued and retried after refresh completes
+     - `_retry` flag prevents infinite refresh loops
+
+- **Technical Implementation**:
+  ```typescript
+  // Key features:
+  - Separate axios instance for refresh (no auth header)
+  - isRefreshing flag prevents concurrent refreshes
+  - failedQueue holds requests waiting for new token
+  - processQueue() retries all queued requests after refresh
+  - redirectToLogin() only called if refresh fails
+  ```
+
+- **User Experience Improvements**:
+  - ✨ **No more forced logouts**: Users stay logged in for 7 days (refresh token lifetime)
+  - ✨ **Seamless token renewal**: Happens transparently in the background
+  - ✨ **Better performance**: Concurrent requests handled efficiently with queue
+  - ✨ **Smart fallback**: Only redirects to login when truly necessary (expired refresh token)
+
+- **Files Modified**:
+  - `apps/web/src/lib/api/client.ts`: Complete rewrite of response interceptor with refresh logic
+
+- **Validation Results**:
+  - ✅ TypeScript type-check: Passing
+  - ✅ Existing tests: 25/25 passing (login, signup, homepage)
+  - ✅ No breaking changes to API client interface
+
+- **Security Features**:
+  - Refresh tokens validated against Redis whitelist (backend)
+  - Old refresh token deleted after successful refresh (prevents reuse)
+  - Tokens cleared from localStorage on failed refresh
+  - Separate secrets for access and refresh tokens
+
+**Conclusion**: Users can now work continuously without authentication interruptions. Access tokens refresh automatically every 15 minutes for up to 7 days.
+
+**Next Step**: Implement Live Game page with WebSocket real-time gameplay
+
+---
+
 ### 2025-11-15: E2E Testing Complete - All Systems Production Ready! 🎉
 
 - **Status**: ✅ Complete (10/10 tests passing - 100% success)
