@@ -21,7 +21,6 @@ export default function BrowsePage() {
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
 
   const templates = templatesResponse?.templates || [];
-  const favoriteGames = myGames.filter((game) => favorites.has(game.id));
 
   const handleCreateRoom = (gameId: string) => {
     if (activeTab === 'myGames') {
@@ -203,29 +202,15 @@ export default function BrowsePage() {
         {/* Browse Tab Content */}
         {activeTab === 'browse' && (
           <div>
-            {/* Favorites Section */}
-            {favoriteGames.length > 0 && (
-              <div className="mb-12">
-                <h2 className="text-xl font-bold text-gray-900 mb-4">⭐ 즐겨찾기 ({favoriteGames.length})</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {favoriteGames.map((game) => (
-                    <GameCard
-                      key={game.id}
-                      game={game}
-                      isFavorite={favorites.has(game.id)}
-                      onCreateRoom={handleCreateRoom}
-                      onToggleFavorite={toggleFavorite}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* All Templates Section */}
-            <div>
-              <h2 className="text-xl font-bold text-gray-900 mb-4">전체 게임 ({templates.length})</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {templates.map((template) => (
+            <h2 className="text-xl font-bold text-gray-900 mb-4">전체 게임 ({templates.length})</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {templates
+                .sort((a, b) => {
+                  const aFav = favorites.has(a.id) ? 1 : 0;
+                  const bFav = favorites.has(b.id) ? 1 : 0;
+                  return bFav - aFav;
+                })
+                .map((template) => (
                   <GameCard
                     key={template.id}
                     game={template}
@@ -234,7 +219,6 @@ export default function BrowsePage() {
                     onToggleFavorite={toggleFavorite}
                   />
                 ))}
-              </div>
             </div>
           </div>
         )}
@@ -253,51 +237,29 @@ export default function BrowsePage() {
                 </button>
               </div>
             ) : (
-              <>
-                {/* Favorites */}
-                {favoriteGames.length > 0 && (
-                  <div className="mb-12">
-                    <h2 className="text-xl font-bold text-gray-900 mb-4">⭐ 즐겨찾기 ({favoriteGames.length})</h2>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {favoriteGames.map((game) => (
-                        <GameCard
-                          key={game.id}
-                          game={game}
-                          isFavorite={favorites.has(game.id)}
-                          isMyGame={true}
-                          onCreateRoom={handleCreateRoom}
-                          onToggleFavorite={toggleFavorite}
-                          onDelete={handleDelete}
-                          isDeleting={isDeleting}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Other Games */}
-                <div>
-                  <h2 className="text-xl font-bold text-gray-900 mb-4">
-                    기타 게임 ({myGames.length - favoriteGames.length})
-                  </h2>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {myGames
-                      .filter((game) => !favorites.has(game.id))
-                      .map((game) => (
-                        <GameCard
-                          key={game.id}
-                          game={game}
-                          isFavorite={favorites.has(game.id)}
-                          isMyGame={true}
-                          onCreateRoom={handleCreateRoom}
-                          onToggleFavorite={toggleFavorite}
-                          onDelete={handleDelete}
-                          isDeleting={isDeleting}
-                        />
-                      ))}
-                  </div>
+              <div>
+                <h2 className="text-xl font-bold text-gray-900 mb-4">내 게임 ({myGames.length})</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {myGames
+                    .sort((a, b) => {
+                      const aFav = favorites.has(a.id) ? 1 : 0;
+                      const bFav = favorites.has(b.id) ? 1 : 0;
+                      return bFav - aFav;
+                    })
+                    .map((game) => (
+                      <GameCard
+                        key={game.id}
+                        game={game}
+                        isFavorite={favorites.has(game.id)}
+                        isMyGame={true}
+                        onCreateRoom={handleCreateRoom}
+                        onToggleFavorite={toggleFavorite}
+                        onDelete={handleDelete}
+                        isDeleting={isDeleting}
+                      />
+                    ))}
                 </div>
-              </>
+              </div>
             )}
           </div>
         )}

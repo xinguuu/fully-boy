@@ -497,6 +497,35 @@ docker-compose down      # Stop all
 
 ## 📋 Recent Changes
 
+### 2025-11-16: Favorites UI/UX Improvement ⭐
+
+- **Status**: ✅ Complete
+- **Summary**: Simplified favorites display - removed separate sections, now sorted in-place
+- **Impact**: Cleaner UI, less scrolling, favorites always visible at the top of lists
+- **Files Modified**:
+  1. ✅ [apps/web/src/app/browse/page.tsx](apps/web/src/app/browse/page.tsx) - Removed separate favorites sections, added sorting logic
+
+**Changes Applied**:
+
+1. **Removed Separate Favorites Sections**:
+   - ❌ Removed "⭐ 즐겨찾기 (N)" heading and separate grid in both tabs
+   - ❌ Removed "기타 게임 (N)" heading
+   - ✅ Unified into single "전체 게임 (N)" / "내 게임 (N)" lists
+
+2. **Added In-Place Sorting**:
+   - ✅ Favorited games now appear at the top of the main list
+   - ✅ Sorting logic: `.sort((a, b) => bFav - aFav)` (favorites first)
+   - ✅ Star icon still visible on cards for easy identification
+
+3. **Simplified State Management**:
+   - ✅ Removed `favoriteGames` derived state (no longer needed)
+   - ✅ Direct sorting in render method for better performance
+
+**Validation**:
+- ✅ Type-check passes (0 errors)
+- ✅ Build successful (all 9 packages)
+- ⚠️ Lint warnings in other files (pre-existing, not related to this change)
+
 ### 2025-11-15: Performance Optimization for Production 🚀
 
 - **Status**: ✅ Complete
