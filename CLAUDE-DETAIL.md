@@ -497,6 +497,43 @@ docker-compose down      # Stop all
 
 ## 📋 Recent Changes
 
+### 2025-11-16: Search Functionality Implementation 🔍
+
+- **Status**: ✅ Complete
+- **Summary**: Added working search functionality to Browse page - filters by title and description
+- **Impact**: Users can now search games in real-time across both tabs
+- **Files Modified**:
+  1. ✅ [apps/web/src/app/browse/page.tsx](apps/web/src/app/browse/page.tsx:36-48) - Added search filtering logic
+
+**Changes Applied**:
+
+1. **Search Filter Function** (line 36-45):
+   - `filterBySearch(games)` - Filters games by search query
+   - Case-insensitive search (`.toLowerCase()`)
+   - Searches in both `title` and `description` fields
+   - Returns all games if search query is empty
+
+2. **Filtered Lists**:
+   - `filteredTemplates` - Filtered public templates
+   - `filteredMyGames` - Filtered user's games
+   - Both lists update in real-time as user types
+
+3. **UI Enhancements**:
+   - Count display shows filtered results (e.g., "5 / 10" when searching)
+   - "검색 결과가 없습니다" message when no matches found
+   - Works seamlessly with favorite sorting
+
+**Search Features**:
+- ✅ Real-time filtering (no submit button needed)
+- ✅ Case-insensitive matching
+- ✅ Searches title + description
+- ✅ Works on both "둘러보기" and "내 게임" tabs
+- ✅ Maintains favorite sorting order
+
+**Validation**:
+- ✅ Type-check passes (0 errors)
+- ✅ Build successful (all 9 packages)
+
 ### 2025-11-16: Persistent Favorites with Backend API 💾
 
 - **Status**: ✅ Complete

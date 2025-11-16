@@ -33,6 +33,20 @@ export default function BrowsePage() {
   const templates = templatesResponse?.templates || [];
   const favorites = new Set(favoriteIds);
 
+  const filterBySearch = (games: Game[]) => {
+    if (!searchQuery.trim()) return games;
+
+    const query = searchQuery.toLowerCase().trim();
+    return games.filter((game) => {
+      const title = game.title?.toLowerCase() || '';
+      const description = game.description?.toLowerCase() || '';
+      return title.includes(query) || description.includes(query);
+    });
+  };
+
+  const filteredTemplates = filterBySearch(templates);
+  const filteredMyGames = filterBySearch(myGames);
+
   const handleCreateRoom = (gameId: string) => {
     if (activeTab === 'myGames') {
       router.push(`/edit/${gameId}`);
@@ -213,9 +227,12 @@ export default function BrowsePage() {
         {/* Browse Tab Content */}
         {activeTab === 'browse' && (
           <div>
-            <h2 className="text-xl font-bold text-gray-900 mb-4">전체 게임 ({templates.length})</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-4">
+              전체 게임 ({filteredTemplates.length}
+              {searchQuery && templates.length !== filteredTemplates.length && ` / ${templates.length}`})
+            </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {templates
+              {filteredTemplates
                 .sort((a, b) => {
                   const aFav = favorites.has(a.id) ? 1 : 0;
                   const bFav = favorites.has(b.id) ? 1 : 0;
@@ -231,6 +248,11 @@ export default function BrowsePage() {
                   />
                 ))}
             </div>
+            {filteredTemplates.length === 0 && searchQuery && (
+              <div className="text-center py-16">
+                <p className="text-gray-500">검색 결과가 없습니다</p>
+              </div>
+            )}
           </div>
         )}
 
@@ -249,9 +271,12 @@ export default function BrowsePage() {
               </div>
             ) : (
               <div>
-                <h2 className="text-xl font-bold text-gray-900 mb-4">내 게임 ({myGames.length})</h2>
+                <h2 className="text-xl font-bold text-gray-900 mb-4">
+                  내 게임 ({filteredMyGames.length}
+                  {searchQuery && myGames.length !== filteredMyGames.length && ` / ${myGames.length}`})
+                </h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {myGames
+                  {filteredMyGames
                     .sort((a, b) => {
                       const aFav = favorites.has(a.id) ? 1 : 0;
                       const bFav = favorites.has(b.id) ? 1 : 0;
@@ -270,6 +295,11 @@ export default function BrowsePage() {
                       />
                     ))}
                 </div>
+                {filteredMyGames.length === 0 && searchQuery && (
+                  <div className="text-center py-16">
+                    <p className="text-gray-500">검색 결과가 없습니다</p>
+                  </div>
+                )}
               </div>
             )}
           </div>
