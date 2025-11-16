@@ -49,6 +49,42 @@ export class GameController {
     await gameService.deleteGame(req.params.id, req.user.id);
     res.status(204).send();
   }
+
+  async addFavorite(req: Request, res: Response): Promise<void> {
+    if (!req.user) {
+      throw new UnauthorizedError();
+    }
+
+    const favorite = await gameService.addFavorite(req.user.id, req.params.id);
+    res.status(201).json(favorite);
+  }
+
+  async removeFavorite(req: Request, res: Response): Promise<void> {
+    if (!req.user) {
+      throw new UnauthorizedError();
+    }
+
+    await gameService.removeFavorite(req.user.id, req.params.id);
+    res.status(204).send();
+  }
+
+  async getFavorites(req: Request, res: Response): Promise<void> {
+    if (!req.user) {
+      throw new UnauthorizedError();
+    }
+
+    const favorites = await gameService.getFavorites(req.user.id);
+    res.status(200).json(favorites);
+  }
+
+  async getFavoriteIds(req: Request, res: Response): Promise<void> {
+    if (!req.user) {
+      throw new UnauthorizedError();
+    }
+
+    const favoriteIds = await gameService.getFavoriteIds(req.user.id);
+    res.status(200).json(favoriteIds);
+  }
 }
 
 export const gameController = new GameController();

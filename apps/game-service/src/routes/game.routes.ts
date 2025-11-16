@@ -12,6 +12,9 @@ const router = Router();
 
 router.get('/my-games', authMiddleware, asyncHandler(gameController.getMyGames.bind(gameController)));
 
+router.get('/favorites', authMiddleware, asyncHandler(gameController.getFavorites.bind(gameController)));
+router.get('/favorites/ids', authMiddleware, asyncHandler(gameController.getFavoriteIds.bind(gameController)));
+
 router.get('/:id', authMiddleware, asyncHandler(gameController.getGameById.bind(gameController)));
 
 router.post(
@@ -21,6 +24,8 @@ router.post(
   asyncHandler(gameController.createGame.bind(gameController)),
 );
 
+router.post('/:id/favorite', authMiddleware, asyncHandler(gameController.addFavorite.bind(gameController)));
+
 router.put(
   '/:id',
   authMiddleware,
@@ -29,5 +34,6 @@ router.put(
 );
 
 router.delete('/:id', authMiddleware, asyncHandler(gameController.deleteGame.bind(gameController)));
+router.delete('/:id/favorite', authMiddleware, asyncHandler(gameController.removeFavorite.bind(gameController)));
 
 export default router;

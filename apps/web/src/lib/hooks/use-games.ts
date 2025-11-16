@@ -49,3 +49,34 @@ export function useDeleteGame() {
     },
   });
 }
+
+export function useFavoriteIds() {
+  return useQuery({
+    queryKey: ['favoriteIds'],
+    queryFn: gamesApi.getFavoriteIds,
+  });
+}
+
+export function useAddFavorite() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (gameId: string) => gamesApi.addFavorite(gameId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['favoriteIds'] });
+      queryClient.invalidateQueries({ queryKey: ['games'] });
+    },
+  });
+}
+
+export function useRemoveFavorite() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (gameId: string) => gamesApi.removeFavorite(gameId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['favoriteIds'] });
+      queryClient.invalidateQueries({ queryKey: ['games'] });
+    },
+  });
+}

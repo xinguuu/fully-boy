@@ -66,4 +66,20 @@ export const gamesApi = {
   deleteGame: async (id: string): Promise<void> => {
     return apiClient.delete<void>(`/api/games/${id}`);
   },
+
+  getFavorites: async (): Promise<Game[]> => {
+    return apiClient.get<Game[]>('/api/games/favorites');
+  },
+
+  getFavoriteIds: async (): Promise<string[]> => {
+    return apiClient.get<string[]>('/api/games/favorites/ids');
+  },
+
+  addFavorite: async (gameId: string): Promise<void> => {
+    return apiClient.post<void>(`/api/games/${gameId}/favorite`, {});
+  },
+
+  removeFavorite: async (gameId: string): Promise<void> => {
+    return apiClient.delete<void>(`/api/games/${gameId}/favorite`);
+  },
 };

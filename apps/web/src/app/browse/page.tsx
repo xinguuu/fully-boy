@@ -3,7 +3,15 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Search, User, Star, Users, Clock } from 'lucide-react';
-import { useTemplates, useGames, useCurrentUser, useDeleteGame } from '@/lib/hooks';
+import {
+  useTemplates,
+  useGames,
+  useCurrentUser,
+  useDeleteGame,
+  useFavoriteIds,
+  useAddFavorite,
+  useRemoveFavorite,
+} from '@/lib/hooks';
 import type { Game } from '@xingu/shared';
 import { Select, DropdownMenu } from '@/components/ui';
 
@@ -13,14 +21,17 @@ export default function BrowsePage() {
   const { data: templatesResponse } = useTemplates();
   const { data: myGames = [] } = useGames();
   const { mutateAsync: deleteGame, isPending: isDeleting } = useDeleteGame();
+  const { data: favoriteIds = [] } = useFavoriteIds();
+  const { mutateAsync: addFavorite } = useAddFavorite();
+  const { mutateAsync: removeFavorite } = useRemoveFavorite();
 
   const [activeTab, setActiveTab] = useState<'browse' | 'myGames'>('browse');
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState('all');
   const [sortBy, setSortBy] = useState('popular');
-  const [favorites, setFavorites] = useState<Set<string>>(new Set());
 
   const templates = templatesResponse?.templates || [];
+  const favorites = new Set(favoriteIds);
 
   const handleCreateRoom = (gameId: string) => {
     if (activeTab === 'myGames') {
@@ -30,17 +41,17 @@ export default function BrowsePage() {
     }
   };
 
-  const toggleFavorite = (templateId: string) => {
-    console.log('Toggle favorite:', templateId);
-    setFavorites((prev) => {
-      const newFavorites = new Set(prev);
-      if (newFavorites.has(templateId)) {
-        newFavorites.delete(templateId);
+  const toggleFavorite = async (gameId: string) => {
+    try {
+      if (favorites.has(gameId)) {
+        await removeFavorite(gameId);
       } else {
-        newFavorites.add(templateId);
+        await addFavorite(gameId);
       }
-      return newFavorites;
-    });
+    } catch (error) {
+      console.error('Failed to toggle favorite:', error);
+      alert('즐겨찾기 변경에 실패했습니다. 다시 시도해주세요.');
+    }
   };
 
   const handleDelete = async (gameId: string) => {
@@ -280,9 +291,9 @@ interface GameCardProps {
 
 function GameCard({ game, isFavorite, isMyGame, onCreateRoom, onToggleFavorite, onDelete, isDeleting }: GameCardProps) {
   return (
-    <div className="group bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm transition-all duration-300 hover:shadow-xl hover:scale-[1.02] hover:-translate-y-1 hover:border-primary-200">
+    <div className="group bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm transition-all duration-300 hover:shadow-xl hover:scale-[1.02] hover:-translate-y-1 hover:border-primary-200 h-full flex flex-col">
       {/* Card Header */}
-      <div className="p-6">
+      <div className="p-6 flex flex-col flex-1">
         <div className="flex items-start justify-between mb-3">
           <h3 className="text-xl font-semibold text-gray-900 group-hover:text-primary-500 transition-colors">
             🎮 {game.title}
@@ -326,7 +337,7 @@ function GameCard({ game, isFavorite, isMyGame, onCreateRoom, onToggleFavorite, 
         {/* Main Action Button */}
         <button
           onClick={() => onCreateRoom(game.id)}
-          className="w-full bg-primary-500 hover:bg-primary-600 active:bg-primary-700 text-white font-semibold py-3 rounded-lg transition-all duration-200 hover:scale-105 hover:shadow-lg active:scale-100 cursor-pointer"
+          className="w-full mt-auto bg-primary-500 hover:bg-primary-600 active:bg-primary-700 text-white font-semibold py-3 rounded-lg transition-all duration-200 hover:scale-105 hover:shadow-lg active:scale-100 cursor-pointer"
         >
           방 생성하기
         </button>

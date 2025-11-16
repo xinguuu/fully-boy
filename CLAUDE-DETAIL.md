@@ -497,6 +497,82 @@ docker-compose down      # Stop all
 
 ## 📋 Recent Changes
 
+### 2025-11-16: Persistent Favorites with Backend API 💾
+
+- **Status**: ✅ Complete
+- **Summary**: Implemented server-side favorites persistence - survives page refresh
+- **Impact**: User favorites now saved to database, synchronized across devices
+- **Files Modified**:
+  1. ✅ [apps/game-service/src/services/game.service.ts](apps/game-service/src/services/game.service.ts:154-255) - Added favorite CRUD methods
+  2. ✅ [apps/game-service/src/controllers/game.controller.ts](apps/game-service/src/controllers/game.controller.ts:53-87) - Added favorite endpoints
+  3. ✅ [apps/game-service/src/routes/game.routes.ts](apps/game-service/src/routes/game.routes.ts:15-37) - Added favorite routes
+  4. ✅ [apps/web/src/lib/api/games.ts](apps/web/src/lib/api/games.ts:70-84) - Added favorite API functions
+  5. ✅ [apps/web/src/lib/hooks/use-games.ts](apps/web/src/lib/hooks/use-games.ts:53-82) - Added favorite hooks
+  6. ✅ [apps/web/src/app/browse/page.tsx](apps/web/src/app/browse/page.tsx:24-55) - Connected to favorite API
+
+**Backend Changes**:
+
+1. **Game Service** - Added 4 methods:
+   - `addFavorite(userId, gameId)` - Create favorite (updates favoriteCount)
+   - `removeFavorite(userId, gameId)` - Delete favorite (updates favoriteCount)
+   - `getFavorites(userId)` - Get all favorited games with questions
+   - `getFavoriteIds(userId)` - Get just the favorite IDs (lightweight)
+
+2. **API Endpoints**:
+   - `POST /api/games/:id/favorite` - Add favorite
+   - `DELETE /api/games/:id/favorite` - Remove favorite
+   - `GET /api/games/favorites` - Get favorites list
+   - `GET /api/games/favorites/ids` - Get favorite IDs
+
+3. **Database**:
+   - Using existing `Favorite` model (Prisma schema)
+   - Atomic transactions for favoriteCount updates
+   - Unique constraint on `userId_gameId`
+
+**Frontend Changes**:
+
+1. **Hooks** - Added 3 hooks:
+   - `useFavoriteIds()` - Query favorite IDs
+   - `useAddFavorite()` - Mutation to add
+   - `useRemoveFavorite()` - Mutation to remove
+
+2. **Browse Page**:
+   - Replaced `useState` with `useFavoriteIds()`
+   - `toggleFavorite()` now calls API mutations
+   - Auto-refreshes on favorite changes
+
+**Validation**:
+- ✅ Type-check passes (0 errors)
+- ✅ Build successful (all 9 packages)
+- ✅ Favorites persist across refresh
+- ✅ FavoriteCount updates in database
+
+### 2025-11-16: Game Card Layout Improvement 📐
+
+- **Status**: ✅ Complete
+- **Summary**: Fixed game card button alignment - buttons now consistently positioned at bottom
+- **Impact**: Uniform card layout regardless of content length, better visual consistency
+- **Files Modified**:
+  1. ✅ [apps/web/src/app/browse/page.tsx](apps/web/src/app/browse/page.tsx:283) - Applied flex layout to GameCard
+
+**Changes Applied**:
+
+1. **Card Container** (line 283):
+   - ✅ Added `h-full flex flex-col` to outer div
+   - Cards now fill full grid cell height
+
+2. **Card Content** (line 285):
+   - ✅ Added `flex flex-col flex-1` to content div
+   - Content area expands to fill available space
+
+3. **Button Positioning** (line 329):
+   - ✅ Added `mt-auto` to "방 생성하기" button
+   - Buttons automatically pushed to bottom regardless of content length
+
+**Validation**:
+- ✅ Type-check passes (0 errors)
+- ✅ Build successful (all 9 packages)
+
 ### 2025-11-16: Favorites UI/UX Improvement ⭐
 
 - **Status**: ✅ Complete
