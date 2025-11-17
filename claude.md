@@ -157,9 +157,13 @@ async getOrCreateTags(tagNames: string[]): Promise<Tag[]>
 1. Run validation: `pnpm type-check && pnpm test && pnpm build`
 2. Fix immediately if failed
 3. Check TODO completion
-4. **Update [docs/06-development-guide.md](docs/06-development-guide.md) "Recent Changes"** (모든 작업 완료 시)
-5. **Update CLAUDE.md "Current Status" / "Next Steps"** (중요한 프로젝트 변경 시)
-6. Move to next TODO
+4. **Sync documentation if changed** (MANDATORY):
+   - UI 흐름/화면 순서 변경 시 → [docs/02-ia.md](docs/02-ia.md) 업데이트
+   - 디자인/스타일 변경 시 → [docs/05-design-guide.md](docs/05-design-guide.md) 업데이트
+   - API 스펙 변경 시 → [docs/03-prd.md](docs/03-prd.md) 업데이트
+5. **Update [docs/06-development-guide.md](docs/06-development-guide.md) "Recent Changes"** (모든 작업 완료 시)
+6. **Update CLAUDE.md "Current Status" / "Next Steps"** (중요한 프로젝트 변경 시)
+7. Move to next TODO
 
 ### Work Session Completion (MANDATORY)
 - ✅ All validation checks passed
