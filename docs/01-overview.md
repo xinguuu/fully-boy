@@ -1,5 +1,30 @@
 # 🎮 Xingu - 한국형 파티 게임 플랫폼
 
+## 🎯 현재 상태 (2025-11-18)
+
+### 프로젝트 진행도: ~95% 🎉
+
+**✅ 완료된 항목:**
+- **Backend 6개 서비스 (100%)**
+  - 138 unit tests + 10 E2E tests 통과
+  - auth-service, template-service, game-service, room-service, ws-service, result-service
+- **Frontend 8개 페이지 (100%)**
+  - 18 Playwright E2E tests 통과
+  - Homepage, Login/Signup, Browse, Edit, Join, Waiting, Live Game, Results
+- **Production build 성공** (All 9 packages)
+- **Performance optimizations** (compression, image optimization, SEO)
+
+**🔄 남은 작업 (Phase 1 Launch):**
+- [ ] SSL 인증서 설정 (Let's Encrypt)
+- [ ] Sentry 에러 추적 설정
+- [ ] CI/CD 파이프라인 (GitHub Actions)
+- [ ] Production 환경 배포
+- [ ] Database backup script (daily)
+
+**→ 상세 현황**: [CLAUDE.md](../CLAUDE.md#current-status)
+
+---
+
 ## 📌 서비스 개요
 
 **Xingu**는 오프라인 파티, MT, 워크샵에서 쉽고 재미있게 즐길 수 있는 **한국형 파티 게임 플랫폼**입니다.
@@ -612,97 +637,93 @@ pnpm lint
 
 ## 🚀 MVP 범위 (Phase 1)
 
-### Core Features (필수) - Week 1-2
+### Core Features (필수) - Week 1-2 ✅ COMPLETE
 
 **목표**: "동작하는 최소 기능" - 카훗처럼 1개 게임 완전 동작
 
 #### Week 1: Infrastructure & Auth (Foundation)
 
-##### Day 1-2: Infrastructure Setup
+##### Day 1-2: Infrastructure Setup ✅
 
-- [ ] Turborepo monorepo 초기화
-- [ ] Docker Compose 설정 (7 containers)
-- [ ] Nginx 리버스 프록시 설정
-- [ ] PostgreSQL + Redis 컨테이너 설정
-- [ ] Shared packages 구조 (`@xingu/shared`, `@xingu/database`, `@xingu/config`)
-- [ ] Prisma schema 초기 설계 (User, Game, Room)
-- [ ] Environment variables 설정
+- [x] Turborepo monorepo 초기화
+- [x] Docker Compose 설정 (10 containers)
+- [x] Nginx 리버스 프록시 설정
+- [x] PostgreSQL + Redis 컨테이너 설정
+- [x] Shared packages 구조 (`@xingu/shared`, `@xingu/database`, `@xingu/config`)
+- [x] Prisma schema 초기 설계 (User, Game, Room)
+- [x] Environment variables 설정
 
-##### Day 3-4: Auth Service (NestJS)
+##### Day 3-4: Auth Service (NestJS) ✅
 
-- [ ] NestJS 프로젝트 초기화
-- [ ] 회원가입 API (`POST /api/auth/signup`)
+- [x] NestJS 프로젝트 초기화
+- [x] 회원가입 API (`POST /api/auth/signup`)
   - 이메일 + 비밀번호 validation (Zod)
   - bcrypt 비밀번호 해싱
   - Prisma User 생성
-- [ ] 로그인 API (`POST /api/auth/login`)
+- [x] 로그인 API (`POST /api/auth/login`)
   - JWT access token (15min)
   - Refresh token (7d) → Redis 저장
-- [ ] 로그아웃 API (`POST /api/auth/logout`)
-- [ ] Token refresh API (`POST /api/auth/refresh`)
-- [ ] Auth Guard (JWT 검증 미들웨어)
-- [ ] Unit tests (Jest + Supertest)
+- [x] 로그아웃 API (`POST /api/auth/logout`)
+- [x] Token refresh API (`POST /api/auth/refresh`)
+- [x] Auth Guard (JWT 검증 미들웨어)
+- [x] Unit tests (17 tests passing)
 
-##### Day 5: Integration & Testing
+##### Day 5: Integration & Testing ✅
 
-- [ ] Auth Service → PostgreSQL 연동 테스트
-- [ ] Auth Service → Redis 세션 테스트
-- [ ] Nginx → Auth Service 프록시 테스트
-- [ ] Docker Compose로 전체 스택 실행 확인
-- [ ] Integration tests
+- [x] Auth Service → PostgreSQL 연동 테스트
+- [x] Auth Service → Redis 세션 테스트
+- [x] Nginx → Auth Service 프록시 테스트
+- [x] Docker Compose로 전체 스택 실행 확인
+- [x] Integration tests
 
-#### Week 2: Game Service & Real-time Features
+#### Week 2: Game Service & Real-time Features ✅
 
-##### Day 1-2: Game Service (Express)
+##### Day 1-2: All Services (Express/Socket.io) ✅
 
-- [ ] Express 프로젝트 초기화
-- [ ] Prisma schema 확장 (Game, Room, Question, Answer)
-- [ ] OX 퀴즈 템플릿 API
-  - `GET /api/games/templates` (템플릿 목록)
-  - `GET /api/games/templates/:id` (템플릿 상세)
-  - `POST /api/games` (내 게임 생성 - 템플릿 기반)
-  - `PUT /api/games/:id` (게임 커스터마이징)
-  - `DELETE /api/games/:id` (게임 삭제)
-- [ ] 방 생성 API
-  - `POST /api/rooms` (방 생성 + 6자리 PIN 발급)
-  - `GET /api/rooms/:pin` (PIN으로 방 조회)
-- [ ] Zod validation schemas
-- [ ] Unit tests (Vitest + Supertest)
+- [x] Template Service 구현 (18 tests)
+- [x] Game Service 구현 (26 tests)
+- [x] Room Service 구현 (28 tests)
+- [x] WebSocket Service 구현 (28 tests)
+- [x] Result Service 구현 (21 tests)
+- [x] Prisma schema 확장 (Game, Room, Question, GameResult)
+- [x] OX 퀴즈 템플릿 API 완성
+- [x] 방 생성 API (PIN 발급)
+- [x] Zod validation schemas
+- [x] Total: 138 unit tests + 10 E2E tests
 
-##### Day 3-4: WebSocket Service (Socket.io)
+##### Day 3-4: WebSocket Real-time ✅
 
-- [ ] Socket.io 프로젝트 초기화
-- [ ] Redis Pub/Sub 설정 (horizontal scaling)
-- [ ] WebSocket events 구현
-  - `join-room` (PIN으로 방 입장)
-  - `set-nickname` (닉네임 설정)
-  - `ready` (참여자 준비 완료)
-  - `start-game` (진행자가 게임 시작)
-  - `submit-answer` (참여자 답변 제출)
-  - `next-question` (다음 질문으로 이동)
-  - `game-end` (게임 종료)
-- [ ] Real-time state management (Redis)
-  - 방별 참여자 목록
-  - 현재 질문 상태
-  - 참여자별 답변 및 점수
-- [ ] Unit tests (Jest + Socket.io Client)
+- [x] Socket.io 프로젝트 구현
+- [x] Redis Pub/Sub 설정 완료
+- [x] WebSocket events 전체 구현
+  - `join-room`, `participant-joined`
+  - `start-game`, `game-started`
+  - `submit-answer`, `answer-submitted`
+  - `next-question`, `question-started`
+  - `end-game`, `game-ended`
+- [x] Real-time state management (Redis)
+- [x] Session recovery (tab close 대응)
 
-##### Day 5: Frontend & E2E Testing
+##### Day 5: Frontend & E2E Testing ✅
 
-- [ ] Next.js 15 프로젝트 초기화
-- [ ] 홈페이지 (PIN 입력)
-- [ ] 닉네임 설정 페이지
-- [ ] 대기실 (실시간 참여자 목록)
-- [ ] 게임 화면 (O/X 선택 버튼)
-- [ ] 결과 화면 (순위 표시)
-- [ ] Socket.io Client 연동
-- [ ] E2E tests (Playwright)
-  - 전체 플로우: 로그인 → 게임 생성 → 방 입장 → 게임 진행 → 결과 확인
+- [x] Next.js 16 프로젝트 구현
+- [x] 8개 페이지 완성:
+  - Homepage (PIN Entry)
+  - Login / Signup
+  - Browse (둘러보기)
+  - Edit Screen (편집)
+  - Join Page (입장)
+  - Waiting Room (대기실)
+  - Live Game (게임 진행)
+  - Results (결과 - Live Game 통합)
+- [x] Socket.io Client 연동
+- [x] E2E tests (18 Playwright tests)
+- [x] Production build 성공
 
-### Enhanced Features (추가) - Week 3-4
-- [ ] 게임 2개 추가 (밸런스게임, 4지선다)
-- [ ] 게임 라이브러리 (필터링)
-- [ ] 대시보드 (내 게임 목록)
+### Enhanced Features (추가) - Week 3-4 🔄 In Progress
+- [x] 게임 라이브러리 (필터링) ✅
+- [x] Browse 페이지 (탭, 검색, 정렬) ✅
+- [ ] 게임 2개 추가 (밸런스게임, 4지선다) - 백엔드 준비 완료
 - [ ] QR 코드 입장
 - [ ] 음향 효과
 
@@ -812,5 +833,9 @@ pnpm lint
 
 ---
 
-**다음 문서**: [02-ia.md](./02-ia.md) - Information Architecture
+## 📚 관련 문서
+
+- **다음**: [02-ia.md](02-ia.md) - Information Architecture
+- **개발 가이드**: [06-development-guide.md](06-development-guide.md) - 코딩 컨벤션
+- **전체 문서**: [00-INDEX.md](00-INDEX.md) - 문서 가이드 맵
 

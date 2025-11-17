@@ -1,7 +1,8 @@
-# Xingu Project - Detailed Documentation
+# Xingu - Development Guide & Detailed Documentation
 
 > **이 문서는 상세한 코딩 컨벤션, 프로덕션 배포 전략, 변경 이력을 포함합니다**
-> **핵심 가이드는**: [CLAUDE.md](./CLAUDE.md) 참조
+> **핵심 가이드는**: [CLAUDE.md](../CLAUDE.md) 참조
+> **전체 문서**: [00-INDEX.md](00-INDEX.md) (문서 가이드 맵)
 
 ---
 
@@ -905,23 +906,44 @@ cd apps/web && npx playwright test auth.spec.ts
 
 ---
 
-### 2025-11-15: Documentation Restructuring 📄
+### 2025-11-18: Documentation Restructuring v2 📄
 
 - **Status**: ✅ Complete
-- **Summary**: Split CLAUDE.md into core guide (350 lines) and detailed documentation for better readability
+- **Summary**: Reorganized documentation structure for better clarity and navigation
 - **Changes**:
-  1. ✅ **Created CLAUDE-DETAIL.md**: Moved all detailed content (coding conventions, production readiness, recent changes)
-  2. ✅ **Simplified CLAUDE.md**: Kept only essentials (architecture, critical rules, current status, quick reference)
-  3. ✅ **Clear Documentation Structure**: Core → Detail → Docs folder pattern
+  1. ✅ **Moved to docs/**: CLAUDE-DETAIL.md → docs/06-development-guide.md (this file)
+  2. ✅ **Created INDEX**: docs/00-INDEX.md (comprehensive document guide map)
+  3. ✅ **Merged PRDs**: 03-prd-practical.md → 03-prd.md (single source of truth)
+  4. ✅ **Simplified CLAUDE.md**: Removed architecture/tech stack duplicates, added proper links
+  5. ✅ **Updated 01-overview.md**: Added current status section, updated MVP checklist to reflect completion
+  6. ✅ **Removed**: 06-presentation.md (no longer needed)
 - **Benefits**:
-  - ✨ **Reduced cognitive load**: AI can focus on core rules without information overload
-  - ✨ **Better organization**: Detail available when needed via cross-reference
-  - ✨ **Faster onboarding**: New contributors see essentials first
-  - ✨ **Maintainability**: Changes log stays in DETAIL, core stays stable
+  - ✨ **Clear separation**: CLAUDE.md (AI only) vs docs/ (all documentation)
+  - ✨ **Single entry point**: 00-INDEX.md guides users to the right document
+  - ✨ **No duplication**: Architecture details only in 01-overview.md and 04-architecture.md
+  - ✨ **Easier navigation**: Consistent linking structure across all docs
 
-**Pattern Established**:
-- CLAUDE.md = 핵심 (What you MUST know)
-- CLAUDE-DETAIL.md = 상세 (When you need more context)
+**New Structure**:
+```
+CLAUDE.md                     # AI 전용 (핵심 규칙, 현재 상태만)
+docs/
+  ├── 00-INDEX.md             # 문서 가이드 맵 (시작점)
+  ├── 01-overview.md          # 프로젝트 전체 개요
+  ├── 02-ia.md                # Information Architecture
+  ├── 03-prd.md               # Product Requirements (통합본)
+  ├── 04-architecture.md      # 시스템 아키텍처
+  ├── 05-design-guide.md      # 디자인 시스템
+  └── 06-development-guide.md # 개발 가이드 (이 파일)
+```
+
+### 2025-11-15: Documentation Restructuring v1 📄
+
+- **Status**: ✅ Complete (Superseded by v2 above)
+- **Summary**: Initial split of CLAUDE.md into core guide and detailed documentation
+- **Changes**:
+  1. ✅ **Created detailed doc**: Moved all detailed content (coding conventions, production readiness, recent changes)
+  2. ✅ **Simplified CLAUDE.md**: Kept only essentials (architecture, critical rules, current status, quick reference)
+  3. ✅ **Cross-references**: Established linking pattern between documents
 
 ---
 
@@ -1064,6 +1086,10 @@ This includes:
 
 ---
 
-**Last Updated**: 2025-11-15
+**Last Updated**: 2025-11-18
 **Maintained By**: Claude AI Assistant
-**See Also**: [CLAUDE.md](./CLAUDE.md) (Core Guide)
+
+**See Also**:
+- [CLAUDE.md](../CLAUDE.md) (Core Guide)
+- [00-INDEX.md](00-INDEX.md) (Document Map)
+- [01-overview.md](01-overview.md) (Project Overview)

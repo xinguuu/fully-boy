@@ -1,7 +1,8 @@
 # Xingu Project - Claude AI Assistant Guide
 
-> **핵심 가이드**: 프로젝트 정체성, 아키텍처, 필수 규칙만 포함
-> **상세 내용**: [CLAUDE-DETAIL.md](./CLAUDE-DETAIL.md) 참조
+> **핵심 가이드**: 프로젝트 정체성, 필수 규칙, 현재 상태만 포함
+> **상세 내용**: [docs/06-development-guide.md](docs/06-development-guide.md) 참조
+> **전체 문서**: [docs/00-INDEX.md](docs/00-INDEX.md) (문서 가이드 맵)
 
 ---
 
@@ -19,68 +20,16 @@
 
 ## 🏗️ Architecture
 
-### 6-Service MSA + Docker (10 Containers)
+**MSA (Microservice Architecture)**: 6개 백엔드 서비스 + Frontend + 3 Infrastructure
+**상세 다이어그램**: [docs/04-architecture.md](docs/04-architecture.md)
 
-```
-Client (Browser) → Nginx (80/443)
-    ↓
-┌─────────────┬─────────────┬─────────────┬─────────────┐
-│   Web       │ Auth Service│Template Svc │  Game Svc   │
-│ Next.js     │  NestJS     │  Express    │  Express    │
-│ Port 3000   │ Port 3001   │ Port 3002   │ Port 3003   │
-└─────────────┴─────────────┴─────────────┴─────────────┘
-┌─────────────┬─────────────┬─────────────┐
-│  Room Svc   │   WS Svc    │ Result Svc  │
-│  Express    │  Socket.io  │  Express    │
-│ Port 3004   │ Port 3005   │ Port 3006   │
-└─────────────┴─────────────┴─────────────┘
-    ↓
-┌──────────────────────────────┐
-│ PostgreSQL 17  │   Redis     │
-│ Main Database  │ Session/Pub │
-└──────────────────────────────┘
-```
+### 핵심 구조
+- **Frontend**: Next.js 16 (App Router) + React 19
+- **Backend**: 6개 서비스 (NestJS + Express + Socket.io)
+- **Database**: PostgreSQL 17 + Redis
+- **Infra**: Docker + Nginx + Turborepo monorepo
 
-### Service Responsibilities
-
-| Service | Port | Role | Tech |
-|---------|------|------|------|
-| **auth-service** | 3001 | JWT 인증, 사용자 관리 | NestJS + Redis |
-| **template-service** | 3002 | 공개 템플릿 조회 (읽기 전용) | Express + Redis 캐싱 |
-| **game-service** | 3003 | 내 게임 CRUD | Express + Prisma |
-| **room-service** | 3004 | 방 생성, PIN 관리 | Express + Redis |
-| **ws-service** | 3005 | 실시간 게임플레이 | Socket.io + Redis Pub/Sub |
-| **result-service** | 3006 | 결과 집계, 통계 | Express + Prisma |
-
----
-
-## 💻 Technology Stack
-
-### Frontend
-
-- **Framework**: Next.js 16.0.3 (App Router) + React 19.2.0
-- **Language**: TypeScript 5.7.2 (Strict Mode)
-- **Styling**: Tailwind CSS + Shadcn UI
-- **State**: Zustand + TanStack Query
-- **Form**: react-hook-form + Zod
-- **Testing**: Vitest + Playwright
-- **Runtime**: Node.js 24.0.0+
-
-### Backend
-
-- **Frameworks**: NestJS 10.4.15 (Auth) + Express (5 services)
-- **Database**: PostgreSQL 17 + Prisma ORM 6.1.0
-- **Cache/Session**: Redis
-- **Real-time**: Socket.io + Redis Pub/Sub
-- **Validation**: Zod schemas
-- **Runtime**: Node.js 24.0.0+
-
-### Infrastructure
-
-- **Containerization**: Docker + Multi-stage builds
-- **Monorepo**: Turborepo 2.3.3 + pnpm 10.21.0 workspaces
-- **Deployment**: Phase 1 - Docker Compose (VPS)
-- **Monitoring**: Sentry (Phase 1), Prometheus (Phase 2+)
+**→ 상세 정보**: [docs/01-overview.md](docs/01-overview.md#technology-stack) | [docs/04-architecture.md](docs/04-architecture.md)
 
 ---
 
@@ -128,15 +77,21 @@ pnpm build       # All packages
 10. **No redundant comments** (complex logic only)
 
 ### Frontend Rules
-11. **ALWAYS follow docs/02-ia.md** (UI structure, user flows)
-12. **ALWAYS follow docs/05-design-guide.md** (colors, typography, styling)
+11. **ALWAYS follow [docs/02-ia.md](docs/02-ia.md)** (UI structure, user flows)
+12. **ALWAYS follow [docs/05-design-guide.md](docs/05-design-guide.md)** (colors, typography, styling)
 13. **ALWAYS check backend code when developing frontend APIs**:
     - Read backend DTO schemas
     - Match request/response types exactly
     - Frontend validation must match backend validation
 
+### Backend Rules
+14. **ALWAYS follow [docs/03-prd.md](docs/03-prd.md)** (API specs, business requirements):
+    - Check API endpoints definition
+    - Verify request/response schemas
+    - Follow business logic requirements
+
 ### Deployment Rules
-14. **No deployment without passing ALL checks**:
+15. **No deployment without passing ALL checks**:
     - ✅ Type-check (0 errors)
     - ✅ Lint (0 warnings)
     - ✅ Unit tests (>80% coverage)
@@ -144,20 +99,20 @@ pnpm build       # All packages
     - ✅ Security scan (no CRITICAL vulnerabilities)
 
 ### Security Rules
-15. **No production secrets in code** (use secret management)
-16. **No unencrypted PII** (encrypt at rest and in transit)
-17. **No single point of failure** (min 2 replicas)
-18. **No skipping error tracking** (Sentry mandatory)
+16. **No production secrets in code** (use secret management)
+17. **No unencrypted PII** (encrypt at rest and in transit)
+18. **No single point of failure** (min 2 replicas)
+19. **No skipping error tracking** (Sentry mandatory)
 
 ### Accessibility & Standards
-19. **No ignoring accessibility** (WCAG 2.1 AA compliance)
-20. **Follow language policy**: Code/docs in English, UI in Korean (i18n)
+20. **No ignoring accessibility** (WCAG 2.1 AA compliance)
+21. **Follow language policy**: Code/docs in English, UI in Korean (i18n)
 
 ---
 
 ## 📝 Coding Conventions (Summary)
 
-**상세 내용**: [CLAUDE-DETAIL.md](./CLAUDE-DETAIL.md#coding-conventions)
+**상세 내용**: [docs/06-development-guide.md](docs/06-development-guide.md#coding-conventions)
 
 ### File Naming
 - Components: `Button.tsx` (PascalCase)
@@ -202,14 +157,14 @@ async getOrCreateTags(tagNames: string[]): Promise<Tag[]>
 1. Run validation: `pnpm type-check && pnpm test && pnpm build`
 2. Fix immediately if failed
 3. Check TODO completion
-4. **Update CLAUDE-DETAIL.md "Recent Changes"** (모든 작업 완료 시)
+4. **Update [docs/06-development-guide.md](docs/06-development-guide.md) "Recent Changes"** (모든 작업 완료 시)
 5. **Update CLAUDE.md "Current Status" / "Next Steps"** (중요한 프로젝트 변경 시)
 6. Move to next TODO
 
 ### Work Session Completion (MANDATORY)
 - ✅ All validation checks passed
 - ✅ TODOs updated
-- ✅ "Recent Changes" updated in CLAUDE-DETAIL.md
+- ✅ "Recent Changes" updated in [docs/06-development-guide.md](docs/06-development-guide.md)
 - ✅ Next steps identified
 
 ---
@@ -347,19 +302,37 @@ chore: Build/config
 
 ```
 xingu/
-├── CLAUDE.md                    # 핵심 가이드 (이 파일)
-├── CLAUDE-DETAIL.md             # 상세 내용 (코딩 컨벤션, Recent Changes 등)
-├── docs/
-│   ├── 01-overview.md           # 프로젝트 개요
-│   ├── 02-ia.md                 # Information Architecture
-│   ├── 03-prd.md                # Product Requirements
-│   ├── 04-architecture.md       # 아키텍처 상세
-│   └── 05-design-guide.md       # 디자인 시스템
-└── README.md                    # 사용자용 가이드
+├── CLAUDE.md                    # 🤖 AI 전용 (이 파일)
+├── README.md                    # 👋 사용자용 Quick Start
+│
+└── docs/
+    ├── 00-INDEX.md              # 📌 문서 가이드 맵 (시작점)
+    │
+    ├── 01-overview.md           # 📖 프로젝트 전체 개요
+    ├── 02-ia.md                 # 🗂️ Information Architecture
+    ├── 03-prd.md                # 📋 Product Requirements
+    ├── 04-architecture.md       # 🏗️ 시스템 아키텍처
+    ├── 05-design-guide.md       # 🎨 디자인 시스템
+    └── 06-development-guide.md  # 💻 개발 가이드 & 컨벤션
 ```
 
 ---
 
-**Remember**: Quality over Speed. 올바르게 작성하는 것이 빠르게 작성하는 것보다 중요합니다.
+## 📚 상세 문서 (개발 시 필수 참조)
 
-**상세 내용이 필요하면**: [CLAUDE-DETAIL.md](./CLAUDE-DETAIL.md)를 참조하세요.
+### 개발 시 항상 확인
+- **[docs/02-ia.md](docs/02-ia.md)** - UI 구조, 화면별 플로우 (Frontend 필수)
+- **[docs/03-prd.md](docs/03-prd.md)** - API 스펙, 요구사항 (Backend/Frontend 필수)
+- **[docs/05-design-guide.md](docs/05-design-guide.md)** - 디자인 시스템 (Frontend 필수)
+- **[docs/06-development-guide.md](docs/06-development-guide.md)** - 코딩 컨벤션, Recent Changes
+
+### 전체 이해
+- **[docs/01-overview.md](docs/01-overview.md)** - 프로젝트 비전, 비즈니스, 기술 스택
+- **[docs/04-architecture.md](docs/04-architecture.md)** - 시스템 구조, DB 스키마, 다이어그램
+
+### 빠른 탐색
+- **[docs/00-INDEX.md](docs/00-INDEX.md)** - 📌 모든 문서 가이드 (어떤 문서를 언제 봐야 하는지)
+
+---
+
+**Remember**: Quality over Speed. 올바르게 작성하는 것이 빠르게 작성하는 것보다 중요합니다.

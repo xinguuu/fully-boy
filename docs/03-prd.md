@@ -1,2533 +1,1652 @@
-# 📋 Product Requirements Document (PRD)
+# 📋 Xingu - 실무 기획서 (PRD)
 
 ## 📌 Document Info
 
-**Product Name**: Xingu - Korean Party Game Platform
-**Version**: 1.0 (MVP)
-**Last Updated**: 2025-11-11
-**Status**: Draft
+**Product Name**: Xingu - 한국형 파티 게임 플랫폼  
+**Version**: 1.0 MVP  
+**Last Updated**: 2025-11-17  
+**Status**: In Progress  
 **Owner**: Development Team
 
 ---
 
-## 1. Executive Summary
+## 1. 프로젝트 개요
 
-### 1.1 Product Vision
+### 1.1 서비스 소개
 
-Xingu is a Korean-style party game platform that combines Kahoot's convenience with trending Korean entertainment content. It provides **game frameworks** (templates) that organizers can customize in 5 minutes, eliminating the need to build games from scratch.
+**Xingu**는 **5분 만에** 파티 게임을 만들 수 있는 한국형 게임 플랫폼입니다.
 
-### 1.2 Key Value Propositions
+- 🎮 **게임 템플릿 제공**: OX 퀴즈, 밸런스 게임, 초성 게임 등 **즉시 사용 가능**
+- ✏️ **간편한 커스터마이징**: 질문만 수정하면 OK (프레임워크는 이미 완성)
+- 📱 **실시간 멀티플레이**: 웹소켓으로 모든 참가자가 동시에 플레이
+- 🔥 **트렌디한 콘텐츠**: 한국 예능, SNS 밈, 유행 게임
 
-1. **⚡ Fast Setup**: 5 minutes vs 30 minutes (compared to creating from scratch)
-2. **🔥 Trendy Content**: Korean entertainment shows, SNS trends, memes
-3. **🎮 Flexible Participation**: Mobile-required mode + MC mode (phone-free)
-4. **✏️ Easy Customization**: Modify only questions/content, framework is ready
+### 1.2 핵심 가치
 
-### 1.3 Success Criteria
+| 항목 | 기존 방식 (Kahoot 등) | Xingu |
+|------|---------------------|-------|
+| 게임 준비 시간 | 30분+ (처음부터 제작) | **5분** (템플릿 수정) |
+| 콘텐츠 특성 | 교육/퀴즈 중심 | 한국 예능/밈 중심 |
+| 참여 방식 | 항상 모바일 필요 | 선택 가능 (MC 모드) |
+| 커스터마이징 | 제한적 | 자유롭게 수정 가능 |
 
-- MVP launch within 4 weeks
-- 1 fully functional game (OX Quiz)
-- Complete authentication and real-time features
-- Successful test with 50+ participants
-- <3 second response time for game actions
+### 1.3 타겟 사용자
 
----
+**1) 진행자 (Organizer)** - 주 고객
+- 연령: 20-35세
+- 역할: MT 진행자, 파티 호스트, 이벤트 기획자
+- 페인 포인트: 시간 부족, 트렌디한 콘텐츠 필요
 
-## 2. Problem Statement
+**2) 참가자 (Participant)**
+- 연령: 20-40세
+- 역할: 게임 참여자
+- 니즈: 빠른 입장, 간편한 UI, 재미있는 콘텐츠
 
-### 2.1 Current Problems
+### 1.4 참여 모드 (중요!)
 
-**For Organizers:**
-- Creating party games from scratch takes 30+ minutes
-- Lack of Korean-specific game templates
-- Need to constantly search for trending game ideas
-- Kahoot is education-focused, not party-optimized
+Xingu는 게임에 따라 **2가지 참여 모드**를 지원합니다:
 
-**For Participants:**
-- Many games require phone participation even for simple games
-- Missing out on trending Korean entertainment games
-- Limited customization in existing platforms
+#### 📱 **모바일 필요 모드** (Mobile Required)
 
-### 2.2 Solution
+**특징:**
+- 모든 참가자가 **스마트폰 필수**
+- PIN 입력 → 각자 폰에서 답변 제출
+- **자동 채점, 자동 점수 부여**
+- 실시간 리더보드
 
-Xingu provides **ready-to-use game frameworks** with:
-- Pre-built game mechanics (only modify content)
-- Korean entertainment/meme templates
-- Flexible participation modes (mobile-required/not-required)
-- 5-minute setup time
+**적합한 게임:**
+- OX 퀴즈 (O/X 버튼)
+- 4지선다 퀴즈
+- 밸런스 게임 (A vs B 선택)
 
----
-
-## 3. Target Users & Personas
-
-### 3.1 Primary Persona: Event Organizer (진행자)
-
-**Profile:**
-- Age: 20-35
-- Role: MT organizer, party host, event planner
-- Tech-savvy: Medium to High
-- Pain Points: Limited time, need quick setup, want trending content
-
-**Goals:**
-- Prepare party games in <5 minutes
-- Find trending Korean games easily
-- Run smooth, professional events
-- Get participants engaged quickly
-
-**Scenario:**
-> "I'm organizing a company MT for 30 people tomorrow. I need 2-3 ice-breaking games that are trendy and easy to run. I don't have time to create games from scratch."
-
-### 3.2 Secondary Persona: Participant (참여자)
-
-**Profile:**
-- Age: 20-40
-- Role: MT participant, party attendee
-- Tech-savvy: Low to Medium
-- Pain Points: App installation friction, complex UIs
-
-**Goals:**
-- Join games quickly (no app install)
-- Simple, clear UI on mobile
-- Fun, engaging content
-- See results in real-time
-
-**Scenario:**
-> "I got a PIN code from the organizer. I want to join the game quickly from my phone's browser without installing any app."
-
----
-
-## 4. User Stories
-
-### 4.1 Authentication (Auth Service)
-
-**US-001: User Registration**
+**진행 플로우:**
 ```
-AS AN organizer
-I WANT TO create an account with email and password
-SO THAT I can create and manage my games
+참가자 폰 입장 → 질문 출제 → 각자 답변 제출 → 자동 채점 → 다음 질문
+```
+
+#### 🎤 **MC 모드** (Phone-Free Mode)
+
+**특징:**
+- 참가자는 **폰 불필요** (프로젝터 화면만 봄)
+- 진행자가 **수동으로 점수 부여**
+- 소리 지르기, 손들기, 몸으로 표현하기 등
+- 더 자유롭고 즉흥적인 분위기
+
+**적합한 게임:**
+- 초성 게임 (소리 지르기)
+- 스피드 퀴즈 (손들고 답하기)
+- 몸으로 말해요
+
+**진행 플로우:**
+```
+참가자 명단 입력 (선택) → 질문 출제 → 참가자 소리 지름 
+→ 진행자 판단 → [김철수 +100점] 버튼 → 다음 질문
+```
+
+**참가자 등록 (MC 모드):**
+- ✅ **사전 등록**: 대기실에서 참가자 이름 미리 입력
+- ✅ **게임 중 추가**: 게임 진행하면서 새 참가자 즉석 추가 가능
+- ✅ **하이브리드**: 사전 10명 등록 + 게임 중 5명 추가 = 총 15명
+
+---
+
+### 1.5 MVP 범위
+
+**Phase 1 (Week 1-2)**: 
+- ✅ OX 퀴즈 게임 1종 **(모바일 필요 모드)**
+- ✅ 인증 시스템
+- ✅ 템플릿 편집
+- ✅ 실시간 게임 플레이 (WebSocket)
+- ✅ 결과 화면
+
+**Phase 2 (Week 3-4)**:
+- ✅ 초성 게임 1종 **(MC 모드)**
+- ✅ MC 모드 참가자 관리
+- ✅ 빠른 점수 입력 UI
+- ✅ 밸런스 게임, 4지선다 퀴즈
+
+**제외 (v2)**:
+- ❌ 소셜 로그인
+- ❌ 유료 기능
+- ❌ 모바일 앱
+
+---
+
+## 2. SWOT 분석
+
+```
+┌─────────────────────────────────────┬─────────────────────────────────────┐
+│  강점 (Strengths)                   │  약점 (Weaknesses)                  │
+├─────────────────────────────────────┼─────────────────────────────────────┤
+│ • 5분 빠른 게임 제작                │ • 신규 서비스 (인지도 없음)        │
+│ • 한국 트렌드 특화 콘텐츠           │ • 초기 템플릿 수 부족              │
+│ • 실시간 멀티플레이 경험            │ • 콘텐츠 지속 업데이트 필요        │
+│ • 유연한 참여 모드 (폰 유무)        │ • 네트워크 효과 필요               │
+│ • 마이크로서비스 아키텍처 (확장성)  │ • 개발 리소스 제한                 │
+└─────────────────────────────────────┴─────────────────────────────────────┘
+┌─────────────────────────────────────┬─────────────────────────────────────┐
+│  기회 (Opportunities)               │  위협 (Threats)                     │
+├─────────────────────────────────────┼─────────────────────────────────────┤
+│ • MT/워크샵 시장 성장               │ • Kahoot, Mentimeter 같은 글로벌   │
+│ • 언택트 파티 문화 확산             │   플레이어 존재                    │
+│ • 한국 예능 콘텐츠 인기             │ • 유사 서비스 등장 가능            │
+│ • 기업 교육/이벤트 시장 진입 가능   │ • 트렌드 변화 속도 빠름            │
+│ • 커뮤니티 기반 콘텐츠 확장         │ • 웹소켓 안정성 이슈               │
+└─────────────────────────────────────┴─────────────────────────────────────┘
+```
+
+### 2.1 전략 도출
+
+**SO 전략 (강점 × 기회)**
+- 한국형 트렌드 콘텐츠로 MT/워크샵 시장 공략
+- 빠른 제작 시간으로 기업 이벤트 시장 진입
+
+**ST 전략 (강점 × 위협)**
+- 한국 특화 콘텐츠로 글로벌 플레이어와 차별화
+- 실시간 멀티플레이 경험으로 기술적 차별점 확보
+
+**WO 전략 (약점 × 기회)**
+- 커뮤니티 기반으로 콘텐츠 부족 해결 (유저 생성 템플릿)
+- 초기 타겟을 좁게 설정 (대학생 MT) → 점진적 확대
+
+**WT 전략 (약점 × 위협)**
+- MVP 빠르게 출시 후 피드백 기반 개선
+- 웹소켓 fallback 전략 (long-polling) 준비
+
+---
+
+## 3. IA (Information Architecture)
+
+### 3.1 사이트맵
+
+```
+🏠 홈
+ ├─ 🔐 로그인/회원가입
+ ├─ 📚 게임 둘러보기 (Browse Templates)
+ │   ├─ [필터] 모바일 필요/불필요, 카테고리, 인원
+ │   ├─ [정렬] 인기순, 최신순, 이름순
+ │   └─ [상세보기] 템플릿 미리보기 → 방 만들기
+ ├─ 📝 내 게임 (My Games)
+ │   ├─ [필터] 즐겨찾기만 보기
+ │   ├─ [정렬] 최근 플레이, 수정일, 이름
+ │   └─ [액션] 편집, 삭제, 방 만들기
+ ├─ ✏️ 게임 편집 (Edit Game)
+ │   ├─ 제목, 설명 수정
+ │   ├─ 질문 추가/수정/삭제/순서 변경
+ │   ├─ 미디어 업로드 (이미지, 동영상, 오디오)
+ │   └─ 설정 (시간 제한, 점수, 효과음)
+ ├─ 🎮 방 만들기/대기실 (Room)
+ │   ├─ [진행자] PIN 표시, QR 코드, 참가자 목록
+ │   ├─ [참가자] PIN 입력 → 닉네임 설정 → 대기실 입장
+ │   └─ [게임 시작] 버튼 (1명 이상 참가 시 활성화)
+ ├─ 🏁 게임 진행 (Play)
+ │   ├─ [진행자] 질문 출제, 실시간 응답 현황, 정답 공개
+ │   ├─ [참가자] 질문 보기, 답변 제출, 대기
+ │   └─ [리더보드] 실시간 순위 TOP 5
+ └─ 🏆 결과 화면 (Results)
+     ├─ 최종 순위 (1등 🥇, 2등 🥈, 3등 🥉)
+     ├─ 게임 통계 (참가자 수, 평균 점수, 소요 시간)
+     └─ [액션] 결과 공유, 다시 하기, 내 게임으로
+```
+
+### 3.2 화면 구조
+
+```
+┌─────────────────────────────────────────────────┐
+│  [로고]  게임 둘러보기  내 게임  [유저 메뉴] ▼  │  ← 헤더
+├─────────────────────────────────────────────────┤
+│                                                 │
+│  📌 [PIN 입력 창]  → 바로 참가하기               │  ← 홈
+│                                                 │
+│  🔥 인기 게임                                   │
+│  [OX 퀴즈] [밸런스 게임] [초성 게임] ...        │
+│                                                 │
+├─────────────────────────────────────────────────┤
+│  필터: [🔘 모두] [⚪️ 폰 필요] [⚪️ 폰 불필요]     │  ← 게임 둘러보기
+│  정렬: [⭐ 인기순 ▼]                             │
+│                                                 │
+│  ┌─────────┐ ┌─────────┐ ┌─────────┐           │
+│  │ OX 퀴즈  │ │ 밸런스   │ │ 초성    │           │
+│  │ 게임     │ │ 게임     │ │ 게임    │           │
+│  │ ⭐ 342   │ │ ⭐ 201   │ │ ⭐ 98   │           │
+│  │ [방만들기]│ │ [방만들기]│ │ [방만들기]│       │
+│  └─────────┘ └─────────┘ └─────────┘           │
+│                                                 │
+├─────────────────────────────────────────────────┤
+│  내 게임                        [+ 새 게임 만들기]│  ← 내 게임
+│                                                 │
+│  ┌────────────────────────────────────┐        │
+│  │ 회사 MT OX 퀴즈          [방만들기]│        │
+│  │ 10문제 · 최근 플레이: 2일 전         │        │
+│  │ [편집] [삭제]                       │        │
+│  └────────────────────────────────────┘        │
+│                                                 │
+└─────────────────────────────────────────────────┘
+```
+
+---
+
+## 4. 유저 스토리보드 (User Storyboard)
+
+### 4.1 시나리오 A: 진행자 - 게임 만들고 진행하기
+
+```
+📍 시작점: 회사 MT 준비 중, 아이스브레이킹 게임 필요
+
+┌──────────────────────────────────────────────────────┐
+│ 1️⃣ 홈페이지 접속 → "게임 둘러보기" 클릭              │
+│    [화면] 헤더 + 인기 게임 카드                      │
+├──────────────────────────────────────────────────────┤
+│ 2️⃣ OX 퀴즈 템플릿 선택 → [방 만들기] 버튼 클릭       │
+│    [화면] 게임 카드 목록 (필터/정렬)                 │
+├──────────────────────────────────────────────────────┤
+│ 3️⃣ "잠깐! 먼저 로그인해주세요" → 회원가입/로그인     │
+│    [화면] 로그인 모달                                │
+├──────────────────────────────────────────────────────┤
+│ 4️⃣ 게임 편집 화면 진입                              │
+│    [화면] 좌측 질문 리스트, 우측 편집 영역           │
+│    - 기본 질문 10개 확인                            │
+│    - 회사 관련 질문 2개 추가 (예: "우리 회사는...")  │
+│    - 질문 순서 드래그로 변경                        │
+│    - 시간 제한 30초 → 20초로 변경                   │
+├──────────────────────────────────────────────────────┤
+│ 5️⃣ [저장 & 방 만들기] 버튼 클릭                     │
+│    → "내 게임"에 저장됨                              │
+│    → PIN 생성: 123456                               │
+├──────────────────────────────────────────────────────┤
+│ 6️⃣ PIN 표시 화면                                    │
+│    [화면] 큰 PIN 숫자 + QR 코드 + [복사] 버튼       │
+│    - 프로젝터에 화면 띄우기                         │
+│    - "xingu.com에서 123456 입력하세요" 안내         │
+│    - 참가자 0명 → 1명 → 5명 → 30명 (실시간 증가)    │
+├──────────────────────────────────────────────────────┤
+│ 7️⃣ [게임 시작] 버튼 활성화 (30명 참가) → 클릭       │
+│    [화면] "게임을 시작합니다!" 애니메이션             │
+├──────────────────────────────────────────────────────┤
+│ 8️⃣ 게임 진행 화면 (진행자 뷰)                       │
+│    [화면] Q 1/12: "우리 회사는 2020년에 창립했다."   │
+│    - 실시간 응답 현황: ✅ 28/30 응답 완료            │
+│    - 대기 중: Jane, Bob                             │
+│    - [정답 공개] 버튼                               │
+├──────────────────────────────────────────────────────┤
+│ 9️⃣ [정답 공개] 클릭                                 │
+│    [화면] ✅ 정답: O                                 │
+│    - 응답 분포: O 85% (25명), X 15% (5명)           │
+│    - TOP 5 리더보드 표시                            │
+│    - [다음 질문] 버튼                               │
+├──────────────────────────────────────────────────────┤
+│ 🔟 12문제 반복 후 → 최종 결과 화면                  │
+│    [화면] 🏆 최종 순위                               │
+│    - 1등 🥇 John (950점)                            │
+│    - 2등 🥈 Jane (920점)                            │
+│    - 3등 🥉 Bob (880점)                             │
+│    - 통계: 참가자 30명, 평균 점수 650점              │
+│    - [결과 공유] [다시 하기] [내 게임으로] 버튼     │
+└──────────────────────────────────────────────────────┘
+
+✨ 결과: 5분 준비 + 10분 게임 = 15분 완료!
+```
+
+### 4.2 시나리오 B: 참가자 - 게임 참여하기
+
+```
+📍 시작점: MT 현장, 진행자가 PIN 안내
+
+┌──────────────────────────────────────────────────────┐
+│ 1️⃣ 스마트폰으로 xingu.com 접속                      │
+│    [화면] 큰 PIN 입력창                             │
+├──────────────────────────────────────────────────────┤
+│ 2️⃣ PIN 입력: 123456 → [입장] 버튼                   │
+│    [화면] PIN 입력 → 로딩                           │
+├──────────────────────────────────────────────────────┤
+│ 3️⃣ 닉네임 설정 화면                                 │
+│    [화면] "닉네임을 입력하세요" (1-20자)             │
+│    - 입력: "Jane"                                   │
+│    - [입장하기] 버튼                                │
+├──────────────────────────────────────────────────────┤
+│ 4️⃣ 대기실 진입                                      │
+│    [화면] "대기 중..."                               │
+│    - 참가자 목록: John ✅, Bob ✅, Jane ✅ (나)      │
+│    - "게임이 곧 시작됩니다"                         │
+├──────────────────────────────────────────────────────┤
+│ 5️⃣ 게임 시작 알림                                   │
+│    [화면] "🎮 게임 시작!" 애니메이션                 │
+├──────────────────────────────────────────────────────┤
+│ 6️⃣ 게임 화면 (참가자 뷰)                            │
+│    [화면] Q 1/12: "우리 회사는 2020년에 창립했다."   │
+│    - 큰 버튼 2개: [⭕ O] [❌ X]                      │
+│    - 타이머: ⏱ 20초                                │
+├──────────────────────────────────────────────────────┤
+│ 7️⃣ [O] 버튼 클릭                                    │
+│    [화면] "답변 제출 완료! 다른 참가자를 기다리는 중..."│
+│    - 버튼 비활성화                                  │
+├──────────────────────────────────────────────────────┤
+│ 8️⃣ 정답 공개                                        │
+│    [화면] ✅ 정답: O (내가 선택한 답)                │
+│    - "정답입니다! +100점"                           │
+│    - 내 점수: 100점                                 │
+│    - 순위: 12등                                     │
+├──────────────────────────────────────────────────────┤
+│ 9️⃣ 12문제 반복 후 → 최종 결과 화면                  │
+│    [화면] 🏆 최종 순위                               │
+│    - 내 순위: 2등 🥈 (920점)                        │
+│    - 전체 순위 확인 가능                            │
+└──────────────────────────────────────────────────────┘
+
+✨ 결과: 1분 입장 + 10분 게임 = 재미있었다! 🎉
+```
+
+### 4.3 시나리오 C: 게스트 체험
+
+```
+📍 시작점: 회원가입 망설이는 신규 방문자
+
+┌──────────────────────────────────────────────────────┐
+│ 1️⃣ 홈페이지 접속 → "체험하기" 버튼 클릭              │
+│    [화면] 헤더에 [체험하기] 버튼                     │
+├──────────────────────────────────────────────────────┤
+│ 2️⃣ 샘플 게임 바로 진입 (로그인 없이)                 │
+│    [화면] 미리 만들어진 샘플 OX 퀴즈                 │
+├──────────────────────────────────────────────────────┤
+│ 3️⃣ 3문제 풀어보기 (미리보기 모드)                    │
+│    [화면] 게임 화면 (참가자 뷰)                      │
+├──────────────────────────────────────────────────────┤
+│ 4️⃣ 3문제 후 → "회원가입하고 나만의 게임 만들기!"     │
+│    [화면] 회원가입 유도 모달                         │
+│    - [회원가입하기] [나중에] 버튼                   │
+└──────────────────────────────────────────────────────┘
+
+✨ 목표: 전환율 20% (체험 → 회원가입)
+```
+
+### 4.4 시나리오 D: MC 모드 - 초성 게임 진행 (폰 없이!)
+
+```
+📍 시작점: 회사 워크샵, 간단한 아이스브레이킹 필요
+
+┌──────────────────────────────────────────────────────┐
+│ 1️⃣ 로그인 → "게임 둘러보기" → 초성 게임 선택         │
+│    [화면] 템플릿 카드에 🎤 "폰 불필요" 뱃지 표시      │
+├──────────────────────────────────────────────────────┤
+│ 2️⃣ 초성 게임 편집                                   │
+│    [화면] 질문 편집 화면                            │
+│    - 기본 질문 10개 확인 (예: "ㅊㅅㄱㅇ", "ㅅㅍㅋㅈ") │
+│    - 회사 관련 초성 3개 추가                        │
+│    - 시간 제한 설정 (문제당 30초)                   │
+├──────────────────────────────────────────────────────┤
+│ 3️⃣ [저장 & 방 만들기] 클릭                          │
+│    → PIN 생성 (하지만 참가자는 PIN 불필요!)         │
+├──────────────────────────────────────────────────────┤
+│ 4️⃣ 참가자 명단 입력 (MC 모드)                       │
+│    [화면] "참가자 관리" 화면                        │
+│    - [+ 참가자 추가] 버튼                           │
+│    - 입력: "김철수", "이영희", "박민수", ...        │
+│    - 10명 사전 등록 완료                            │
+│    - [게임 시작] 버튼                              │
+│                                                    │
+│    💡 참고: 사전 등록 없이 바로 시작도 가능!        │
+│             게임 중에 추가할 수 있음                │
+├──────────────────────────────────────────────────────┤
+│ 5️⃣ [게임 시작] 클릭                                 │
+│    [화면] 프로젝터에만 화면 표시                    │
+│    - 참가자들은 폰 없이 프로젝터만 봄               │
+├──────────────────────────────────────────────────────┤
+│ 6️⃣ 게임 진행 화면 (진행자 뷰)                       │
+│    [화면] Q 1/13: "ㅊㅅㄱㅇ" (대형 글씨)             │
+│                                                    │
+│    참가자 화면 (프로젝터):                          │
+│    ┌────────────────────────────────────┐         │
+│    │      Q 1/13                        │         │
+│    │                                    │         │
+│    │        ㅊ  ㅅ  ㄱ  ㅇ               │         │
+│    │                                    │         │
+│    │    (큰 글씨로 화면 가득 채움)       │         │
+│    └────────────────────────────────────┘         │
+│                                                    │
+│    진행자 화면 (태블릿/노트북):                     │
+│    ┌────────────────────────────────────┐         │
+│    │ Q 1/13: ㅊㅅㄱㅇ            ⏱ 30초  │         │
+│    │ 정답: 초성게임                     │         │
+│    │                                    │         │
+│    │ 🎯 빠른 점수 입력:                  │         │
+│    │ ┌──────────────────────────────┐  │         │
+│    │ │ [김철수 +100점] 버튼          │  │         │
+│    │ │ [이영희 +100점] 버튼          │  │         │
+│    │ │ [박민수 +100점] 버튼          │  │         │
+│    │ │ ... (전체 참가자 목록)         │  │         │
+│    │ │                              │  │         │
+│    │ │ [+ 새 참가자 추가]            │  │         │
+│    │ └──────────────────────────────┘  │         │
+│    │                                    │         │
+│    │ TOP 5 순위:                        │         │
+│    │ 1. -                               │         │
+│    │ 2. -                               │         │
+│    └────────────────────────────────────┘         │
+├──────────────────────────────────────────────────────┤
+│ 7️⃣ 참가자들 반응                                    │
+│    - 김철수: "초성게임!" (큰 소리로 외침)            │
+│    - 이영희: "최신가요!" (틀림)                      │
+│    - 박민수: "초성게임!" (늦게 외침)                 │
+├──────────────────────────────────────────────────────┤
+│ 8️⃣ 진행자 판단 후 점수 부여                         │
+│    [화면] 진행자가 [김철수 +100점] 버튼 탭          │
+│    → 즉시 점수 업데이트                            │
+│    → 프로젝터 화면에 "김철수 +100점!" 표시         │
+│    → 리더보드 업데이트 (김철수 1등)                │
+├──────────────────────────────────────────────────────┤
+│ 9️⃣ 게임 중 새 참가자 추가                           │
+│    [상황] 관객석에 있던 "최수진"이 참여 의사 표시    │
+│    [화면] 진행자가 [+ 새 참가자 추가] 클릭          │
+│    - 이름 입력: "최수진"                            │
+│    - [추가] 클릭                                   │
+│    → 참가자 목록에 "최수진" 추가됨                  │
+│    → 이후 문제부터 최수진도 참여 가능               │
+├──────────────────────────────────────────────────────┤
+│ 🔟 [다음 질문] 버튼 → 13문제 반복                   │
+│    - 매 문제마다 빠른 점수 입력                     │
+│    - 한 문제에 여러 명 점수 부여 가능               │
+│    - 리더보드 실시간 업데이트                       │
+├──────────────────────────────────────────────────────┤
+│ 1️⃣1️⃣ 최종 결과 화면                                  │
+│    [화면] 🏆 최종 순위                               │
+│    - 1등 🥇 김철수 (800점) - 8문제 정답             │
+│    - 2등 🥈 이영희 (500점) - 5문제 정답             │
+│    - 3등 🥉 최수진 (300점) - 3문제 정답 (중간 참여) │
+│    - ...                                           │
+│    - 통계: 참가자 11명 (사전 10명 + 추가 1명)       │
+│    - [결과 공유] [다시 하기] [내 게임으로]         │
+└──────────────────────────────────────────────────────┘
+
+✨ 결과: 폰 없이도 재미있게! 더 자유롭고 시끌벅적한 분위기 🎉
+```
+
+**MC 모드 핵심 특징:**
+- ✅ 참가자는 폰 불필요 (프로젝터만 봄)
+- ✅ 진행자가 빠르게 점수 부여 ([이름 +100점] 버튼)
+- ✅ 사전 등록 + 게임 중 추가 가능 (하이브리드)
+- ✅ 한 문제에 여러 명 점수 부여 가능
+- ✅ 더 즉흥적이고 자유로운 분위기
+
+---
+
+## 5. 플로우차트 (Flowcharts)
+
+### 5.1 전체 서비스 플로우
+
+```
+                    [사용자 접속]
+                         ↓
+            ┌────────────┴────────────┐
+            ↓                         ↓
+    [진행자 (게임 만들기)]      [참가자 (게임 참여)]
+            ↓                         ↓
+    로그인 필요?                  로그인 불필요
+            ↓                         ↓
+       [Yes] → 로그인/회원가입         PIN 입력
+       [No]  → 게스트 체험            ↓
+            ↓                    닉네임 설정
+       게임 선택                       ↓
+            ↓                    대기실 입장
+       템플릿 편집                     ↓
+            ↓                    ┌─────┴─────┐
+       방 만들기                  ↓           ↓
+            ↓               게임 진행    게임 종료
+       PIN 표시                   ↓           ↓
+            ↓               실시간 답변   결과 확인
+       참가자 대기                 ↓
+            ↓               점수 획득
+       게임 시작                   ↓
+            ↓               다음 질문
+       ┌────┴────┐                ↓
+       ↓         ↓            최종 결과
+   질문 출제  정답 공개             ↓
+       ↓         ↓             [종료]
+   응답 확인  순위 공개
+       ↓         ↓
+    다음 질문  or  게임 종료
+       ↓              ↓
+    [반복]        최종 결과
+                      ↓
+                  통계 확인
+                      ↓
+                   [종료]
+```
+
+### 5.2 방 생성 플로우 (진행자)
+
+```
+[게임 선택]
+    ↓
+게임 템플릿 존재?
+    ↓
+[Yes] → 즐겨찾기? → [Yes] → 내 게임에서 선택
+         ↓                         ↓
+        [No]                    [편집]
+         ↓                         ↓
+    새 게임 만들기          질문 수정/추가/삭제
+         ↓                         ↓
+    [커스터마이징 화면]        이미지 업로드
+         ↓                         ↓
+    • 제목/설명 수정           설정 변경
+    • 질문 추가/수정           (시간, 점수, 효과)
+    • 드래그로 순서 변경             ↓
+    • 시간/점수 설정           [저장 & 방 만들기]
+         ↓                         ↓
+    [저장 & 방 만들기]        6자리 PIN 생성
+         ↓                         ↓
+    DB 저장 (내 게임)          QR 코드 생성
+         ↓                         ↓
+    Room 생성 (PostgreSQL)     Redis에 방 상태 저장
+         ↓                         ↓
+    PIN 생성 (123456)         [PIN 표시 화면]
+         ↓                         ↓
+    QR 코드 생성              대기실 (Waiting Room)
+         ↓                         ↓
+    [PIN 표시 화면]           참가자 입장 대기
+         ↓                    (실시간 WebSocket)
+    • PIN 큰 글씨 표시               ↓
+    • QR 코드 표시             1명 이상 입장?
+    • [복사] 버튼                    ↓
+    • 참가자 목록 (0명)         [Yes] → [게임 시작] 버튼 활성화
+    • [전체 화면] 버튼               ↓
+    • [게임 시작] 버튼 비활성화       클릭
+         ↓                         ↓
+    참가자 입장 대기          [게임 진행 화면]
+    (실시간 참가자 수 증가)
+         ↓
+    1명 이상?
+         ↓
+    [Yes] → [게임 시작] 버튼 활성화
+         ↓
+    클릭 → [게임 진행]
+```
+
+### 5.3 게임 진행 플로우 (OX 퀴즈)
+
+```
+[게임 시작]
+    ↓
+currentQuestionIndex = 0
+    ↓
+┌──────────────────────────────┐
+│  [질문 출제]                  │
+│  (WebSocket broadcast)       │
+│  - questionIndex             │
+│  - content                   │
+│  - imageUrl                  │
+│  - timeLimit                 │
+└──────────┬───────────────────┘
+           ↓
+    ┌──────┴──────┐
+    ↓             ↓
+[진행자 화면]  [참가자 화면]
+    ↓             ↓
+질문 + 응답 현황  질문 + [O][X] 버튼
+    ↓             ↓
+대기 중...      답변 선택 (O or X)
+    ↓             ↓
+[참가자 답변]     [submit-answer]
+(실시간 카운트)   (WebSocket emit)
+15/30 응답         ↓
+    ↓          답변 제출 완료
+20/30 응답         ↓
+    ↓          버튼 비활성화
+28/30 응답         ↓
+    ↓          "대기 중..." 표시
+    ↓             ↓
+[정답 공개]        ↓
+(진행자 클릭)      ↓
+    ↓             ↓
+[reveal-answer]    ↓
+(WebSocket broadcast)
+    ↓             ↓
+    ├─────────────┤
+    ↓             ↓
+정답 표시       정답 표시
+    ↓             ↓
+응답 통계       내 답변 결과
+O: 85% (25명)   ✅ 정답! +100점
+X: 15% (5명)        ↓
+    ↓          내 점수: 200점
+TOP 5 순위      순위: 12등
+    ↓             ↓
+[다음 질문]        ↓
+(진행자 클릭)      ↓
+    ↓             ↓
+currentQuestionIndex++
+    ↓
+마지막 질문?
+    ↓
+[No] → 다음 질문 출제 (반복)
+    ↓
+[Yes] → [게임 종료]
+    ↓
+[최종 결과 화면]
+(WebSocket broadcast)
+    ↓
+    ├─────────────┐
+    ↓             ↓
+진행자 화면    참가자 화면
+    ↓             ↓
+전체 순위       내 순위 강조
+통계 (참가자수,  전체 순위 확인
+     평균점수,
+     소요시간)
+    ↓             ↓
+[결과 공유]    [게임 끝]
+[다시 하기]
+[내 게임으로]
+    ↓
+[종료]
+```
+
+### 5.4 게임 진행 플로우 (MC 모드 - 초성 게임)
+
+```
+[게임 시작] (MC 모드)
+    ↓
+참가자 명단 있음?
+    ↓
+┌───┴────┐
+↓        ↓
+[Yes]   [No]
+사전 등록  빈 명단으로 시작
+10명      (게임 중 추가)
+    ↓        ↓
+    └────┬───┘
+         ↓
+[게임 시작 클릭]
+    ↓
+currentQuestionIndex = 0
+    ↓
+┌──────────────────────────────┐
+│  [질문 출제]                  │
+│  (WebSocket broadcast)       │
+│  - questionIndex             │
+│  - content (초성)            │
+│  - correctAnswer (정답)      │
+│  - timeLimit                 │
+└──────────┬───────────────────┘
+           ↓
+    ┌──────┴──────┐
+    ↓             ↓
+[진행자 화면]   [참가자 화면]
+(태블릿/노트북)  (프로젝터 only)
+    ↓             ↓
+┌─────────────┐  ┌─────────────┐
+│ Q 1/10      │  │  Q 1/10     │
+│ ㅊㅅㄱㅇ     │  │             │
+│ 정답: 초성게임│  │  ㅊ ㅅ ㄱ ㅇ │
+│             │  │             │
+│ 빠른 점수:   │  │ (큰 글씨)   │
+│ [김철수+100]│  │             │
+│ [이영희+100]│  └─────────────┘
+│ [박민수+100]│       ↓
+│ ...         │  참가자들 소리 지름
+│             │  "초성게임!"
+│ [+새참가자] │  "최신가요!"
+└─────────────┘       ↓
+    ↓             진행자 판단
+    ↓                 ↓
+[진행자 점수 부여]     ↓
+    ↓                 ↓
+[김철수 +100점] 버튼 클릭
+    ↓
+Redis 업데이트
+participants[김철수].score += 100
+    ↓
+WebSocket broadcast
+    ↓
+┌───────┴───────┐
+↓               ↓
+진행자 화면     프로젝터 화면
+리더보드 업데이트  "김철수 +100점!" 애니메이션
+    ↓               ↓
+TOP 5 순위      TOP 5 순위
+1. 김철수 100    1. 김철수 100
+2. -            2. -
+3. -            3. -
+    ↓
+┌───────────────────────────┐
+│ 선택 A: 다음 질문          │
+│ 선택 B: 새 참가자 추가     │
+└───┬───────────────┬───────┘
+    ↓               ↓
+[다음 질문]     [+ 새 참가자]
+(진행자 클릭)    (진행자 클릭)
+    ↓               ↓
+currentQuestionIndex++  이름 입력: "최수진"
+    ↓               ↓
+마지막 질문?      participants.push({
+    ↓              name: "최수진",
+[No] → 다시 질문 출제      score: 0
+    ↓            })
+[Yes] → [게임 종료]          ↓
+    ↓            리스트 업데이트
+    ↓            ↓
+    ↓            "최수진" 버튼 추가됨
+    ↓            ↓
+    ↓            [계속 게임 진행]
+    ↓
+[최종 결과 화면]
+(WebSocket broadcast)
+    ↓
+    ├─────────────┐
+    ↓             ↓
+진행자 화면     프로젝터 화면
+    ↓             ↓
+전체 순위       전체 순위
+통계:           대형 화면 표시
+- 참가자 11명
+  (사전 10명 + 추가 1명)
+- 평균 점수
+- 소요 시간
+    ↓
+[결과 공유]
+[다시 하기]
+[내 게임으로]
+    ↓
+[종료]
+```
+
+**MC 모드 핵심 차이점:**
+- ❌ 참가자는 WebSocket 연결 없음 (프로젝터 화면만)
+- ✅ 진행자만 WebSocket 연결 (태블릿/노트북)
+- ✅ 진행자가 수동으로 점수 부여
+- ✅ 게임 중 참가자 추가/삭제 가능
+- ✅ 한 문제에 여러 명 점수 부여 가능
+
+---
+
+### 5.5 실시간 동기화 플로우 (WebSocket)
+
+```
+[진행자 액션]
+(예: 게임 시작)
+    ↓
+socket.emit('start-game', { roomId })
+    ↓
+[WS Service 수신]
+    ↓
+Redis에서 room 상태 로드
+    ↓
+상태 검증
+(참가자 ≥ 1명?)
+    ↓
+[Yes]
+    ↓
+room.status = 'PLAYING'
+currentQuestionIndex = 0
+    ↓
+Redis 업데이트
+    ↓
+Redis Pub/Sub → 'room:123456' 채널
+    ↓
+┌────────────┴────────────┐
+↓                         ↓
+[진행자 클라이언트]   [모든 참가자 클라이언트들]
+socket.on('game-started')  socket.on('game-started')
+    ↓                         ↓
+게임 화면 전환            게임 화면 전환
+첫 질문 표시              첫 질문 표시
+    ↓                         ↓
+[UI 업데이트]             [UI 업데이트]
+```
+
+**Horizontal Scaling 지원:**
+```
+WS Service 1 ─┐
+              ├─→ Redis Pub/Sub ─→ WS Service 2
+WS Service 3 ─┘                    ↓
+                            참가자 클라이언트들
+```
+
+---
+
+## 6. 기능 명세 (Features)
+
+### 6.1 우선순위 매트릭스 (MoSCoW)
+
+| 우선순위 | 기능 | 설명 | Phase |
+|---------|------|------|-------|
+| **Must** (필수) |
+| M-001 | 회원가입/로그인 | 이메일 + 비밀번호 인증 | 1 |
+| M-002 | 토큰 관리 | JWT Access/Refresh Token | 1 |
+| M-003 | 게임 템플릿 조회 | 공개 템플릿 목록 (OX 퀴즈 3종) | 1 |
+| M-004 | 템플릿 즐겨찾기 | 별표 클릭 → 내 게임에 복사 | 1 |
+| M-005 | 게임 편집 | 질문 추가/수정/삭제, 순서 변경 | 1 |
+| M-006 | 방 생성 | 6자리 PIN + QR 코드 생성 | 1 |
+| M-007 | 참가자 입장 | PIN 입력 → 닉네임 → 대기실 | 1 |
+| M-008 | 대기실 | 실시간 참가자 목록 (WebSocket) | 1 |
+| M-009 | 게임 진행 (OX) | 질문 출제, 답변 제출, 정답 공개 | 1 |
+| M-010 | 리더보드 | 실시간 순위 TOP 5 | 1 |
+| M-011 | 결과 화면 | 최종 순위, 통계 | 1 |
+| M-012 | 내 게임 관리 | 조회, 편집, 삭제 | 1 |
+| M-013 | 반응형 디자인 | 모바일/태블릿/데스크톱 | 1 |
+| **Should** (해야 함) |
+| S-001 | 밸런스 게임 | 두 선택지 중 하나 선택 | 2 |
+| S-002 | 초성 게임 | 초성 보고 단어 맞추기 | 2 |
+| S-003 | 4지선다 퀴즈 | 4개 보기 중 정답 선택 | 2 |
+| S-004 | 고급 필터 | 카테고리, 인원, 시간 상세 필터 | 2 |
+| S-005 | 게임 기록 | 과거 게임 결과 조회 | 2 |
+| S-006 | QR 스캔 | 카메라로 QR 코드 스캔 입장 | 2 |
+| S-007 | 효과음/애니메이션 | 답변 제출, 정답 공개 시 효과 | 2 |
+| **Could** (하면 좋음) |
+| C-001 | 소셜 로그인 | 구글, 카카오 로그인 | 3 |
+| C-002 | 커뮤니티 템플릿 | 유저가 만든 템플릿 공유 | 3 |
+| C-003 | 평점/리뷰 | 템플릿에 별점, 리뷰 작성 | 3 |
+| C-004 | 유료 플랜 | Pro 기능 (커스텀 브랜딩 등) | 3 |
+| C-005 | 결과 PDF 다운로드 | 게임 결과 PDF 생성 | 3 |
+| **Won't** (하지 않음) |
+| W-001 | 모바일 앱 | 웹만 지원 (PWA로 대체 가능) | - |
+| W-002 | 음성 채팅 | 복잡도 높음, v2 고려 | - |
+| W-003 | AI 질문 생성 | 고비용, v2 고려 | - |
+
+### 6.2 기능별 상세 명세 (MVP)
+
+#### F-001: 사용자 인증
+
+**User Story:**
+```
+AS AN 진행자
+I WANT TO 회원가입하고 로그인하고
+SO THAT 내 게임을 저장하고 관리할 수 있다
 ```
 
 **Acceptance Criteria:**
-- Email validation (valid format, unique)
-- Password validation (min 8 chars, 1 uppercase, 1 number, 1 special char)
-- Password hashing with bcrypt (10 salt rounds)
-- Account created in PostgreSQL via Prisma
-- Returns JWT access token (15min) + refresh token (7d)
-- Refresh token stored in Redis
+- [ ] 이메일 형식 검증 (example@domain.com)
+- [ ] 비밀번호 강도 검증 (최소 8자, 대문자 1개, 숫자 1개, 특수문자 1개)
+- [ ] bcrypt 해싱 (10 salt rounds)
+- [ ] JWT Access Token 발급 (15분 만료)
+- [ ] Refresh Token 발급 (7일 만료, Redis 저장)
+- [ ] 중복 이메일 체크 (409 Conflict)
+- [ ] 로그인 실패 시 401 Unauthorized
 
-**US-002: User Login**
-```
-AS AN organizer
-I WANT TO log in with my credentials
-SO THAT I can access my saved games
-```
+**API Endpoint:**
+- POST `/api/auth/signup`
+- POST `/api/auth/login`
+- POST `/api/auth/refresh`
+- POST `/api/auth/logout`
 
-**Acceptance Criteria:**
-- Email + password validation
-- bcrypt password comparison
-- JWT access token issued (15min expiry)
-- Refresh token issued (7d expiry, stored in Redis)
-- Session created and shared across services
-- Failed login returns 401 Unauthorized
+**Priority:** Must (M-001, M-002)
 
-**US-003: Token Refresh**
+---
+
+#### F-002: 게임 템플릿 조회
+
+**User Story:**
 ```
-AS AN authenticated organizer
-I WANT TO refresh my access token automatically
-SO THAT I can continue using the platform without re-login
+AS AN 진행자
+I WANT TO 공개 게임 템플릿을 둘러보고
+SO THAT 마음에 드는 게임을 선택할 수 있다
 ```
 
 **Acceptance Criteria:**
-- Valid refresh token required
-- New access token issued (15min)
-- Old refresh token invalidated
-- New refresh token issued and stored
-- Invalid/expired refresh tokens return 401
+- [ ] 공개 템플릿 목록 표시 (OX 퀴즈 3종)
+- [ ] 각 카드에 표시:
+  - 제목, 설명, 썸네일
+  - 모바일 필요 여부 (badge)
+  - 예상 시간, 인원
+  - 즐겨찾기 수 (⭐ 342)
+  - [방 만들기] [미리보기] 버튼
+- [ ] 필터: 모바일 필요/불필요
+- [ ] 정렬: 인기순, 최신순, 이름순
+- [ ] 페이지네이션 (20개씩)
 
-**US-004: User Logout**
-```
-AS AN authenticated organizer
-I WANT TO log out of my account
-SO THAT my session is terminated securely
-```
+**API Endpoint:**
+- GET `/api/templates?needsMobile=all&sort=popularity&page=1&limit=20`
 
-**Acceptance Criteria:**
-- Refresh token removed from Redis
-- Access token invalidated
-- Session destroyed
-- Returns 200 OK
+**Priority:** Must (M-003)
 
 ---
 
-### 4.2 Game Library (Game Service)
+#### F-003: 게임 편집
 
-**US-005: Browse Game Templates**
+**User Story:**
 ```
-AS AN organizer
-I WANT TO browse available game templates with filters
-SO THAT I can find the right game for my event
+AS AN 진행자
+I WANT TO 게임 내용을 수정하고
+SO THAT 우리 행사에 맞게 커스터마이징할 수 있다
 ```
 
 **Acceptance Criteria:**
-- Display all public game templates
-- Filter by:
-  - Mobile requirement (required/not-required/all)
-  - Category (ice-breaking, quiz, music, etc.)
-  - Duration (5/10/30/60 min)
-  - Player count (5-10, 10-30, 30+)
-- Sort by popularity, newest, name
-- Show favorite (starred) games at top
-- Each card displays:
-  - Game title, description, thumbnail
-  - Mobile requirement badge
-  - Estimated duration, player count
-  - Rating and play count
-  - [Create Room] button, [Preview] button
+- [ ] 제목, 설명 수정 가능
+- [ ] 질문 추가/수정/삭제
+- [ ] 드래그 앤 드롭으로 질문 순서 변경
+- [ ] 이미지 업로드 (jpg, png, gif, 최대 5MB)
+- [ ] 유튜브 동영상 URL 입력
+- [ ] 오디오 업로드 (mp3, 최대 10MB)
+- [ ] 설정 변경:
+  - 시간 제한 (5-60초 or 무제한)
+  - 정답당 점수 (기본 100점)
+  - 시간 보너스 활성화/비활성화
+  - 효과음 활성화/비활성화
+- [ ] [저장 & 방 만들기] 버튼
+- [ ] [취소] 버튼 (변경사항 버림)
 
-**US-006: Preview Game Template**
-```
-AS AN organizer
-I WANT TO preview a game template
-SO THAT I can understand the game before using it
-```
+**API Endpoint:**
+- POST `/api/games` (새 게임 생성)
+- PUT `/api/games/:id` (기존 게임 수정)
+- POST `/api/games/:id/rooms` (방 생성)
 
-**Acceptance Criteria:**
-- Modal shows:
-  - Full game description
-  - Sample questions/content
-  - Rules and scoring system
-  - Mobile requirement details
-  - Video/GIF demo (if available)
-- [Create Room] button in modal
-- Close modal without navigation
+**Priority:** Must (M-005)
 
-**US-007: Add to Favorites (Star)**
+---
+
+#### F-004: 실시간 게임 플레이 (OX 퀴즈)
+
+**User Story:**
 ```
-AS AN organizer
-I WANT TO bookmark favorite games
-SO THAT I can quickly access them later
+AS A 참가자
+I WANT TO 실시간으로 OX 질문에 답하고
+SO THAT 다른 참가자들과 경쟁할 수 있다
 ```
 
 **Acceptance Criteria:**
-- Click star icon (☆) to add to favorites
-- Auto-creates a copy in "My Games"
-- Star becomes filled (⭐)
-- Toast notification: "Added to favorites"
-- Click again to remove from favorites
-- Favorites shown at top of "Browse" and "My Games"
+- [ ] 진행자 화면:
+  - 질문 번호 (Q 1/10)
+  - 질문 텍스트
+  - O/X 선택지 (이미지 포함)
+  - 실시간 응답 현황 (15/30 응답)
+  - 타이머 (카운트다운)
+  - [정답 공개] 버튼
+- [ ] 참가자 화면:
+  - 질문 텍스트
+  - 큰 [O] [X] 버튼 (터치 친화적)
+  - 타이머 (카운트다운)
+  - 답변 후 "대기 중..." 표시
+- [ ] 답변 제출 → 버튼 비활성화
+- [ ] 정답 공개 → 정답 강조 (✅/❌)
+- [ ] 응답 통계 표시 (O: 85%, X: 15%)
+- [ ] TOP 5 리더보드 실시간 업데이트
+- [ ] 점수 변화 애니메이션 (+100)
+- [ ] [다음 질문] 버튼 (진행자만)
+
+**WebSocket Events:**
+- `start-game` (진행자 → 서버)
+- `game-started` (서버 → 모두)
+- `question-start` (서버 → 모두)
+- `submit-answer` (참가자 → 서버)
+- `answer-submitted` (서버 → 진행자)
+- `reveal-answer` (진행자 → 서버)
+- `answer-revealed` (서버 → 모두)
+- `next-question` (진행자 → 서버)
+- `game-ended` (서버 → 모두)
+
+**Priority:** Must (M-009, M-010)
 
 ---
 
-### 4.3 Game Customization (Game Service)
+#### F-005: MC 모드 참가자 관리 & 점수 부여
 
-**US-008: Edit Game Template**
+**User Story:**
 ```
-AS AN organizer
-I WANT TO edit game content (questions, images, settings)
-SO THAT I can customize it for my event
-```
-
-**Acceptance Criteria:**
-- Edit screen shows:
-  - Game title (editable)
-  - Game settings (time limits, sound effects, scoring)
-  - Question list (add, edit, delete, reorder)
-- Drag & drop to reorder questions
-- Add/remove questions
-- Edit question text and options
-- Upload images (jpg, png, gif)
-- Insert YouTube videos
-- Upload audio files (mp3)
-- [Save and Create Room] button
-- [Cancel] button
-
-**US-009: Create Room from Template**
-```
-AS AN organizer
-I WANT TO create a game room with customized content
-SO THAT participants can join and play
-```
-
-**Acceptance Criteria:**
-- After editing, click [Save and Create Room]
-- Game saved to "My Games"
-- 6-digit PIN generated (unique)
-- QR code generated for PIN
-- Room created in PostgreSQL
-- Room status: "waiting"
-- Redirect to PIN display screen
-- Display PIN, QR code, and join instructions
-
-**US-010: My Games Management**
-```
-AS AN organizer
-I WANT TO view and manage my saved games
-SO THAT I can reuse them for future events
+AS AN 진행자
+I WANT TO MC 모드에서 참가자를 관리하고 수동으로 점수를 부여하고
+SO THAT 폰 없이도 재미있는 게임을 진행할 수 있다
 ```
 
 **Acceptance Criteria:**
-- "My Games" tab shows all user's games
-- Filter by favorites only
-- Sort by: last played, modified date, name
-- Each card shows:
-  - Game title, type
-  - Question count
-  - Last played/modified timestamp
-  - [Create Room] button (direct, no edit)
-  - [Edit] button
-  - [Delete] button
-- Delete confirmation modal
-- Play count tracking
 
----
-
-### 4.4 Room & Lobby (Game Service + WS Service)
-
-**US-011: Display Room PIN**
-```
-AS AN organizer
-I WANT TO see the room PIN and QR code
-SO THAT participants can join
-```
-
-**Acceptance Criteria:**
-- Large 6-digit PIN displayed
-- [Copy PIN] button
-- QR code displayed
-- Join instructions: "Go to xingu.com and enter PIN"
-- Real-time participant list (0 initially)
-- [Full Screen] button (presentation mode)
-- [Start Game] button (enabled when ≥1 participant)
-
-**US-012: Participant Join Room**
-```
-AS A participant
-I WANT TO join a game room with PIN
-SO THAT I can participate in the game
-```
-
-**Acceptance Criteria:**
-- Home page has PIN input field (6 digits)
-- QR code scanner option
-- Enter PIN → nickname setup page
-- Nickname validation (1-20 chars, no profanity)
-- Enter nickname → join room via WebSocket
-- Enter lobby/waiting room
-- See other participants joining in real-time
-
-**US-013: Waiting Room**
-```
-AS AN organizer
-I WANT TO see participants joining in real-time
-SO THAT I know when to start the game
-```
-
-**Acceptance Criteria:**
-- Real-time participant list updates via WebSocket
-- Show participant count
-- Show participant nicknames with checkmarks (✅)
-- [Start Game] button becomes enabled when ≥1 participant
-- Click [Start Game] → game begins for all participants
-
----
-
-### 4.5 Game Play (WS Service)
-
-**US-014: Play OX Quiz (MVP Game)**
-```
-AS A participant
-I WANT TO answer OX questions in real-time
-SO THAT I can compete with others
-```
-
-**Acceptance Criteria:**
-- Organizer screen shows:
-  - Question number (Q 1/10)
-  - Question text
-  - O/X options with images
-  - Response stats (real-time)
-  - Timer (if enabled)
-  - [Reveal Answer] button
-- Participant screen shows:
-  - Question text
-  - Large [O] and [X] buttons
-  - Timer countdown (if enabled)
-  - "Waiting for others..." after submission
-- Submit answer → disable buttons
-- Real-time response count on organizer screen
-- Organizer clicks [Reveal Answer] → show correct answer
-
-**US-015: Answer Reveal & Scoring**
-```
-AS AN organizer
-I WANT TO reveal answers and update scores
-SO THAT participants can see results
-```
-
-**Acceptance Criteria:**
-- Correct answer highlighted (✅)
-- Wrong answer marked (❌)
-- Response statistics displayed (% per option)
-- TOP 5 leaderboard shown
-- Score changes displayed (+100, +0)
-- [Next Question] button
-- Click [Next] → next question loads for all
-
-**US-016: Game End & Results**
-```
-AS AN organizer
-I WANT TO see final results when game ends
-SO THAT I can announce winners
-```
-
-**Acceptance Criteria:**
-- After last question, auto-navigate to results screen
-- Display:
-  - 🏆 Final Rankings (1st 🥇, 2nd 🥈, 3rd 🥉)
-  - All participant scores
-  - Game statistics:
-    - Total participants
-    - Average score
-    - Total duration
-    - Hardest question (lowest accuracy)
-- Actions:
-  - [Share Results] button
-  - [Download PDF] button (Pro plan)
-  - [Play Again] button (new room, same game)
-  - [Back to My Games] button
-
----
-
-### 4.6 Non-Functional Requirements
-
-**US-017: Real-time Synchronization**
-```
-AS A system
-I WANT TO synchronize game state across all clients in real-time
-SO THAT all participants see the same game state
-```
-
-**Acceptance Criteria:**
-- <100ms latency for WebSocket events
-- Redis Pub/Sub for horizontal scaling
-- Auto-reconnection on disconnect
-- State recovery on reconnect
-- Handle 100 concurrent rooms
-- Handle 50 participants per room
-
-**US-018: Data Validation**
-```
-AS A system
-I WANT TO validate all user inputs with Zod
-SO THAT invalid data is rejected
-```
-
-**Acceptance Criteria:**
-- All API requests validated with Zod schemas
-- Validation errors return 400 with detailed messages
-- Type-safe validation across services
-- Shared Zod schemas in `@xingu/shared`
-
-**US-019: Error Handling**
-```
-AS A system
-I WANT TO handle errors gracefully
-SO THAT users see friendly error messages
-```
-
-**Acceptance Criteria:**
-- Custom error classes (AppError, AuthError, ValidationError)
-- User-friendly error messages (no technical details)
-- Error logging (dev: console, prod: Sentry)
-- 4xx errors for client mistakes
-- 5xx errors for server issues
-- Error boundaries in React
-
----
-
-## 5. Functional Requirements
-
-### 5.1 Authentication System
-
-**FR-001: User Registration**
-- Email + password registration
-- Email format validation
-- Password strength validation (min 8 chars, 1 uppercase, 1 number, 1 special)
-- Unique email constraint
-- bcrypt password hashing (10 salt rounds)
-- JWT access token (15min expiry)
-- Refresh token (7d expiry, stored in Redis)
-- User record created in PostgreSQL
-
-**FR-002: User Login**
-- Email + password authentication
-- bcrypt password comparison
-- JWT access token issuance
-- Refresh token issuance (stored in Redis)
-- Session creation (shared across services)
-- Failed login lockout (5 attempts, 15min cooldown)
-
-**FR-003: Token Management**
-- JWT access token validation middleware
-- Refresh token endpoint
-- Token rotation (new refresh token on refresh)
-- Token revocation on logout
-- Redis session store (TTL 7 days)
-
-**FR-004: Authorization**
-- Role-based access control (RBAC): Organizer, Admin
-- JWT contains: userId, email, role
-- Protected routes require valid access token
-- Admin-only routes (future: user management, analytics)
-
----
-
-### 5.2 Game Template System
-
-**FR-005: Game Template CRUD**
-- Public templates (read-only for organizers)
-- User games (full CRUD by owner)
-- Game types: OX Quiz (MVP), Balance Game, Initial Quiz (Phase 2)
-- Template fields:
-  - Title, description, thumbnail
-  - Category, duration, player count
-  - Mobile requirement (boolean)
-  - Questions array (content varies by game type)
-  - Settings (time limits, scoring, effects)
-
-**FR-006: Game Filtering & Sorting**
-- Filter by:
-  - Mobile requirement (required/not-required/all)
-  - Category (ice-breaking, quiz, music, vote, entertainment, meme)
-  - Duration (5, 10, 30, 60 min)
-  - Player count (5-10, 10-30, 30+)
-- Sort by:
-  - Popularity (play count, rating)
-  - Newest (created date)
-  - Name (alphabetical)
-
-**FR-007: Favorites (Starring)**
-- Star/unstar game templates
-- Starred games create copy in "My Games"
-- Favorites shown at top of Browse and My Games
-- Star count tracked for popularity
-
-**FR-008: Game Customization**
-- Edit game title, description
-- Add/edit/delete questions
-- Drag & drop reorder questions
-- Upload media (images, audio, video URLs)
-- Configure game settings:
-  - Time limit per question (5-60s or unlimited)
-  - Scoring rules (points per correct answer)
-  - Sound effects (on/off)
-  - Background theme (basic/pro)
-
----
-
-### 5.3 Room Management
-
-**FR-009: Room Creation**
-- Generate unique 6-digit PIN (numeric only)
-- Generate QR code (PIN embedded)
-- Room fields:
-  - PIN (unique, indexed)
-  - Game ID (reference to game template)
-  - Organizer ID (user who created room)
-  - Status (waiting, playing, finished)
-  - Created at, started at, ended at
-- Room expiration: 4 hours after creation (auto-cleanup)
-
-**FR-010: Room State Management**
-- Status transitions: waiting → playing → finished
-- Current question index
-- Participant list (nicknames, scores, connection status)
-- Answer submissions per question
-- Real-time state stored in Redis
-- State synchronized via WebSocket
-
-**FR-011: Participant Management**
-- Join room with PIN
-- Set nickname (unique per room)
-- Connection tracking (online/offline)
-- Auto-remove on disconnect (30s timeout)
-- Kick participant (organizer only)
-
----
-
-### 5.4 Game Play Logic
-
-**FR-012: OX Quiz (MVP)**
-- Question structure:
-  - Question text
-  - Correct answer (O or X)
-  - Optional: image, explanation
-- Participant answer submission
-- Answer validation (O or X)
-- Scoring: +100 points for correct, 0 for wrong
-- Time bonus (if time limit enabled): +10 points per second remaining
-- Real-time response tracking
-- Answer reveal by organizer
-- Leaderboard update after each question
-
-**FR-013: Real-time Events (WebSocket)**
-- `join-room`: Participant joins room (PIN + nickname)
-- `participant-joined`: Broadcast to all (new participant info)
-- `participant-left`: Broadcast to all (participant disconnect)
-- `start-game`: Organizer starts game
-- `question-start`: New question sent to all participants
-- `submit-answer`: Participant submits answer (O/X)
-- `answer-submitted`: Broadcast to organizer (response count)
-- `reveal-answer`: Organizer reveals correct answer
-- `answer-revealed`: Broadcast results and scores
-- `next-question`: Organizer moves to next question
-- `game-end`: Final results sent to all
-
-**FR-014: Game Results**
-- Final leaderboard (all participants ranked)
-- Game statistics:
-  - Total participants
-  - Average score
-  - Total duration (HH:MM:SS)
-  - Hardest question (lowest accuracy)
-  - Easiest question (highest accuracy)
-- Results stored in PostgreSQL (GameResult table)
-- Share results (copy link, social media)
-- Download PDF (Pro plan only)
-
----
-
-### 5.5 Data Persistence
-
-**FR-015: Game History**
-- Store completed games (GameResult)
-- Organizer can view past games
-- Participant list and scores saved
-- Statistics saved for analytics
-- Replay not supported (MVP)
-
-**FR-016: Play Count & Ratings**
-- Track play count per game template
-- Track star count (favorites)
-- Future: user ratings (1-5 stars)
-
----
-
-## 6. Non-Functional Requirements
-
-### 6.1 Performance
-
-**NFR-001: Response Time**
-- API response time: <200ms (p95)
-- WebSocket event latency: <100ms (p95)
-- Page load time: <3s (p95)
-- Time to Interactive (TTI): <5s
-
-**NFR-002: Scalability**
-- Support 100 concurrent rooms
-- Support 50 participants per room (5000 concurrent users)
-- Horizontal scaling via Docker + Kubernetes (production)
-- Redis Pub/Sub for WebSocket horizontal scaling
-
-**NFR-003: Availability**
-- 99% uptime (MVP)
-- Auto-restart on crash (Docker restart policy)
-- Health checks for all services
-- Graceful degradation (WebSocket fallback to polling)
-
----
-
-### 6.2 Security
-
-**NFR-004: Authentication & Authorization**
-- JWT-based authentication
-- Short-lived access tokens (15min)
-- Long-lived refresh tokens (7d, revocable)
-- bcrypt password hashing (10 salt rounds)
-- Rate limiting:
-  - Auth endpoints: 5 req/min per IP
-  - API endpoints: 100 req/min per user
-  - WebSocket connections: 10 per user
-
-**NFR-005: Data Security**
-- SQL injection prevention (Prisma parameterized queries)
-- XSS prevention (React auto-escaping, CSP headers)
-- CSRF protection (SameSite cookies, CSRF tokens)
-- HTTPS only (SSL/TLS via Nginx)
-- Environment variables for secrets
-- Docker secrets for production
-
-**NFR-006: Input Validation**
-- All inputs validated with Zod
-- Request body validation
-- Query parameter validation
-- File upload validation (size, type)
-- Profanity filter for nicknames (future)
-
----
-
-### 6.3 Reliability
-
-**NFR-007: Error Handling**
-- Custom error classes (AppError, AuthError, ValidationError, NotFoundError)
-- User-friendly error messages
-- Error logging (dev: console, prod: Sentry)
-- Retry logic for network failures
-- Circuit breaker for external services (future)
-
-**NFR-008: Data Integrity**
-- Database constraints (unique, foreign keys, not null)
-- Transaction support (Prisma)
-- Referential integrity (cascade delete)
-- Backup strategy (daily PostgreSQL backups)
-
----
-
-### 6.4 Usability
-
-**NFR-009: Accessibility**
-- WCAG 2.1 Level AA compliance
-- Keyboard navigation support
-- Screen reader support (ARIA labels)
-- Color contrast ratio ≥4.5:1
-- Focus indicators
-
-**NFR-010: Responsive Design**
-- Mobile-first design
-- Responsive breakpoints: 640px (mobile), 768px (tablet), 1024px (desktop)
-- Touch-friendly buttons (min 44x44px)
-- Viewport meta tags
-
-**NFR-011: Browser Compatibility**
-- Chrome 90+
-- Safari 14+
-- Firefox 90+
-- Edge 90+
-- Mobile Safari (iOS 14+)
-- Mobile Chrome (Android 10+)
-
----
-
-### 6.5 Maintainability
-
-**NFR-012: Code Quality**
-- TypeScript strict mode
-- ESLint + Prettier
-- No `any` types (use `unknown`)
-- SOLID principles
-- Max file size: 500 lines
-
-**NFR-013: Testing**
-- Unit test coverage: ≥80%
-- Integration tests for all API endpoints
-- E2E tests for critical flows
-- WebSocket event tests
-
-**NFR-014: Documentation**
-- API documentation (OpenAPI/Swagger)
-- README for each service
-- Inline comments for complex logic
-- Architecture diagrams
-
----
-
-## 7. Database Schema Design
-
-### 7.1 Prisma Schema
-
-```prisma
-// packages/database/prisma/schema.prisma
-
-generator client {
-  provider = "prisma-client-js"
-}
-
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-}
-
-// ========================================
-// User & Authentication
-// ========================================
-
-model User {
-  id            String   @id @default(cuid())
-  email         String   @unique
-  passwordHash  String
-  name          String?
-  role          Role     @default(ORGANIZER)
-
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  // Relations
-  games         Game[]
-  rooms         Room[]
-  favorites     Favorite[]
-
-  @@index([email])
-  @@map("users")
-}
-
-enum Role {
-  ORGANIZER
-  ADMIN
-}
-
-// Refresh tokens stored in Redis (not in DB)
-// Format: refresh_token:{tokenId} -> { userId, expiresAt }
-
-// ========================================
-// Game Templates
-// ========================================
-
-model Game {
-  id              String      @id @default(cuid())
-  title           String
-  description     String?
-  thumbnail       String?
-
-  // Classification
-  gameType        GameType
-  category        Category
-  isPublic        Boolean     @default(false) // Public templates vs user games
-
-  // Metadata
-  duration        Int         // Minutes
-  minPlayers      Int         @default(5)
-  maxPlayers      Int         @default(100)
-  needsMobile     Boolean     // Mobile required?
-
-  // Stats
-  playCount       Int         @default(0)
-  favoriteCount   Int         @default(0)
-
-  // Settings
-  settings        Json        // Game-specific settings (time limits, scoring)
-
-  // Content
-  questions       Question[]
-
-  // Ownership
-  userId          String?     // Null for public templates
-  user            User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
-
-  // Relations
-  rooms           Room[]
-  favorites       Favorite[]
-
-  @@index([gameType, isPublic])
-  @@index([category, isPublic])
-  @@index([userId])
-  @@map("games")
-}
-
-enum GameType {
-  OX_QUIZ           // MVP
-  BALANCE_GAME      // Phase 2
-  INITIAL_QUIZ      // Phase 2
-  FOUR_CHOICE_QUIZ  // Phase 2
-  SPEED_QUIZ        // Phase 3
-}
-
-enum Category {
-  ICE_BREAKING
-  QUIZ
-  MUSIC
-  VOTE
-  ENTERTAINMENT
-  MEME
-}
-
-// ========================================
-// Questions
-// ========================================
-
-model Question {
-  id          String   @id @default(cuid())
-  gameId      String
-  game        Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
-
-  order       Int      // Question order in game
-  content     String   // Question text
-  data        Json     // Question-specific data (varies by game type)
-
-  // Media
-  imageUrl    String?
-  videoUrl    String?
-  audioUrl    String?
-
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@index([gameId, order])
-  @@map("questions")
-}
-
-// Question.data structure by GameType:
-// OX_QUIZ:
-// {
-//   "correctAnswer": "O" | "X",
-//   "explanation": "Optional explanation text"
-// }
-//
-// BALANCE_GAME:
-// {
-//   "optionA": "Option A text",
-//   "optionB": "Option B text"
-// }
-//
-// FOUR_CHOICE_QUIZ:
-// {
-//   "options": ["A", "B", "C", "D"],
-//   "correctAnswer": 0 | 1 | 2 | 3,
-//   "explanation": "Optional explanation"
-// }
-
-// ========================================
-// Favorites (Starring)
-// ========================================
-
-model Favorite {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  gameId    String
-  game      Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now())
-
-  @@unique([userId, gameId])
-  @@index([userId])
-  @@map("favorites")
-}
-
-// ========================================
-// Rooms & Game Sessions
-// ========================================
-
-model Room {
-  id            String      @id @default(cuid())
-  pin           String      @unique // 6-digit numeric PIN
-
-  gameId        String
-  game          Game        @relation(fields: [gameId], references: [id], onDelete: Cascade)
-
-  organizerId   String
-  organizer     User        @relation(fields: [organizerId], references: [id], onDelete: Cascade)
-
-  status        RoomStatus  @default(WAITING)
-
-  // Timestamps
-  createdAt     DateTime    @default(now())
-  startedAt     DateTime?
-  endedAt       DateTime?
-  expiresAt     DateTime    // Auto-cleanup after 4 hours
-
-  // Relations
-  result        GameResult?
-
-  @@index([pin])
-  @@index([organizerId])
-  @@index([expiresAt]) // For cleanup job
-  @@map("rooms")
-}
-
-enum RoomStatus {
-  WAITING   // Participants joining
-  PLAYING   // Game in progress
-  FINISHED  // Game completed
-}
-
-// Room real-time state stored in Redis:
-// room:{roomId} -> {
-//   currentQuestionIndex: number,
-//   participants: [{ nickname, score, online }],
-//   answers: { [questionIndex]: { [nickname]: answer } }
-// }
-
-// ========================================
-// Game Results
-// ========================================
-
-model GameResult {
-  id              String   @id @default(cuid())
-  roomId          String   @unique
-  room            Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
-
-  // Statistics
-  participantCount Int
-  duration         Int      // Seconds
-  averageScore     Float
-
-  // Leaderboard (top 10)
-  leaderboard      Json     // [{ nickname, score, rank }]
-
-  // Question stats
-  questionStats    Json     // [{ questionIndex, correctRate, avgTime }]
-
-  createdAt        DateTime @default(now())
-
-  @@index([roomId])
-  @@map("game_results")
-}
-```
-
----
-
-### 7.2 Redis Data Structures
-
-**Session Store (Auth Service)**
-```
-Key: session:{userId}
-Value: { accessToken, refreshToken, expiresAt }
-TTL: 7 days
-```
-
-**Refresh Tokens**
-```
-Key: refresh_token:{tokenId}
-Value: { userId, email, expiresAt }
-TTL: 7 days
-```
-
-**Room State (WS Service)**
-```
-Key: room:{roomId}
-Value: {
-  pin: string,
-  gameId: string,
-  organizerId: string,
-  status: "waiting" | "playing" | "finished",
-  currentQuestionIndex: number,
-  participants: [
-    { nickname: string, socketId: string, score: number, online: boolean }
-  ],
-  answers: {
-    [questionIndex]: {
-      [nickname]: { answer: string, timestamp: number }
-    }
-  }
-}
-TTL: 4 hours
-```
-
-**Rate Limiting**
-```
-Key: rate_limit:auth:{ip}
-Value: request count
-TTL: 60 seconds
-
-Key: rate_limit:api:{userId}
-Value: request count
-TTL: 60 seconds
-```
-
----
-
-### 7.3 Database Migrations Strategy
-
-1. **Initial Migration**: Create all tables
-2. **Seed Data**: Populate public game templates (OX Quiz examples)
-3. **Indexes**: Add indexes for performance
-4. **Constraints**: Foreign keys, unique constraints
-
-**Prisma Commands:**
-```bash
-# Generate Prisma Client
-npx prisma generate
-
-# Create migration
-npx prisma migrate dev --name init
-
-# Apply migration (production)
-npx prisma migrate deploy
-
-# Seed database
-npx prisma db seed
-```
-
----
-
-## 8. API Specifications
-
-### Service Architecture Overview (6 Microservices)
-
-**Updated**: 2025-11-11 - Refactored from 3 services to 6 services for better separation of concerns
-
-| Service | Port | Base URL | Purpose |
-|---------|------|----------|---------|
-| **Auth Service** | 3001 | `/api/auth` | User authentication, JWT management |
-| **Template Service** | 3002 | `/api/templates` | Public game templates (read-only, cached) |
-| **Game Service** | 3003 | `/api/games` | My games CRUD, customization |
-| **Room Service** | 3004 | `/api/rooms` | Room creation, PIN management |
-| **WS Service** | 3005 | `/ws` | Real-time gameplay (WebSocket) |
-| **Result Service** | 3006 | `/api/results` | Game results, statistics, leaderboards |
-
----
-
-### 8.1 Auth Service API (NestJS)
-
-**Base URL**: `http://localhost:3001/api/auth` (dev)
-**Production**: `https://xingu.com/api/auth` (via Nginx)
-
----
-
-#### 8.1.1 POST /signup
-
-**Description**: Register a new user
-
-**Request:**
-```json
-{
-  "email": "user@example.com",
-  "password": "SecurePass123!",
-  "name": "John Doe"
-}
-```
-
-**Validation (Zod):**
-```typescript
-{
-  email: z.string().email(),
-  password: z.string()
-    .min(8, "Password must be at least 8 characters")
-    .regex(/[A-Z]/, "Password must contain uppercase letter")
-    .regex(/[0-9]/, "Password must contain number")
-    .regex(/[^A-Za-z0-9]/, "Password must contain special character"),
-  name: z.string().min(1).max(100).optional()
-}
-```
-
-**Response (201 Created):**
-```json
-{
-  "user": {
-    "id": "ckl1j2k3l4m5n6o7p8q9",
-    "email": "user@example.com",
-    "name": "John Doe",
-    "role": "ORGANIZER",
-    "createdAt": "2025-11-11T10:00:00Z"
-  },
-  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-}
-```
-
-**Errors:**
-- 400 Bad Request: Validation failed
-- 409 Conflict: Email already exists
-
----
-
-#### 8.1.2 POST /login
-
-**Description**: Authenticate user
-
-**Request:**
-```json
-{
-  "email": "user@example.com",
-  "password": "SecurePass123!"
-}
-```
-
-**Response (200 OK):**
-```json
-{
-  "user": {
-    "id": "ckl1j2k3l4m5n6o7p8q9",
-    "email": "user@example.com",
-    "name": "John Doe",
-    "role": "ORGANIZER"
-  },
-  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-}
-```
-
-**Errors:**
-- 400 Bad Request: Missing credentials
-- 401 Unauthorized: Invalid credentials
-- 429 Too Many Requests: Rate limit exceeded (5 attempts)
-
----
-
-#### 8.1.3 POST /refresh
-
-**Description**: Refresh access token
-
-**Request:**
-```json
-{
-  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-}
-```
-
-**Response (200 OK):**
-```json
-{
-  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." // New refresh token
-}
-```
-
-**Errors:**
-- 401 Unauthorized: Invalid or expired refresh token
-
----
-
-#### 8.1.4 POST /logout
-
-**Description**: Logout user (invalidate tokens)
-
-**Request Headers:**
-```
-Authorization: Bearer {accessToken}
-```
-
-**Request:**
-```json
-{
-  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-}
-```
-
-**Response (200 OK):**
-```json
-{
-  "message": "Logged out successfully"
-}
-```
-
----
-
-#### 8.1.5 GET /me
-
-**Description**: Get current user info
-
-**Request Headers:**
-```
-Authorization: Bearer {accessToken}
-```
-
-**Response (200 OK):**
-```json
-{
-  "id": "ckl1j2k3l4m5n6o7p8q9",
-  "email": "user@example.com",
-  "name": "John Doe",
-  "role": "ORGANIZER",
-  "createdAt": "2025-11-11T10:00:00Z"
-}
-```
-
-**Errors:**
-- 401 Unauthorized: Invalid or expired access token
-
----
-
-### 8.2 Template Service API (Express)
-
-**Base URL**: `http://localhost:3002/api/templates` (dev)
-**Production**: `https://xingu.com/api/templates` (via Nginx)
-
-**Port**: 3002
-**Authentication**: Optional (public templates, but favorite requires auth)
-**Purpose**: Public game templates (read-only, heavy caching)
-
----
-
-#### 8.2.1 GET /
-
-**Description**: Get all public game templates with filters
-
-**Query Parameters:**
-```
-?needsMobile=true|false|all  (default: all)
-&category=ICE_BREAKING|QUIZ|MUSIC|VOTE|ENTERTAINMENT|MEME|all  (default: all)
-&duration=5|10|30|60|all  (default: all)
-&minPlayers=5|10|30|all  (default: all)
-&sort=popularity|newest|name  (default: popularity)
-&page=1  (default: 1)
-&limit=20  (default: 20)
-```
-
-**Response (200 OK):**
-```json
-{
-  "templates": [
-    {
-      "id": "ckl1j2k3l4m5n6o7p8q9",
-      "title": "OX Quiz - General Knowledge",
-      "description": "Test your general knowledge with O/X questions",
-      "thumbnail": "https://cdn.xingu.com/templates/ox-quiz.jpg",
-      "gameType": "OX_QUIZ",
-      "category": "QUIZ",
-      "duration": 10,
-      "minPlayers": 5,
-      "maxPlayers": 100,
-      "needsMobile": true,
-      "playCount": 1520,
-      "favoriteCount": 342,
-      "isFavorited": false,  // Based on current user
-      "createdAt": "2025-11-01T10:00:00Z"
-    },
-    // ... more templates
-  ],
-  "pagination": {
-    "page": 1,
-    "limit": 20,
-    "total": 24,
-    "totalPages": 2
-  }
-}
-```
-
----
-
-#### 8.2.2 GET /:id
-
-**Description**: Get single game template details
-
-**Response (200 OK):**
-```json
-{
-  "id": "ckl1j2k3l4m5n6o7p8q9",
-  "title": "OX Quiz - General Knowledge",
-  "description": "Test your general knowledge with O/X questions",
-  "thumbnail": "https://cdn.xingu.com/templates/ox-quiz.jpg",
-  "gameType": "OX_QUIZ",
-  "category": "QUIZ",
-  "duration": 10,
-  "minPlayers": 5,
-  "maxPlayers": 100,
-  "needsMobile": true,
-  "playCount": 1520,
-  "favoriteCount": 342,
-  "isFavorited": false,
-  "settings": {
-    "timeLimit": 30,  // seconds per question
-    "pointsPerCorrect": 100,
-    "timeBonusEnabled": true,
-    "soundEnabled": true
-  },
-  "questions": [
-    {
-      "id": "q1",
-      "order": 1,
-      "content": "The Earth is flat.",
-      "imageUrl": null,
-      "videoUrl": null,
-      "audioUrl": null,
-      "data": {
-        "correctAnswer": "X",
-        "explanation": "The Earth is an oblate spheroid (round)."
-      }
-    },
-    // ... more questions
-  ],
-  "createdAt": "2025-11-01T10:00:00Z",
-  "updatedAt": "2025-11-05T15:30:00Z"
-}
-```
-
-**Errors:**
-- 404 Not Found: Template not found
-
----
-
-#### 8.2.3 POST /templates/:id/favorite
-
-**Description**: Add template to favorites (creates copy in My Games)
-
-**Response (201 Created):**
-```json
-{
-  "message": "Added to favorites",
-  "game": {
-    "id": "new-game-id",
-    "title": "OX Quiz - General Knowledge (Copy)",
-    "isFavorited": true,
-    // ... full game object
-  }
-}
-```
-
-**Errors:**
-- 404 Not Found: Template not found
-- 409 Conflict: Already favorited
-
----
-
-#### 8.2.4 DELETE /templates/:id/favorite
-
-**Description**: Remove template from favorites
-
-**Response (200 OK):**
-```json
-{
-  "message": "Removed from favorites"
-}
-```
-
----
-
-#### 8.2.5 GET /my-games
-
-**Description**: Get current user's games
-
-**Query Parameters:**
-```
-?favoritesOnly=true|false  (default: false)
-&sort=lastPlayed|modified|name  (default: lastPlayed)
-&page=1  (default: 1)
-&limit=20  (default: 20)
-```
-
-**Response (200 OK):**
-```json
-{
-  "games": [
-    {
-      "id": "user-game-id",
-      "title": "Company MT Balance Game",
-      "gameType": "BALANCE_GAME",
-      "category": "ICE_BREAKING",
-      "duration": 10,
-      "needsMobile": false,
-      "questionCount": 10,
-      "playCount": 3,
-      "isFavorited": true,
-      "lastPlayedAt": "2025-11-10T14:30:00Z",
-      "createdAt": "2025-11-01T10:00:00Z",
-      "updatedAt": "2025-11-08T12:00:00Z"
-    },
-    // ... more games
-  ],
-  "pagination": {
-    "page": 1,
-    "limit": 20,
-    "total": 5,
-    "totalPages": 1
-  }
-}
-```
-
----
-
-#### 8.2.6 GET /my-games/:id
-
-**Description**: Get user's game details (for editing)
-
-**Response (200 OK):**
-```json
-{
-  // Same structure as GET /templates/:id
-  "id": "user-game-id",
-  "title": "Company MT Balance Game",
-  // ... full game object with questions
-}
-```
-
-**Errors:**
-- 403 Forbidden: Not the owner
-- 404 Not Found: Game not found
-
----
-
-#### 8.2.7 POST /my-games
-
-**Description**: Create a new game from template or from scratch
-
-**Request:**
-```json
-{
-  "templateId": "ckl1j2k3l4m5n6o7p8q9",  // Optional: copy from template
-  "title": "My Custom OX Quiz",
-  "description": "Custom quiz for company event",
-  "gameType": "OX_QUIZ",
-  "category": "ICE_BREAKING",
-  "duration": 15,
-  "minPlayers": 10,
-  "maxPlayers": 50,
-  "needsMobile": true,
-  "settings": {
-    "timeLimit": 20,
-    "pointsPerCorrect": 100,
-    "timeBonusEnabled": false,
-    "soundEnabled": true
-  },
-  "questions": [
-    {
-      "order": 1,
-      "content": "Our company was founded in 2020.",
-      "imageUrl": null,
-      "data": {
-        "correctAnswer": "O",
-        "explanation": "Founded on Jan 1, 2020"
-      }
-    },
-    // ... more questions
-  ]
-}
-```
-
-**Validation:**
-```typescript
-{
-  templateId: z.string().cuid().optional(),
-  title: z.string().min(1).max(200),
-  description: z.string().max(1000).optional(),
-  gameType: z.enum(["OX_QUIZ", "BALANCE_GAME", ...]),
-  category: z.enum(["ICE_BREAKING", "QUIZ", ...]),
-  duration: z.number().int().min(5).max(120),
-  minPlayers: z.number().int().min(1).max(1000),
-  maxPlayers: z.number().int().min(1).max(1000),
-  needsMobile: z.boolean(),
-  settings: z.object({
-    timeLimit: z.number().int().min(5).max(300).optional(),
-    pointsPerCorrect: z.number().int().min(1).max(1000),
-    timeBonusEnabled: z.boolean().optional(),
-    soundEnabled: z.boolean().optional()
-  }),
-  questions: z.array(
-    z.object({
-      order: z.number().int().min(1),
-      content: z.string().min(1).max(500),
-      imageUrl: z.string().url().optional(),
-      videoUrl: z.string().url().optional(),
-      audioUrl: z.string().url().optional(),
-      data: z.record(z.any()) // Game-type specific validation
-    })
-  ).min(1).max(100)
-}
-```
-
-**Response (201 Created):**
-```json
-{
-  "id": "new-game-id",
-  "title": "My Custom OX Quiz",
-  // ... full game object
-  "createdAt": "2025-11-11T10:00:00Z"
-}
-```
-
-**Errors:**
-- 400 Bad Request: Validation failed
-- 404 Not Found: Template not found (if templateId provided)
-
----
-
-#### 8.2.8 PUT /my-games/:id
-
-**Description**: Update user's game
-
-**Request:**
-```json
-{
-  "title": "Updated Title",
-  "description": "Updated description",
-  "settings": { /* updated settings */ },
-  "questions": [ /* updated questions */ ]
-}
-```
-
-**Response (200 OK):**
-```json
-{
-  "id": "user-game-id",
-  "title": "Updated Title",
-  // ... full game object
-  "updatedAt": "2025-11-11T11:00:00Z"
-}
-```
-
-**Errors:**
-- 400 Bad Request: Validation failed
-- 403 Forbidden: Not the owner
-- 404 Not Found: Game not found
-
----
-
-#### 8.2.9 DELETE /my-games/:id
-
-**Description**: Delete user's game
-
-**Response (200 OK):**
-```json
-{
-  "message": "Game deleted successfully"
-}
-```
-
-**Errors:**
-- 403 Forbidden: Not the owner
-- 404 Not Found: Game not found
-
----
-
-#### 8.2.10 POST /rooms
-
-**Description**: Create a new room for a game
-
-**Request:**
-```json
-{
-  "gameId": "user-game-id"
-}
-```
-
-**Validation:**
-```typescript
-{
-  gameId: z.string().cuid()
-}
-```
-
-**Response (201 Created):**
-```json
-{
-  "room": {
-    "id": "room-id",
-    "pin": "123456",  // 6-digit unique PIN
-    "gameId": "user-game-id",
-    "organizerId": "current-user-id",
-    "status": "WAITING",
-    "createdAt": "2025-11-11T10:00:00Z",
-    "expiresAt": "2025-11-11T14:00:00Z"  // 4 hours later
-  },
-  "qrCode": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUg..." // QR code image (base64)
-}
-```
-
-**Errors:**
-- 400 Bad Request: Invalid gameId
-- 403 Forbidden: Not the game owner
-- 404 Not Found: Game not found
-
----
-
-#### 8.2.11 GET /rooms/:pin
-
-**Description**: Get room details by PIN (for participants joining)
-
-**Response (200 OK):**
-```json
-{
-  "room": {
-    "id": "room-id",
-    "pin": "123456",
-    "status": "WAITING",
-    "game": {
-      "id": "game-id",
-      "title": "Company MT Balance Game",
-      "gameType": "BALANCE_GAME",
-      "needsMobile": false
-    },
-    "organizerId": "organizer-id",
-    "createdAt": "2025-11-11T10:00:00Z"
-  }
-}
-```
-
-**Errors:**
-- 404 Not Found: Room not found or expired
-
----
-
-#### 8.2.12 GET /rooms/:id/result
-
-**Description**: Get game result for a finished room
-
-**Response (200 OK):**
-```json
-{
-  "result": {
-    "id": "result-id",
-    "roomId": "room-id",
-    "participantCount": 30,
-    "duration": 620,  // seconds
-    "averageScore": 650,
-    "leaderboard": [
-      { "nickname": "John", "score": 950, "rank": 1 },
-      { "nickname": "Jane", "score": 920, "rank": 2 },
-      // ... top 10
-    ],
-    "questionStats": [
-      {
-        "questionIndex": 0,
-        "question": "Question text",
-        "correctRate": 0.85,  // 85% correct
-        "avgTime": 12.5  // seconds
-      },
-      // ... all questions
-    ],
-    "createdAt": "2025-11-11T11:00:00Z"
-  }
-}
-```
-
-**Errors:**
-- 404 Not Found: Room or result not found
-- 400 Bad Request: Room not finished yet
-
----
-
-### 8.3 WebSocket Service API (Socket.io)
-
-**URL**: `ws://localhost:3003` (dev)
-**Production**: `wss://xingu.com/ws` (via Nginx upgrade)
-
-**Transport**: WebSocket (fallback: long-polling)
-
----
-
-#### 8.3.1 Connection
-
-**Client connects:**
-```javascript
-import { io } from 'socket.io-client';
-
-const socket = io('http://localhost:3003', {
-  auth: {
-    token: accessToken  // JWT access token (optional for participants)
-  },
-  transports: ['websocket', 'polling']
-});
-```
-
-**Server authenticates:**
-- Organizer: Requires valid JWT access token
-- Participant: No authentication required
-
----
-
-#### 8.3.2 Events (Client → Server)
-
-**join-room**
-
-Participant joins a room
-
-```javascript
-socket.emit('join-room', {
-  pin: '123456',
-  nickname: 'John Doe'
-});
-```
-
-**Validation:**
-```typescript
-{
-  pin: z.string().length(6).regex(/^\d{6}$/),
-  nickname: z.string().min(1).max(20).trim()
-}
-```
-
-**Response:**
-```javascript
-socket.on('joined-room', (data) => {
-  console.log(data);
-  // {
-  //   roomId: 'room-id',
-  //   nickname: 'John Doe',
-  //   participants: [
-  //     { nickname: 'Jane', online: true },
-  //     { nickname: 'John Doe', online: true }
-  //   ]
-  // }
-});
-```
-
-**Errors:**
-```javascript
-socket.on('error', (error) => {
-  console.error(error);
-  // { message: 'Room not found', code: 'ROOM_NOT_FOUND' }
-  // { message: 'Nickname already taken', code: 'DUPLICATE_NICKNAME' }
-  // { message: 'Room is already playing', code: 'ROOM_IN_PROGRESS' }
-});
-```
-
----
-
-**start-game**
-
-Organizer starts the game
-
-```javascript
-socket.emit('start-game', {
-  roomId: 'room-id'
-});
-```
-
-**Server broadcasts to all participants:**
-```javascript
-socket.on('game-started', (data) => {
-  // {
-  //   roomId: 'room-id',
-  //   firstQuestion: {
-  //     index: 0,
-  //     content: 'The Earth is flat.',
-  //     imageUrl: null,
-  //     timeLimit: 30
-  //   }
-  // }
-});
-```
-
-**Errors:**
-- `NOT_ORGANIZER`: Only organizer can start game
-- `ROOM_NOT_FOUND`: Room does not exist
-- `NO_PARTICIPANTS`: Need at least 1 participant
-
----
-
-**submit-answer**
-
-Participant submits answer
-
-```javascript
-socket.emit('submit-answer', {
-  roomId: 'room-id',
-  questionIndex: 0,
-  answer: 'O'  // OX Quiz: 'O' or 'X'
-});
-```
-
-**Validation:**
-```typescript
-{
-  roomId: z.string().cuid(),
-  questionIndex: z.number().int().min(0),
-  answer: z.string()  // Validated based on game type
-}
-```
-
-**Server broadcasts to organizer:**
-```javascript
-// Organizer receives real-time response count
-socket.on('answer-submitted', (data) => {
-  // {
-  //   roomId: 'room-id',
-  //   questionIndex: 0,
-  //   responseCount: 15,
-  //   totalParticipants: 20,
-  //   waitingFor: ['Jane', 'Bob', 'Alice']  // Nicknames who haven't answered
-  // }
-});
-```
-
-**Participant receives confirmation:**
-```javascript
-socket.on('answer-received', () => {
-  // Show "Waiting for others..." message
-});
-```
-
-**Errors:**
-- `ALREADY_ANSWERED`: Participant already answered this question
-- `INVALID_ANSWER`: Answer format invalid for game type
-- `TIME_EXPIRED`: Time limit exceeded
-
----
-
-**reveal-answer**
-
-Organizer reveals correct answer
-
-```javascript
-socket.emit('reveal-answer', {
-  roomId: 'room-id',
-  questionIndex: 0
-});
-```
-
-**Server broadcasts to all:**
-```javascript
-socket.on('answer-revealed', (data) => {
-  // {
-  //   roomId: 'room-id',
-  //   questionIndex: 0,
-  //   correctAnswer: 'X',
-  //   explanation: 'The Earth is an oblate spheroid.',
-  //   statistics: {
-  //     'O': 8,  // 8 participants chose O
-  //     'X': 12  // 12 participants chose X
-  //   },
-  //   leaderboard: [
-  //     { nickname: 'John', score: 200, change: +100 },
-  //     { nickname: 'Jane', score: 100, change: +100 },
-  //     // ... top 5
-  //   ]
-  // }
-});
-```
-
----
-
-**next-question**
-
-Organizer moves to next question
-
-```javascript
-socket.emit('next-question', {
-  roomId: 'room-id'
-});
-```
-
-**Server broadcasts to all:**
-```javascript
-socket.on('question-started', (data) => {
-  // {
-  //   roomId: 'room-id',
-  //   question: {
-  //     index: 1,
-  //     content: 'Next question text',
-  //     imageUrl: null,
-  //     timeLimit: 30
-  //   }
-  // }
-});
-```
-
-**If last question:**
-```javascript
-socket.on('game-ended', (data) => {
-  // {
-  //   roomId: 'room-id',
-  //   result: {
-  //     leaderboard: [ /* all participants ranked */ ],
-  //     statistics: {
-  //       participantCount: 20,
-  //       averageScore: 650,
-  //       duration: 620,  // seconds
-  //       hardestQuestion: { index: 4, correctRate: 0.25 },
-  //       easiestQuestion: { index: 1, correctRate: 0.95 }
-  //     }
-  //   }
-  // }
-});
-```
-
----
-
-#### 8.3.3 Events (Server → Client)
-
-**participant-joined**
-
-Broadcast when a new participant joins
-
-```javascript
-socket.on('participant-joined', (data) => {
-  // {
-  //   roomId: 'room-id',
-  //   participant: { nickname: 'Bob', online: true },
-  //   totalCount: 3
-  // }
-});
-```
-
----
-
-**participant-left**
-
-Broadcast when a participant disconnects
-
-```javascript
-socket.on('participant-left', (data) => {
-  // {
-  //   roomId: 'room-id',
-  //   nickname: 'Bob',
-  //   totalCount: 2
-  // }
-});
-```
-
----
-
-**timer-tick**
-
-Optional: Server-side timer countdown
-
-```javascript
-socket.on('timer-tick', (data) => {
-  // {
-  //   roomId: 'room-id',
-  //   questionIndex: 0,
-  //   timeRemaining: 15  // seconds
-  // }
-});
-```
-
----
-
-#### 8.3.4 Error Handling
-
-**All errors follow this format:**
-```javascript
-socket.on('error', (error) => {
-  console.error(error);
-  // {
-  //   message: 'Human-readable error message',
-  //   code: 'ERROR_CODE',
-  //   details: { /* optional additional info */ }
-  // }
-});
-```
-
-**Common error codes:**
-- `ROOM_NOT_FOUND`: Room does not exist or expired
-- `DUPLICATE_NICKNAME`: Nickname already taken in this room
-- `NOT_ORGANIZER`: Action requires organizer role
-- `ROOM_IN_PROGRESS`: Cannot join, game already started
-- `INVALID_STATE`: Action not allowed in current room state
-- `VALIDATION_ERROR`: Input validation failed
-
----
-
-#### 8.3.5 Reconnection
-
-**Client reconnects:**
-```javascript
-socket.on('reconnect', () => {
-  // Rejoin room
-  socket.emit('rejoin-room', {
-    roomId: 'room-id',
-    nickname: 'John Doe'
-  });
-});
-
-socket.on('rejoined-room', (data) => {
-  // {
-  //   roomId: 'room-id',
-  //   currentState: {
-  //     status: 'playing',
-  //     currentQuestionIndex: 2,
-  //     yourScore: 200,
-  //     leaderboard: [ /* current rankings */ ]
-  //   }
-  // }
-});
-```
-
----
-
-## 9. Security Requirements
-
-### 9.1 Authentication Security
-
-**SEC-001: Password Security**
-- bcrypt hashing with 10 salt rounds
-- Minimum password requirements enforced
-- No password storage in plaintext or logs
-- Failed login attempt tracking (5 attempts → 15min lockout)
-
-**SEC-002: Token Security**
-- JWT access tokens: 15min expiry (short-lived)
-- Refresh tokens: 7d expiry (long-lived, revocable)
-- Token rotation on refresh (old refresh token invalidated)
-- Secure random token generation
-- Tokens stored in HttpOnly cookies (production)
-
-**SEC-003: Session Management**
-- Redis-based session store
-- Session timeout: 7 days
-- Logout invalidates all tokens
-- Concurrent session limit: 5 per user
-
----
-
-### 9.2 API Security
-
-**SEC-004: Rate Limiting**
-- Auth endpoints: 5 req/min per IP
-- API endpoints: 100 req/min per user
-- WebSocket connections: 10 per user
-- 429 Too Many Requests response
-- Redis-based rate limit storage
-
-**SEC-005: Input Validation**
-- All inputs validated with Zod schemas
-- Request body, query params, headers validated
-- File upload validation (size, type, extension)
-- SQL injection prevention (Prisma parameterized queries)
-- XSS prevention (React auto-escaping, CSP headers)
-
-**SEC-006: CORS Configuration**
-- Whitelist allowed origins
-- Credentials support for cookies
-- Preflight request handling
-- Restricted HTTP methods
-
----
-
-### 9.3 Infrastructure Security
-
-**SEC-007: HTTPS Only**
-- SSL/TLS via Nginx
-- Let's Encrypt certificates (production)
-- HTTP → HTTPS redirect
-- HSTS header (Strict-Transport-Security)
-
-**SEC-008: Security Headers**
-```nginx
-X-Frame-Options: DENY
-X-Content-Type-Options: nosniff
-X-XSS-Protection: 1; mode=block
-Strict-Transport-Security: max-age=31536000; includeSubDomains
-Content-Security-Policy: default-src 'self'
-```
-
-**SEC-009: Docker Security**
-- Non-root user in containers
-- Read-only file systems where possible
-- Network isolation (internal network for services)
-- Database not exposed externally (only services can access)
-- Docker secrets for sensitive data (production)
-
----
-
-### 9.4 Data Security
-
-**SEC-010: Sensitive Data Protection**
-- Environment variables for secrets (`.env` not committed)
-- No hardcoded credentials in code
-- No sensitive data in logs
-- Redact passwords/tokens in error messages
-
-**SEC-011: Authorization**
-- RBAC: Organizer, Admin roles
-- Resource ownership checks (user can only edit own games)
-- JWT contains userId, role
-- Protected routes require valid access token
-
----
-
-## 10. Success Metrics & KPIs
-
-### 10.1 Product Metrics
-
-**User Acquisition:**
-- New user signups: Target 100 in first month
-- Signup conversion rate: Target 20% (visitors → signups)
-- Retention rate (D7): Target 40%
-- Retention rate (D30): Target 20%
-
-**Engagement:**
-- Games created per user: Target 3+ per month
-- Rooms created per user: Target 5+ per month
-- Average participants per room: Target 15+
-- Game completion rate: Target 85%+
-- Customization usage rate: Target 60%+ users edit templates
-
-**Growth:**
-- Monthly Active Users (MAU): Target 500 in first 3 months
-- Organic referrals: Target 30% of new users
-- Social shares: Target 20% of completed games
-- Star/favorite rate: Target 40% of played games
-
----
-
-### 10.2 Technical Metrics
-
-**Performance:**
-- API response time: <200ms (p95)
-- WebSocket latency: <100ms (p95)
-- Page load time: <3s (p95)
-- Time to Interactive (TTI): <5s
-
-**Reliability:**
-- Uptime: 99%+
-- Error rate: <1% of requests
-- WebSocket connection success rate: >95%
-- Room creation success rate: >99%
-
-**Scalability:**
-- Concurrent rooms: 100+
-- Concurrent users: 5000+
-- Database query time: <50ms (p95)
-- Redis operation time: <10ms (p95)
-
----
-
-### 10.3 Business Metrics (Future)
-
-**Monetization (Phase 3+):**
-- Pro plan conversion rate: Target 5% of active users
-- Monthly Recurring Revenue (MRR): Target $10,000 after 6 months
-- Average Revenue Per User (ARPU): Target $5/month
-- Churn rate: Target <5% per month
-
----
-
-## 11. MVP Scope & Timeline
-
-### 11.1 MVP Definition (Phase 1)
-
-**Goal**: Launch a working product with 1 fully functional game (OX Quiz) in 2 weeks
-
-**In Scope:**
-- ✅ User authentication (signup, login, logout, token refresh)
-- ✅ Browse public game templates (OX Quiz only)
-- ✅ Favorite (star) templates
-- ✅ Edit game content (questions, settings)
-- ✅ Create room (PIN + QR code)
-- ✅ Participant join room (PIN entry, nickname)
-- ✅ Waiting room (real-time participant list)
-- ✅ Play OX Quiz game (real-time answers, scoring, leaderboard)
-- ✅ Game results (final rankings, statistics)
-- ✅ My Games management (view, edit, delete)
-- ✅ Responsive design (mobile & desktop)
-- ✅ Basic error handling & validation
-
-**Out of Scope (Phase 2+):**
-- ❌ Additional game types (Balance Game, Initial Quiz, etc.)
-- ❌ Advanced filters (detailed category, player count)
-- ❌ Game history & replay
-- ❌ Social features (comments, ratings)
-- ❌ Pro plan features (branding, custom themes)
-- ❌ Payment integration
-- ❌ Social login (Google, Kakao)
-- ❌ Mobile app
-- ❌ Admin dashboard
-- ❌ Analytics & monitoring (Sentry, analytics)
-
----
-
-### 11.2 Timeline (2 Weeks)
-
-#### **Week 1: Infrastructure & Backend (Days 1-7)**
-
-**Day 1-2: Infrastructure Setup**
-- [ ] Initialize Turborepo monorepo
-- [ ] Set up Docker Compose (7 containers)
-- [ ] Configure Nginx reverse proxy
-- [ ] Set up PostgreSQL + Redis containers
-- [ ] Create shared packages structure
-- [ ] Design initial Prisma schema
-- [ ] Configure environment variables
-- [ ] Write initial migrations
-
-**Day 3-4: Auth Service (NestJS)**
-- [ ] Initialize NestJS project
-- [ ] Implement POST /signup endpoint
-- [ ] Implement POST /login endpoint
-- [ ] Implement POST /logout endpoint
-- [ ] Implement POST /refresh endpoint
-- [ ] Implement GET /me endpoint
-- [ ] JWT + Redis session management
-- [ ] Zod validation schemas
-- [ ] Unit tests (Jest)
-- [ ] Integration tests
-
-**Day 5: Game Service - Part 1 (Express)**
-- [ ] Initialize Express project
-- [ ] Implement GET /templates endpoint
-- [ ] Implement GET /templates/:id endpoint
-- [ ] Implement POST /templates/:id/favorite endpoint
-- [ ] Seed database with 3 OX Quiz templates
-- [ ] Zod validation schemas
-- [ ] Unit tests
-
-**Day 6-7: Game Service - Part 2 + WS Service**
-- [ ] Game Service:
-  - [ ] Implement GET /my-games endpoint
-  - [ ] Implement POST /my-games endpoint
-  - [ ] Implement PUT /my-games/:id endpoint
-  - [ ] Implement DELETE /my-games/:id endpoint
-  - [ ] Implement POST /rooms endpoint
-  - [ ] Implement GET /rooms/:pin endpoint
-  - [ ] Unit tests
-- [ ] WebSocket Service:
-  - [ ] Initialize Socket.io project
-  - [ ] Redis Pub/Sub setup
-  - [ ] Implement join-room event
-  - [ ] Implement start-game event
-  - [ ] Implement submit-answer event
-  - [ ] Implement reveal-answer event
-  - [ ] Implement next-question event
-  - [ ] Real-time state management (Redis)
-  - [ ] Unit tests
-
----
-
-#### **Week 2: Frontend & Integration (Days 8-14)**
-
-**Day 8-9: Frontend Core Pages**
-- [ ] Initialize Next.js 15 project (App Router)
-- [ ] Set up Tailwind CSS + Shadcn UI
-- [ ] Implement authentication pages:
-  - [ ] Home page (PIN entry)
-  - [ ] Signup page
-  - [ ] Login page
-- [ ] Implement main pages:
-  - [ ] Browse templates page (with filters)
-  - [ ] My Games page
-  - [ ] Edit game page
-- [ ] Auth context (Zustand)
-- [ ] API client (Axios + TanStack Query)
-
-**Day 10-11: Frontend Game Flow**
-- [ ] Room creation flow:
-  - [ ] PIN display page
-  - [ ] QR code generation
-  - [ ] Waiting room (organizer view)
-- [ ] Participant flow:
-  - [ ] Nickname setup page
-  - [ ] Waiting room (participant view)
-- [ ] Game play pages:
-  - [ ] Game screen (organizer view)
-  - [ ] Game screen (participant view)
-  - [ ] Answer reveal screen
-  - [ ] Final results screen
-- [ ] Socket.io client integration
-- [ ] Real-time state management (Zustand + Socket.io)
-
-**Day 12: Testing & Bug Fixes**
-- [ ] E2E tests (Playwright):
-  - [ ] Full organizer flow: signup → create game → create room → play → results
-  - [ ] Full participant flow: join room → play → see results
-  - [ ] Real-time sync test (multiple participants)
-- [ ] Fix critical bugs
-- [ ] Cross-browser testing
-- [ ] Mobile responsive testing
-
-**Day 13: Polish & Documentation**
-- [ ] UI polish (loading states, error messages, animations)
-- [ ] Error handling improvements
-- [ ] Accessibility improvements (a11y)
-- [ ] Update README files
-- [ ] API documentation (OpenAPI)
-- [ ] Deployment guide
-- [ ] User guide (basic)
-
-**Day 14: Deployment & Launch**
-- [ ] Production environment setup
-- [ ] Deploy to cloud (AWS/GCP/Vercel)
-- [ ] SSL certificate setup
-- [ ] Database migration (production)
-- [ ] Seed production data (3 OX Quiz templates)
-- [ ] Smoke tests on production
-- [ ] Monitor logs and errors
-- [ ] Internal testing with 10+ people
-- [ ] 🚀 **MVP LAUNCH**
-
----
-
-### 11.3 Phase 2 Scope (Weeks 3-4)
-
-**Goal**: Add 2 more game types and enhanced features
-
-**Features:**
-- ✅ Balance Game (mobile not required)
-- ✅ Initial Quiz (mobile required)
-- ✅ 4-Choice Quiz (mobile required)
-- ✅ Advanced filters (detailed categories, player count, duration)
-- ✅ Game history (past games, results)
-- ✅ QR code scanning for participants
-- ✅ Sound effects and animations
-- ✅ Game preview modal (detailed info)
-
----
-
-### 11.4 Phase 3 Scope (Weeks 5-8)
-
-**Goal**: Monetization and premium features
-
-**Features:**
-- ✅ Pro plan (₩4,990/month):
-  - Custom branding (logo, colors)
-  - Background customization
-  - Unlimited participants
-  - Download PDF results
-- ✅ Payment integration (Toss Payments)
-- ✅ Social login (Google, Kakao)
-- ✅ Game template sharing (community)
-- ✅ User ratings & reviews
-- ✅ Admin dashboard (analytics, user management)
-- ✅ Monitoring & error tracking (Sentry)
-
----
-
-## 12. Dependencies & Risks
-
-### 12.1 Technical Dependencies
-
-**Critical Dependencies:**
-- Node.js 24+
-- PostgreSQL 17+
-- Redis (latest)
-- Docker & Docker Compose
-- Nginx
-
-**External Services:**
-- CDN for media files (Phase 2)
-- Email service for notifications (Phase 2)
-- Payment gateway (Toss Payments, Phase 3)
-- Error tracking (Sentry, Phase 3)
-
----
-
-### 12.2 Risks & Mitigation
-
-**Risk 1: Real-time Sync Issues**
-- **Impact**: High (breaks core gameplay)
-- **Probability**: Medium
-- **Mitigation**:
-  - Extensive WebSocket testing
-  - Fallback to long-polling
-  - Redis Pub/Sub for horizontal scaling
-  - Connection recovery on disconnect
-
-**Risk 2: Scalability Bottlenecks**
-- **Impact**: High (limits user growth)
-- **Probability**: Low (MVP scale)
-- **Mitigation**:
-  - Design for horizontal scaling from start
-  - Redis for session & state management
-  - Database indexing
-  - Load testing before launch
-
-**Risk 3: Security Vulnerabilities**
-- **Impact**: Critical (data breach, reputation damage)
-- **Probability**: Low (with proper practices)
-- **Mitigation**:
-  - Follow security best practices (OWASP)
-  - Input validation (Zod)
-  - Rate limiting
-  - Regular dependency updates
-  - Security audit before production
-
-**Risk 4: Timeline Delays**
-- **Impact**: Medium (delayed launch)
-- **Probability**: High (2-week timeline is tight)
-- **Mitigation**:
-  - Daily standups
-  - Task breakdown & tracking (TODOs)
-  - Cut non-essential features if needed
-  - Focus on MVP scope only
-
-**Risk 5: User Adoption**
-- **Impact**: High (product failure)
-- **Probability**: Medium (new product)
-- **Mitigation**:
-  - Solve real pain point (5min setup vs 30min)
-  - Test with target users early
-  - Iterate based on feedback
-  - Marketing & community building
-
----
-
-## 13. Acceptance Criteria
-
-### 13.1 MVP Launch Checklist
-
-**Functionality:**
-- [ ] User can sign up, log in, log out
-- [ ] User can browse OX Quiz templates
-- [ ] User can star templates and see in My Games
-- [ ] User can edit game content (questions, settings)
-- [ ] User can create room and get PIN + QR code
-- [ ] Participant can join room with PIN
-- [ ] Real-time participant list updates in waiting room
-- [ ] Organizer can start game when ≥1 participant
-- [ ] Participant can answer O/X questions in real-time
-- [ ] Organizer can reveal answers and see response stats
-- [ ] Leaderboard updates after each question
-- [ ] Game ends with final results and statistics
-- [ ] User can view My Games, edit, delete
-- [ ] All features work on mobile and desktop
-
-**Performance:**
-- [ ] API response time <200ms (p95)
-- [ ] WebSocket latency <100ms (p95)
-- [ ] Page load time <3s (p95)
-- [ ] No critical bugs (P0)
-- [ ] <5% error rate in production
-
-**Security:**
-- [ ] All endpoints require authentication (except public)
-- [ ] Passwords hashed with bcrypt
-- [ ] JWT tokens expire correctly
-- [ ] Rate limiting works on auth endpoints
-- [ ] HTTPS enabled in production
-- [ ] Input validation prevents SQL injection, XSS
-
-**Quality:**
-- [ ] Unit test coverage ≥80%
-- [ ] All E2E tests pass
-- [ ] No console errors or warnings
-- [ ] Accessible (keyboard navigation, ARIA labels)
-- [ ] Works on Chrome, Safari, Firefox, Edge
-
-**Documentation:**
-- [ ] README updated with setup instructions
-- [ ] API documentation complete
-- [ ] User guide available
-- [ ] Deployment guide written
-
----
-
-### 13.2 Definition of Done (DoD)
-
-A feature is "Done" when:
-1. Code written and follows style guide
-2. Unit tests written and passing
-3. Integration tests written and passing (if applicable)
-4. Code reviewed and approved
-5. Documentation updated
-6. Merged to main branch
-7. Deployed to staging and tested
-8. Product owner approved
-
----
-
-## 14. Appendix
-
-### 14.1 Glossary
-
-- **Organizer**: User who creates and manages games, hosts game rooms
-- **Participant**: User who joins game rooms and plays games
-- **Template**: Pre-built public game that organizers can copy and customize
-- **My Games**: Organizer's personal collection of games (copies of templates or created from scratch)
-- **Room**: Game session with unique PIN, where participants join and play
-- **PIN**: 6-digit numeric code for joining a room
-- **Session**: Authenticated user session (stored in Redis)
-- **Game Type**: Type of game mechanic (OX Quiz, Balance Game, etc.)
-- **Category**: Content category (Ice-breaking, Quiz, Music, etc.)
-
----
-
-### 14.2 References
-
-- [01-overview.md](./01-overview.md) - Project Overview
-- [02-ia.md](./02-ia.md) - Information Architecture
-- [Prisma Docs](https://www.prisma.io/docs)
-- [Next.js 15 Docs](https://nextjs.org/docs)
-- [Socket.io Docs](https://socket.io/docs/v4/)
-- [NestJS Docs](https://docs.nestjs.com/)
-- [Docker Compose Docs](https://docs.docker.com/compose/)
-
----
-
-### 14.3 Change Log
-
-| Version | Date | Author | Changes |
-|---------|------|--------|---------|
-| 1.0 | 2025-11-11 | Dev Team | Initial PRD creation |
-
----
+**참가자 관리:**
+- [ ] 방 생성 후 "참가자 관리" 화면 진입
+- [ ] [+ 참가자 추가] 버튼으로 이름 입력 (1-20자)
+- [ ] 참가자 목록 표시 (번호, 이름, [삭제] 버튼)
+- [ ] [나중에 추가] 버튼 (사전 등록 없이 게임 시작)
+- [ ] [게임 시작] 버튼 (0명 이상일 때 활성화)
+
+**게임 진행 (진행자 화면):**
+- [ ] 좌측: 질문 & 정답 표시 (진행자만 봄)
+- [ ] 우측: 빠른 점수 입력 영역
+  - 참가자별 [이름 +100점] 버튼
+  - 현재 점수 표시 (예: "김철수 (100점)")
+  - [+ 새 참가자 추가] 버튼
+- [ ] 하단: TOP 5 리더보드
+- [ ] [다음 질문] [게임 종료] 버튼
+
+**게임 진행 (프로젝터 화면):**
+- [ ] 질문만 큰 글씨로 표시 (정답 안 보임)
+- [ ] 하단에 TOP 5 순위 표시
+- [ ] 점수 부여 시 애니메이션:
+  - "김철수 +100점!" 큰 글씨 (2초)
+  - 리더보드 업데이트 (순위 변동 표시)
+
+**게임 중 참가자 추가:**
+- [ ] 게임 진행 중 [+ 새 참가자 추가] 클릭
+- [ ] 이름 입력 모달 표시
+- [ ] [추가] 클릭 → 참가자 목록에 추가
+- [ ] 점수 입력 버튼 목록에 새 버튼 추가
+- [ ] 실시간 반영 (프로젝터 화면에도)
+
+**점수 부여:**
+- [ ] [이름 +100점] 버튼 클릭 (1회 탭)
+- [ ] Redis 업데이트 (참가자 점수 +100)
+- [ ] WebSocket broadcast → 프로젝터 화면
+- [ ] 프로젝터에 "이름 +100점!" 애니메이션
+- [ ] 리더보드 실시간 업데이트
+- [ ] 한 문제에 여러 명 점수 부여 가능
+
+**WebSocket Events:**
+- `add-participant` (C→S): 참가자 추가
+- `participant-added` (S→Host): 참가자 추가됨
+- `remove-participant` (C→S): 참가자 제거
+- `participant-removed` (S→Host): 참가자 제거됨
+- `award-points` (C→S): 점수 부여
+- `points-awarded` (S→All): 점수 부여됨 (프로젝터 화면 업데이트)
+
+**API Endpoint:**
+- POST `/api/rooms/:id/participants` (참가자 추가)
+- DELETE `/api/rooms/:id/participants/:participantId` (참가자 제거)
+- POST `/api/rooms/:id/award-points` (점수 부여 - WebSocket 대안)
+
+**Priority:** Should (Phase 2) (S-001 초성 게임과 함께)
+
+---
+
+## 7. 화면 설계 (Wireframes)
+
+### 7.1 주요 화면 목록
+
+| 화면 ID | 화면 이름 | 사용자 | 설명 |
+|---------|----------|--------|------|
+| SCR-001 | 홈 화면 | 공통 | PIN 입력 + 인기 게임 |
+| SCR-002 | 회원가입 | 진행자 | 이메일 + 비밀번호 |
+| SCR-003 | 로그인 | 진행자 | 이메일 + 비밀번호 |
+| SCR-004 | 게임 둘러보기 | 진행자 | 템플릿 목록 (필터/정렬) |
+| SCR-005 | 템플릿 미리보기 | 진행자 | 모달 (상세 정보) |
+| SCR-006 | 내 게임 | 진행자 | 내가 만든/저장한 게임 |
+| SCR-007 | 게임 편집 | 진행자 | 질문 편집, 설정 변경 |
+| SCR-008 | PIN 표시 | 진행자 | PIN + QR + 대기실 |
+| SCR-009 | 참가자 입장 | 참가자 | PIN 입력 → 닉네임 |
+| SCR-010 | 대기실 (진행자) | 진행자 | 참가자 목록, [시작] 버튼 |
+| SCR-011 | 대기실 (참가자) | 참가자 | "대기 중..." |
+| SCR-012 | 게임 화면 (진행자) | 진행자 | 질문 + 응답 현황 |
+| SCR-013 | 게임 화면 (참가자) | 참가자 | 질문 + [O][X] 버튼 |
+| SCR-014 | 정답 공개 | 공통 | 정답 + 통계 + 순위 |
+| SCR-015 | 결과 화면 | 공통 | 최종 순위 + 통계 |
+| **MC 모드 화면** |
+| SCR-016 | 참가자 관리 (MC 모드) | 진행자 | 사전 참가자 등록 |
+| SCR-017 | 게임 화면 (MC 모드 - 진행자) | 진행자 | 질문 + 빠른 점수 입력 |
+| SCR-018 | 게임 화면 (MC 모드 - 프로젝터) | 공통 | 큰 화면으로 질문만 표시 |
+
+### 7.2 와이어프레임 (주요 화면)
+
+#### SCR-001: 홈 화면
+
+```
+┌─────────────────────────────────────────────────────┐
+│  [로고 Xingu]   게임 둘러보기   내 게임   [로그인] │
+├─────────────────────────────────────────────────────┤
+│                                                     │
+│          🎮 한국형 파티 게임 플랫폼                  │
+│          5분 만에 게임 만들고 바로 시작!             │
+│                                                     │
+│  ┌────────────────────────────────────────┐        │
+│  │  PIN 코드 입력                          │        │
+│  │  [______] [______] [______]             │        │
+│  │           [입장하기 →]                  │        │
+│  └────────────────────────────────────────┘        │
+│                                                     │
+│  🔥 인기 게임 템플릿                                │
+│                                                     │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐           │
+│  │ [이미지]  │ │ [이미지]  │ │ [이미지]  │          │
+│  │ OX 퀴즈   │ │ 밸런스    │ │ 초성      │          │
+│  │          │ │ 게임      │ │ 게임      │          │
+│  │ 📱 폰 필요 │ │ 🖐 폰 불필요│ │ 📱 폰 필요 │        │
+│  │ ⭐ 342    │ │ ⭐ 201    │ │ ⭐ 98     │          │
+│  │ [둘러보기] │ │ [둘러보기] │ │ [둘러보기] │        │
+│  └──────────┘ └──────────┘ └──────────┘           │
+│                                                     │
+│  [모든 게임 보기 →]                                 │
+│                                                     │
+└─────────────────────────────────────────────────────┘
+```
+
+#### SCR-007: 게임 편집 화면
+
+```
+┌─────────────────────────────────────────────────────┐
+│  [← 뒤로]  게임 편집: OX 퀴즈                        │
+├──────────────────┬──────────────────────────────────┤
+│ 질문 목록 (10)    │  질문 1 편집                      │
+│                  │  ┌──────────────────────────────┐│
+│ ☰ 1. 질문 1 ✏️   │  │ 질문 내용                     ││
+│ ☰ 2. 질문 2      │  │ [________________________]   ││
+│ ☰ 3. 질문 3      │  │                              ││
+│ ☰ 4. 질문 4      │  │ 정답: ⚪️ O   ⚫ X              ││
+│ ☰ 5. 질문 5      │  └──────────────────────────────┘│
+│ ☰ 6. 질문 6      │                                  │
+│ ☰ 7. 질문 7      │  이미지 (선택)                    │
+│ ☰ 8. 질문 8      │  ┌──────────────────────────────┐│
+│ ☰ 9. 질문 9      │  │ [이미지 업로드] 📷             ││
+│ ☰ 10. 질문 10    │  └──────────────────────────────┘│
+│                  │                                  │
+│ [+ 질문 추가]     │  설명 (선택)                      │
+│                  │  ┌──────────────────────────────┐│
+│                  │  │ [________________________]   ││
+│                  │  └──────────────────────────────┘│
+├──────────────────┴──────────────────────────────────┤
+│  게임 설정                                           │
+│  시간 제한: [20초 ▼]  점수: [100점]                  │
+│  시간 보너스: [✓]  효과음: [✓]                       │
+│                                                     │
+│  [취소]                    [저장 & 방 만들기 →]      │
+└─────────────────────────────────────────────────────┘
+```
+
+#### SCR-008: PIN 표시 화면 (대기실)
+
+```
+┌─────────────────────────────────────────────────────┐
+│  OX 퀴즈 - 회사 MT                      [전체화면] │
+├─────────────────────────────────────────────────────┤
+│                                                     │
+│          xingu.com 접속 후 PIN 입력                 │
+│                                                     │
+│          ┌─────────────────────┐                   │
+│          │                     │                   │
+│          │     1  2  3  4  5  6│                   │
+│          │                     │  (큰 글씨)        │
+│          └─────────────────────┘                   │
+│                                                     │
+│          [📋 PIN 복사]                              │
+│                                                     │
+│          ┌─────────────┐                           │
+│          │             │                           │
+│          │  QR 코드    │                           │
+│          │             │                           │
+│          └─────────────┘                           │
+│                                                     │
+│  ─────────────────────────────────────────────────  │
+│                                                     │
+│  참가자 (30명)                                      │
+│                                                     │
+│  ✅ John       ✅ Jane       ✅ Bob                 │
+│  ✅ Alice      ✅ Charlie    ✅ David               │
+│  ✅ Emma       ✅ Frank      ✅ Grace               │
+│  ...                                                │
+│                                                     │
+│              [🎮 게임 시작]                          │
+│                                                     │
+└─────────────────────────────────────────────────────┘
+```
+
+#### SCR-013: 게임 화면 (참가자 뷰)
+
+```
+┌─────────────────────────────────────────────────────┐
+│  Q 1 / 12                               ⏱ 18초      │
+├─────────────────────────────────────────────────────┤
+│                                                     │
+│                                                     │
+│          우리 회사는 2020년에 창립했다.              │
+│                                                     │
+│                                                     │
+│  ┌───────────────────────────────────────────────┐ │
+│  │                                               │ │
+│  │                  ⭕  O                        │ │
+│  │                                               │ │
+│  └───────────────────────────────────────────────┘ │
+│                                                     │
+│  ┌───────────────────────────────────────────────┐ │
+│  │                                               │ │
+│  │                  ❌  X                        │ │
+│  │                                               │ │
+│  └───────────────────────────────────────────────┘ │
+│                                                     │
+│                                                     │
+│  내 점수: 200점     순위: 12등                       │
+│                                                     │
+└─────────────────────────────────────────────────────┘
+```
+
+#### SCR-015: 결과 화면
+
+```
+┌─────────────────────────────────────────────────────┐
+│  🏆 최종 결과                                        │
+├─────────────────────────────────────────────────────┤
+│                                                     │
+│  ┌───────────────────────────────────────────────┐ │
+│  │  🥇 1등  John           950점                 │ │
+│  └───────────────────────────────────────────────┘ │
+│  ┌───────────────────────────────────────────────┐ │
+│  │  🥈 2등  Jane           920점                 │ │
+│  └───────────────────────────────────────────────┘ │
+│  ┌───────────────────────────────────────────────┐ │
+│  │  🥉 3등  Bob            880점                 │ │
+│  └───────────────────────────────────────────────┘ │
+│                                                     │
+│  4등  Alice          850점                          │
+│  5등  Charlie        820점                          │
+│  ...                                                │
+│                                                     │
+│  ─────────────────────────────────────────────────  │
+│                                                     │
+│  📊 게임 통계                                       │
+│  • 참가자: 30명                                     │
+│  • 평균 점수: 650점                                 │
+│  • 소요 시간: 10분 20초                             │
+│  • 가장 어려운 문제: Q 7 (정답률 25%)                │
+│  • 가장 쉬운 문제: Q 1 (정답률 95%)                  │
+│                                                     │
+│  [📤 결과 공유]  [🔄 다시 하기]  [← 내 게임으로]    │
+│                                                     │
+└─────────────────────────────────────────────────────┘
+```
+
+#### SCR-016: 참가자 관리 (MC 모드)
+
+```
+┌─────────────────────────────────────────────────────┐
+│  [← 뒤로]  초성 게임 - 참가자 관리                   │
+├─────────────────────────────────────────────────────┤
+│                                                     │
+│  📋 참가자 명단 (10명)                               │
+│                                                     │
+│  ┌──────────────────────────────────────────────┐  │
+│  │  1. 김철수                          [❌ 삭제] │  │
+│  │  2. 이영희                          [❌ 삭제] │  │
+│  │  3. 박민수                          [❌ 삭제] │  │
+│  │  4. 최지은                          [❌ 삭제] │  │
+│  │  5. 정다은                          [❌ 삭제] │  │
+│  │  6. 강호준                          [❌ 삭제] │  │
+│  │  7. 윤서아                          [❌ 삭제] │  │
+│  │  8. 임준혁                          [❌ 삭제] │  │
+│  │  9. 송하늘                          [❌ 삭제] │  │
+│  │ 10. 오민지                          [❌ 삭제] │  │
+│  └──────────────────────────────────────────────┘  │
+│                                                     │
+│  ┌──────────────────────────────────────────────┐  │
+│  │  새 참가자 이름                              │  │
+│  │  [___________________________]    [+ 추가]   │  │
+│  └──────────────────────────────────────────────┘  │
+│                                                     │
+│  💡 팁: 사전 등록 없이 바로 시작할 수도 있습니다.    │
+│       게임 중에도 참가자를 추가할 수 있어요!         │
+│                                                     │
+│  [나중에 추가]                    [🎮 게임 시작]    │
+│                                                     │
+└─────────────────────────────────────────────────────┘
+```
+
+#### SCR-017: 게임 화면 (MC 모드 - 진행자 뷰)
+
+```
+┌─────────────────────────────────────────────────────┐
+│  초성 게임                                Q 1 / 10   │
+├────────────────────┬────────────────────────────────┤
+│  질문 & 정답        │  빠른 점수 입력                │
+│                    │                                │
+│  ┌──────────────┐  │  🎯 정답을 맞춘 참가자 선택:    │
+│  │ Q 1:  ㅊㅅㄱㅇ │  │                                │
+│  │              │  │  ┌──────────────────────────┐ │
+│  │ 정답: 초성게임│  │  │ [김철수 +100점]  (100점) │ │
+│  │              │  │  │ [이영희 +100점]  (200점) │ │
+│  │ ⏱ 30초       │  │  │ [박민수 +100점]  (0점)   │ │
+│  └──────────────┘  │  │ [최지은 +100점]  (100점) │ │
+│                    │  │ [정다은 +100점]  (0점)   │ │
+│                    │  │ [강호준 +100점]  (300점) │ │
+│                    │  │ ...                      │ │
+│                    │  │                          │ │
+│                    │  │ [+ 새 참가자 추가]        │ │
+│                    │  └──────────────────────────┘ │
+│                    │                                │
+├────────────────────┴────────────────────────────────┤
+│  🏆 TOP 5 순위                                      │
+│                                                     │
+│  1. 강호준        300점  ⭐⭐⭐                      │
+│  2. 이영희        200점  ⭐⭐                        │
+│  3. 김철수        100점  ⭐                         │
+│  4. 최지은        100점  ⭐                         │
+│  5. -                                               │
+│                                                     │
+│  [⏭ 다음 질문]              [🏁 게임 종료]          │
+│                                                     │
+└─────────────────────────────────────────────────────┘
+```
+
+**특징:**
+- 진행자만 보는 화면 (태블릿/노트북)
+- 정답 보임 (참가자는 안 봄)
+- 빠른 점수 입력 버튼 (탭 한 번으로 점수 부여)
+- 게임 중 참가자 추가 가능
+- 한 문제에 여러 명 점수 부여 가능
+
+#### SCR-018: 게임 화면 (MC 모드 - 프로젝터 뷰)
+
+```
+┌─────────────────────────────────────────────────────┐
+│                                                     │
+│                     Q  1 / 10                       │
+│                                                     │
+│                                                     │
+│                                                     │
+│                   ㅊ   ㅅ   ㄱ   ㅇ                  │
+│                                                     │
+│                   (엄청 큰 글씨)                     │
+│                                                     │
+│                                                     │
+│                                                     │
+│  ─────────────────────────────────────────────────  │
+│                                                     │
+│  🏆 TOP 5                            ⏱ 30초         │
+│                                                     │
+│  1. 강호준 ................ 300점                   │
+│  2. 이영희 ................ 200점                   │
+│  3. 김철수 ................ 100점                   │
+│  4. 최지은 ................ 100점                   │
+│  5. -                                               │
+│                                                     │
+└─────────────────────────────────────────────────────┘
+```
+
+**특징:**
+- 프로젝터/대형 화면에 표시
+- 참가자들은 이 화면만 봄 (폰 불필요)
+- 정답 표시 안 됨 (진행자만 봄)
+- 큰 글씨로 질문 표시
+- 실시간 순위 업데이트
+
+#### SCR-018-1: 점수 부여 애니메이션 (프로젝터)
+
+```
+┌─────────────────────────────────────────────────────┐
+│                                                     │
+│                     Q  1 / 10                       │
+│                                                     │
+│                   ㅊ   ㅅ   ㄱ   ㅇ                  │
+│                                                     │
+│            ┌─────────────────────┐                  │
+│            │                     │                  │
+│            │   김철수 +100점!    │  ← 애니메이션    │
+│            │        ⭐           │                  │
+│            └─────────────────────┘                  │
+│                                                     │
+│  ─────────────────────────────────────────────────  │
+│                                                     │
+│  🏆 TOP 5                            ⏱ 25초         │
+│                                                     │
+│  1. 강호준 ................ 300점                   │
+│  2. 이영희 ................ 200점                   │
+│  3. 김철수 ................ 100점  ⬆️ (순위 상승)   │
+│                                                     │
+└─────────────────────────────────────────────────────┘
+```
+
+**애니메이션:**
+- 진행자가 [김철수 +100점] 버튼 클릭
+- 프로젝터에 "김철수 +100점!" 큰 글씨 표시 (2초)
+- 리더보드 업데이트 (순위 변동 표시)
+- 참가자들 환호 🎉
+
+---
+
+## 8. 기술 명세 (간단히)
+
+### 8.1 아키텍처 다이어그램
+
+```
+[사용자 (Browser)]
+        ↓ HTTPS
+   [Nginx:80] ← Reverse Proxy, Load Balancer
+        ↓
+┌───────┴────────────────────────────────────┐
+│                                            │
+[Next.js:3000]  [Auth:3001]  [Game:3002]  [WS:3003]
+    ↓               ↓            ↓            ↓
+    └───────────────┴────────────┴────────────┘
+                    ↓                ↓
+              [PostgreSQL:5432]  [Redis:6379]
+              
+7 Containers Total:
+1. nginx (reverse proxy)
+2. postgres (database)
+3. redis (session/cache)
+4. web (Next.js frontend)
+5. auth-service (NestJS)
+6. game-service (Express)
+7. ws-service (Socket.io)
+```
+
+### 8.2 기술 스택
+
+| 레이어 | 기술 | 버전 | 용도 |
+|--------|------|------|------|
+| **Frontend** |
+| Framework | Next.js | 15 | SSR, App Router |
+| UI Library | React | 19 | 컴포넌트 |
+| Styling | Tailwind CSS | 3.x | 스타일링 |
+| UI Components | Shadcn UI + Radix | - | 재사용 컴포넌트 |
+| State | Zustand | 4.x | 전역 상태 관리 |
+| Forms | react-hook-form + Zod | - | 폼 검증 |
+| Data Fetching | TanStack Query | 5.x | 서버 상태 관리 |
+| WebSocket Client | Socket.io Client | 4.x | 실시간 통신 |
+| **Backend** |
+| Auth Service | NestJS | 10.x | 인증 서비스 |
+| Game Service | Express | 4.x | 게임 서비스 |
+| WS Service | Socket.io | 4.x | 웹소켓 서비스 |
+| Database | PostgreSQL | 15 | 메인 DB |
+| ORM | Prisma | 5.x | DB ORM |
+| Cache/Session | Redis | 7.x | 세션/캐시 |
+| **Infrastructure** |
+| Reverse Proxy | Nginx | alpine | 프록시 |
+| Container | Docker | 24.x | 컨테이너 |
+| Orchestration | Docker Compose | 2.x | 개발 환경 |
+| **DevOps** |
+| Monorepo | Turborepo | 1.x | 빌드 최적화 |
+| Package Manager | pnpm | 8.x | 의존성 관리 |
+| Linting | ESLint + Prettier | - | 코드 품질 |
+| Testing | Vitest + Playwright | - | 테스트 |
+
+### 8.3 API 엔드포인트 요약
+
+| Service | Base URL | Endpoints | 설명 |
+|---------|----------|-----------|------|
+| **Auth Service** | `/api/auth` | | |
+| | | POST /signup | 회원가입 |
+| | | POST /login | 로그인 |
+| | | POST /refresh | 토큰 갱신 |
+| | | POST /logout | 로그아웃 |
+| | | GET /me | 내 정보 |
+| **Game Service** | `/api/templates` | | |
+| | | GET / | 템플릿 목록 |
+| | | GET /:id | 템플릿 상세 |
+| | | POST /:id/favorite | 즐겨찾기 추가 |
+| | | DELETE /:id/favorite | 즐겨찾기 제거 |
+| | | GET /my-games | 내 게임 목록 |
+| | | POST /my-games | 게임 생성 |
+| | | PUT /my-games/:id | 게임 수정 |
+| | | DELETE /my-games/:id | 게임 삭제 |
+| | | POST /rooms | 방 생성 |
+| | | GET /rooms/:pin | 방 정보 |
+| | | GET /rooms/:id/result | 게임 결과 |
+| **WS Service** | `/ws` | | |
+| | | (connect) | WebSocket 연결 |
+| | | join-room | 방 입장 |
+| | | start-game | 게임 시작 |
+| | | submit-answer | 답변 제출 |
+| | | reveal-answer | 정답 공개 |
+| | | next-question | 다음 질문 |
+
+### 8.4 WebSocket 이벤트 목록
+
+| 이벤트 | 방향 | 설명 | Payload |
+|--------|------|------|---------|
+| `join-room` | C→S | 참가자 방 입장 | `{ pin, nickname }` |
+| `joined-room` | S→C | 입장 성공 | `{ roomId, participants }` |
+| `participant-joined` | S→All | 새 참가자 입장 | `{ participant, totalCount }` |
+| `participant-left` | S→All | 참가자 퇴장 | `{ nickname, totalCount }` |
+| `start-game` | C→S | 게임 시작 (진행자) | `{ roomId }` |
+| `game-started` | S→All | 게임 시작됨 | `{ firstQuestion }` |
+| `submit-answer` | C→S | 답변 제출 | `{ roomId, questionIndex, answer }` |
+| `answer-submitted` | S→Host | 응답 현황 | `{ responseCount, totalParticipants }` |
+| `reveal-answer` | C→S | 정답 공개 (진행자) | `{ roomId, questionIndex }` |
+| `answer-revealed` | S→All | 정답 공개됨 | `{ correctAnswer, statistics, leaderboard }` |
+| `next-question` | C→S | 다음 질문 (진행자) | `{ roomId }` |
+| `question-started` | S→All | 다음 질문 시작 | `{ question }` |
+| `game-ended` | S→All | 게임 종료 | `{ result, leaderboard, statistics }` |
+| `error` | S→C | 에러 발생 | `{ message, code, details }` |
+| **MC 모드 전용 이벤트** |
+| `add-participant` | C→S | 참가자 추가 (MC 모드) | `{ roomId, name }` |
+| `participant-added` | S→Host | 참가자 추가됨 | `{ participant, totalCount }` |
+| `remove-participant` | C→S | 참가자 제거 (MC 모드) | `{ roomId, participantId }` |
+| `participant-removed` | S→Host | 참가자 제거됨 | `{ participantId, totalCount }` |
+| `award-points` | C→S | 점수 부여 (MC 모드) | `{ roomId, participantId, points }` |
+| `points-awarded` | S→All | 점수 부여됨 | `{ participantName, points, newScore, leaderboard }` |
+
+**이벤트 설명:**
+
+**모바일 필요 모드 (OX 퀴즈):**
+- 참가자들이 각자 WebSocket 연결
+- `join-room` → `submit-answer` 플로우
+- 자동 채점, 자동 점수 부여
+
+**MC 모드 (초성 게임):**
+- 진행자만 WebSocket 연결
+- 참가자는 WebSocket 연결 없음 (프로젝터만 봄)
+- `add-participant` → `award-points` 플로우
+- 수동 점수 부여
+
+---
+
+## 9. 개발 일정 (Timeline)
+
+### 9.1 Phase 1: MVP (2주)
+
+```
+Week 1: 백엔드 & 인프라
+┌─────────────────────────────────────────────────────┐
+│ Day 1-2: 인프라 셋업                                │
+│ • Turborepo 초기화                                  │
+│ • Docker Compose 구성 (7 containers)                │
+│ • Nginx 설정                                        │
+│ • PostgreSQL + Redis 설정                           │
+│ • Prisma 스키마 설계                                │
+│ • 환경변수 설정                                     │
+├─────────────────────────────────────────────────────┤
+│ Day 3-4: Auth Service (NestJS)                     │
+│ • 회원가입/로그인 API                               │
+│ • JWT + Refresh Token                              │
+│ • Redis 세션 관리                                   │
+│ • Unit 테스트                                       │
+├─────────────────────────────────────────────────────┤
+│ Day 5: Game Service - Part 1 (Express)            │
+│ • 템플릿 조회 API                                   │
+│ • 즐겨찾기 API                                      │
+│ • DB 시드 데이터 (OX 퀴즈 3종)                      │
+├─────────────────────────────────────────────────────┤
+│ Day 6-7: Game Service - Part 2 + WS Service       │
+│ • 내 게임 CRUD API                                  │
+│ • 방 생성 API                                       │
+│ • WebSocket 이벤트 구현                             │
+│ • Redis Pub/Sub                                    │
+│ • Unit 테스트                                       │
+└─────────────────────────────────────────────────────┘
+
+Week 2: 프론트엔드 & 통합
+┌─────────────────────────────────────────────────────┐
+│ Day 8-9: 프론트엔드 코어                             │
+│ • Next.js 15 App Router 셋업                        │
+│ • Tailwind + Shadcn UI                             │
+│ • 인증 페이지 (회원가입/로그인)                     │
+│ • 게임 둘러보기 페이지                              │
+│ • 내 게임 페이지                                    │
+│ • 게임 편집 페이지                                  │
+├─────────────────────────────────────────────────────┤
+│ Day 10-11: 게임 플로우                              │
+│ • 방 생성 → PIN 표시                                │
+│ • 대기실 (진행자/참가자)                            │
+│ • 게임 화면 (진행자/참가자)                         │
+│ • 결과 화면                                         │
+│ • Socket.io 클라이언트 통합                         │
+├─────────────────────────────────────────────────────┤
+│ Day 12: 테스트 & 버그 수정                          │
+│ • E2E 테스트 (Playwright)                          │
+│ • 크로스 브라우저 테스트                            │
+│ • 모바일 반응형 테스트                              │
+│ • 크리티컬 버그 수정                                │
+├─────────────────────────────────────────────────────┤
+│ Day 13: 폴리싱 & 문서화                             │
+│ • UI 폴리싱 (로딩, 에러, 애니메이션)                │
+│ • 접근성 개선 (a11y)                                │
+│ • README 작성                                       │
+│ • API 문서 (OpenAPI)                               │
+├─────────────────────────────────────────────────────┤
+│ Day 14: 배포 & 런칭                                 │
+│ • 프로덕션 환경 설정                                │
+│ • 배포 (Vercel/AWS)                                │
+│ • SSL 설정                                          │
+│ • DB 마이그레이션                                   │
+│ • 내부 테스트 (10+ 명)                              │
+│ • 🚀 MVP LAUNCH                                     │
+└─────────────────────────────────────────────────────┘
+```
+
+### 9.2 Phase 2-3 (추후)
+
+**Phase 2 (Week 3-4)**: 추가 게임 & 고급 기능
+- 밸런스 게임, 초성 게임, 4지선다 퀴즈
+- 고급 필터, 게임 기록
+- QR 스캔, 효과음/애니메이션
+
+**Phase 3 (Week 5+)**: 유료화 & 프리미엄
+- Pro 플랜 (커스텀 브랜딩, PDF 다운로드)
+- 소셜 로그인 (구글, 카카오)
+- 커뮤니티 템플릿 공유
+- 평점/리뷰 시스템
+
+---
+
+## 10. 부록
+
+### 10.1 용어 정의
+
+| 용어 | 정의 |
+|------|------|
+| 진행자 (Organizer) | 게임을 만들고 관리하는 사용자 (로그인 필요) |
+| 참가자 (Participant) | 게임에 참여하는 사용자 (로그인 불필요) |
+| 템플릿 (Template) | 공개 게임 (읽기 전용, 복사 가능) |
+| 내 게임 (My Games) | 진행자가 만든/저장한 게임 (수정 가능) |
+| 방 (Room) | 게임 세션 (고유한 PIN으로 식별) |
+| PIN | 6자리 숫자 코드 (참가자 입장용) |
+| 세션 (Session) | 인증된 사용자의 로그인 세션 (Redis 저장) |
+| 게임 타입 (Game Type) | 게임 종류 (OX 퀴즈, 밸런스 게임 등) |
+| 카테고리 (Category) | 콘텐츠 분류 (아이스브레이킹, 퀴즈, 음악 등) |
+
+### 10.2 참고 자료
+
+- [01-overview.md](./01-overview.md) - 프로젝트 개요
+- [02-ia.md](./02-ia.md) - 정보 구조
+- [Prisma 문서](https://www.prisma.io/docs)
+- [Next.js 15 문서](https://nextjs.org/docs)
+- [Socket.io 문서](https://socket.io/docs/v4/)
+- [NestJS 문서](https://docs.nestjs.com/)
+- [Docker Compose 문서](https://docs.docker.com/compose/)
+
+### 10.3 변경 이력
+
+| 버전 | 날짜 | 작성자 | 변경사항 |
+|------|------|--------|----------|
+| 1.0 | 2025-11-17 | Dev Team | 실무 중심 PRD 작성 (플로우차트, IA, 스토리보드) |
+
+---
+
+## ✅ Next Steps (다음 할 일)
+
+1. **이 PRD 리뷰 및 승인**
+2. **Turborepo 초기화** (Day 1 시작)
+3. **Docker Compose 구성** (7 containers)
+4. **Prisma 스키마 설계**
+5. **Auth Service 구현** (회원가입/로그인)
+6. **매일 진행 상황 업데이트**
+
+---
+
+**🎯 MVP 목표: 2주 내 OX 퀴즈 게임 완성 & 런칭!**
+
+**문의**: dev@xingu.com
 
 **END OF DOCUMENT**
 
-**Next Steps:**
-1. Review and approve this PRD
-2. Begin Week 1 implementation (Infrastructure & Backend)
-3. Daily standup and progress tracking
-4. Update this document as requirements change
