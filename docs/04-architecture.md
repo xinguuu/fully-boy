@@ -3,9 +3,11 @@
 ## 📌 Document Info
 
 **Document**: System Architecture & Diagrams
-**Version**: 1.0
-**Last Updated**: 2025-11-11
+**Version**: 2.0
+**Last Updated**: 2025-11-18
 **Purpose**: Visual representation of database schema, API flows, and system architecture
+
+**Status**: ✅ Synchronized with actual implementation (as of 2025-11-18)
 
 ---
 
@@ -354,96 +356,137 @@ sequenceDiagram
     Web->>Web: Update UI (⭐ filled)
 ```
 
-### 3.3 Create & Edit Game
+### 3.3 Create & Edit Game (Actual Implementation)
 
 ```mermaid
 sequenceDiagram
     actor User as Organizer
     participant Web as Next.js Web
+    participant Template as Template Service
     participant Game as Game Service
+    participant Room as Room Service
     participant DB as PostgreSQL
+    participant Redis as Redis
 
-    Note over User,DB: Create Game from Template
+    Note over User,Redis: Browse & Select Template
 
-    User->>Web: Click [Create Room] on template
-    Web->>Web: Navigate to /games/edit/:templateId
-    Web->>Game: GET /api/games/templates/:id
-    Game->>DB: SELECT template with questions
-    DB-->>Game: Template data
-    Game-->>Web: 200 OK {template}
+    User->>Web: Visit /browse
+    Web->>Template: GET /api/templates?filters
+    Template->>DB: SELECT templates WHERE isPublic=true
+    DB-->>Template: Public templates
+    Template-->>Web: 200 OK {templates}
+    Web-->>User: Display template cards
+
+    User->>Web: Click [방 만들기] on template
+    Web->>Web: Navigate to /edit/:templateId
+    Web->>Template: GET /api/templates/:id
+    Template->>DB: SELECT template with questions
+    DB-->>Template: Template data
+    Template-->>Web: 200 OK {template}
     Web-->>User: Show edit screen (pre-filled)
 
-    Note over User,DB: Edit Game Content
+    Note over User,Redis: Edit & Create Room in One Step
 
     User->>Web: Edit title, questions, settings
-    User->>Web: Click [Save and Create Room]
-    Web->>Game: POST /api/games/my-games
-    Note right of Web: {title, questions[], settings, templateId}
-    Game->>Game: Validate with Zod
-    Game->>DB: BEGIN TRANSACTION
-    Game->>DB: INSERT INTO games
-    DB-->>Game: game.id
-    Game->>DB: INSERT INTO questions (bulk)
-    Game->>DB: COMMIT
-    DB-->>Game: Success
-    Game-->>Web: 201 Created {game}
-    Web->>Web: Navigate to /games/:id/create-room
-    Web-->>User: Redirect to create room
+    User->>Web: Click [저장 & 방 만들기]
+
+    alt New Game (no gameId)
+        Web->>Game: POST /api/games
+        Note right of Web: {title, questions[], settings}
+        Game->>DB: BEGIN TRANSACTION
+        Game->>DB: INSERT INTO games
+        DB-->>Game: game.id
+        Game->>DB: INSERT INTO questions (bulk)
+        Game->>DB: COMMIT
+        Game-->>Web: 201 Created {game}
+    else Existing Game (has gameId)
+        Web->>Game: PUT /api/games/:id
+        Game->>DB: UPDATE game, questions
+        Game-->>Web: 200 OK {game}
+    end
+
+    Web->>Room: POST /api/rooms
+    Note right of Web: {gameId, expiresInMinutes: 60}
+    Room->>Room: Generate 6-digit PIN
+    Room->>DB: INSERT INTO rooms
+    Room->>Redis: SET room:state (initial)
+    Room-->>Web: 201 Created {room, pin}
+
+    Web->>Web: Navigate to /room/:pin/waiting
+    Web-->>User: Waiting room (PIN displayed)
 ```
 
-### 3.4 Create Room & Participant Join
+### 3.4 Organizer Waiting Room & Participant Join (Actual Implementation)
 
 ```mermaid
 sequenceDiagram
     actor Org as Organizer
     actor Part as Participant
     participant Web as Next.js Web
-    participant Game as Game Service
+    participant Auth as Auth Service
+    participant Room as Room Service
     participant WS as WebSocket Service
     participant DB as PostgreSQL
     participant Redis as Redis
 
-    Note over Org,Redis: Organizer Creates Room
+    Note over Org,Redis: Organizer on Waiting Room
 
-    Org->>Web: Click [Create Room] from My Games
-    Web->>Game: POST /api/games/rooms {gameId}
-    Game->>Game: Generate 6-digit PIN
-    Game->>DB: INSERT INTO rooms
-    DB-->>Game: room created
-    Game->>Game: Generate QR code
-    Game->>Redis: SET room:{roomId} {state}
-    Redis-->>Game: OK
-    Game-->>Web: 201 Created {room, pin, qrCode}
-    Web-->>Org: Display PIN & QR code
+    Org->>Web: Navigate to /room/:pin/waiting
+    Web->>Auth: Verify JWT token
+    Auth-->>Web: User authenticated
+    Web->>Room: GET /api/rooms/:pin
+    Room->>DB: SELECT room WHERE pin
+    DB-->>Room: Room data
+    Room-->>Web: 200 OK {room}
 
-    Org->>Web: Click [Start Game]
-    Web->>WS: Connect WebSocket (organizer)
-    WS->>Redis: Subscribe to room:{roomId}
-    WS-->>Web: Connected
+    Web->>Web: Check: room.organizerId === currentUser.id
+    Note right of Web: If not organizer → redirect to /room/:pin
 
-    Note over Part,Redis: Participant Joins Room
+    Web->>Web: Store nickname in sessionStorage
+    Note right of Web: sessionStorage['room_:pin_nickname'] = user.name
 
-    Part->>Web: Visit / (home page)
-    Part->>Web: Enter PIN: 123456
-    Web->>Game: GET /api/games/rooms/:pin
-    Game->>DB: SELECT room WHERE pin
-    DB-->>Game: Room info
-    Game-->>Web: 200 OK {room, game}
-    Web->>Web: Navigate to /rooms/:pin/join
+    Web->>WS: Connect WebSocket {pin, nickname, JWT}
+    WS->>WS: Validate JWT → isOrganizer = true
+    WS->>Redis: GET room:state
+    WS->>Redis: Add player {id, nickname, isOrganizer: true}
+    WS->>Redis: SET room:state
+    WS-->>Web: emit('joined-room', {room, game})
+    Web-->>Org: Display waiting room (PIN visible)
 
-    Part->>Web: Enter nickname: "John"
-    Web->>WS: Connect WebSocket (participant)
-    WS->>Redis: GET room:{roomId}
-    WS->>Redis: Add participant to state
-    WS->>Redis: PUBLISH participant-joined
-    Redis-->>WS: OK
-    WS-->>Web: joined-room event
-    WS->>Web: Broadcast participant-joined to organizer
-    Web-->>Part: Navigate to waiting room
-    Web-->>Org: Update participant list (real-time)
+    Web->>Room: GET /api/rooms/:pin/participants (poll every 3s)
+    Room->>DB: SELECT participants (REST API joins)
+    Room-->>Web: Participant count
+    Web-->>Org: Update participant list
+
+    Note over Part,Redis: Participant Joins
+
+    Part->>Web: Visit / (home)
+    Part->>Web: Enter PIN: 123456 → Submit
+    Web->>Web: Navigate to /room/:pin
+    Web->>Room: GET /api/rooms/:pin
+    Room->>DB: SELECT room
+    Room-->>Web: 200 OK {room}
+
+    Part->>Web: Enter nickname: "Alice"
+    Web->>Room: POST /api/rooms/:pin/join {nickname, deviceId}
+    Room->>DB: INSERT INTO participants
+    DB-->>Room: participant created
+    Room->>Redis: SET participant:session:{sessionId}
+    Room-->>Web: 201 Created {sessionId, participant}
+
+    Web->>Web: Store in localStorage + sessionStorage
+    Note right of Web: localStorage['room_:pin_sessionId'] = sessionId<br/>sessionStorage['room_:pin_nickname'] = nickname
+
+    Web->>Web: Navigate to /room/:pin/game
+    Web->>WS: Connect WebSocket {pin, nickname, sessionId}
+    WS->>Redis: Validate sessionId
+    WS->>Redis: Add player {id, nickname, isOrganizer: false}
+    WS->>Web: Broadcast 'participant-joined'
+    Web-->>Part: Show "게임 시작 대기 중..."
+    Web-->>Org: Real-time participant list update
 ```
 
-### 3.5 Play OX Quiz Game
+### 3.5 Play OX Quiz Game (Actual Implementation)
 
 ```mermaid
 sequenceDiagram
@@ -451,110 +494,140 @@ sequenceDiagram
     actor Part as Participant
     participant Web as Next.js Web
     participant WS as WebSocket Service
+    participant Result as Result Service
     participant Redis as Redis
     participant DB as PostgreSQL
 
     Note over Org,DB: Game Start
 
-    Org->>Web: Click [Start Game]
-    Web->>WS: emit('start-game', {roomId})
-    WS->>Redis: UPDATE room status = PLAYING
+    Org->>Web: Click [게임 시작] on waiting page
+    Web->>WS: emit('start-game', {pin})
+    WS->>Redis: UPDATE room:state status = 'playing'
     WS->>Redis: SET currentQuestionIndex = 0
-    WS->>DB: SELECT questions WHERE gameId
-    DB-->>WS: All questions
-    WS->>Redis: PUBLISH game-started
-    WS-->>Web: Broadcast game-started {firstQuestion}
-    Web-->>Org: Show question screen
-    Web-->>Part: Show O/X answer buttons
+    WS->>DB: SELECT game with questions
+    DB-->>WS: Game + questions
+    WS->>Redis: PUBLISH 'game-started'
+    WS-->>Web: Broadcast 'game-started' {room}
+    WS->>Redis: PUBLISH 'question-started'
+    WS-->>Web: Broadcast 'question-started' {question, index: 0}
+
+    Web->>Web: Organizer redirects to /room/:pin/game
+    Web-->>Org: Show question + real-time stats (isOrganizer view)
+    Web-->>Part: Show question + O/X buttons (participant view)
 
     Note over Part,Redis: Participant Answers
 
     Part->>Web: Click [O] button
-    Web->>WS: emit('submit-answer', {roomId, questionIndex, answer: 'O'})
-    WS->>Redis: SET room answers[0][participant] = 'O'
-    WS->>Redis: GET answer count
+    Web->>WS: emit('submit-answer', {pin, questionIndex, answer, responseTimeMs})
+    WS->>Redis: GET room:state
+    WS->>Redis: UPDATE player.answers[index] = {answer, responseTimeMs}
+    WS->>Redis: SET room:state
     WS->>Web: emit('answer-received') to participant
-    WS->>Web: Broadcast answer-submitted to organizer
-    Web-->>Part: Show "Waiting for others..."
-    Web-->>Org: Update response count (15/20 answered)
+    Note right of WS: {correct, score, responseTimeMs}
+    WS->>Web: Broadcast 'answer-submitted' to organizer
+    Note right of WS: {playerId, playerNickname, questionIndex}
+    Web-->>Part: Show "대기 중..." (disabled buttons)
+    Web-->>Org: Update stats (15/20 answered, 85% O, 15% X)
 
-    Note over Org,DB: Reveal Answer
+    Note over Org,DB: End Question
 
-    Org->>Web: Click [Reveal Answer]
-    Web->>WS: emit('reveal-answer', {roomId, questionIndex})
-    WS->>Redis: GET all answers for question
-    WS->>Redis: GET correct answer from question data
-    WS->>WS: Calculate scores
-    WS->>Redis: UPDATE participant scores
-    WS->>Redis: Calculate statistics
-    WS->>WS: Get TOP 5 leaderboard
-    WS->>Redis: PUBLISH answer-revealed
-    WS-->>Web: Broadcast answer-revealed
-    Note right of WS: {correctAnswer, statistics, leaderboard}
-    Web-->>Org: Show results with stats
-    Web-->>Part: Show correct answer + your score
+    alt Timer expires (auto)
+        Web->>Web: Timer component triggers
+        Web->>WS: emit('end-question', {pin, questionIndex})
+    else Organizer manually ends
+        Org->>Web: Click [질문 종료]
+        Web->>WS: emit('end-question', {pin, questionIndex})
+    end
+
+    WS->>Redis: GET all player answers for question
+    WS->>WS: Calculate scores (correct + time bonus)
+    WS->>Redis: UPDATE player scores
+    WS->>WS: Calculate TOP 5 leaderboard
+    WS->>Redis: PUBLISH 'question-ended'
+    WS-->>Web: Broadcast 'question-ended'
+    Note right of WS: {correctAnswer, results[], leaderboard, statistics}
+    Web-->>Org: Show answer + stats + leaderboard
+    Web-->>Part: Show correct answer + your score + rank
 
     Note over Org,DB: Next Question or End Game
 
-    Org->>Web: Click [Next Question]
-    Web->>WS: emit('next-question', {roomId})
+    Org->>Web: Click [다음 문제] (organizer only)
+    Web->>WS: emit('next-question', {pin})
     WS->>Redis: INCREMENT currentQuestionIndex
 
     alt More questions
-        WS->>Redis: PUBLISH question-started
-        WS-->>Web: Broadcast question-started {nextQuestion}
+        WS->>Redis: PUBLISH 'question-started'
+        WS-->>Web: Broadcast 'question-started' {question, index}
         Web-->>Org: Show next question
-        Web-->>Part: Show next question O/X buttons
+        Web-->>Part: Show next question
     else Last question completed
-        WS->>Redis: UPDATE room status = FINISHED
-        WS->>WS: Calculate final statistics
-        WS->>DB: INSERT INTO game_results
-        Note right of WS: {roomId, leaderboard, stats}
-        DB-->>WS: Result saved
-        WS->>Redis: PUBLISH game-ended
-        WS-->>Web: Broadcast game-ended {results}
-        Web-->>Org: Navigate to results page
-        Web-->>Part: Navigate to results page
+        WS->>Redis: UPDATE room:state status = 'finished'
+        WS->>WS: Calculate final leaderboard
+        WS->>Result: POST /api/results
+        Note right of WS: {roomId, leaderboard, statistics}
+        Result->>DB: INSERT INTO game_results
+        WS->>Redis: PUBLISH 'game-ended'
+        WS-->>Web: Broadcast 'game-ended' {leaderboard, room}
+        Web->>Web: roomState.status = 'finished'
+        Web-->>Org: Show results section in game page
+        Web-->>Part: Show results section in game page
     end
 ```
 
-### 3.6 View Game Results
+### 3.6 View Game Results (Actual Implementation)
+
+**Note:** Results are displayed directly in the game page (`/room/:pin/game`) when `roomState.status === 'finished'`. No separate results page exists.
 
 ```mermaid
 sequenceDiagram
     actor User as Organizer/Participant
     participant Web as Next.js Web
-    participant Game as Game Service
+    participant Result as Result Service
     participant DB as PostgreSQL
 
-    Note over User,DB: Fetch Game Results
+    Note over User,DB: Results Displayed in Game Page
 
-    User->>Web: View results page (/rooms/:id/results)
-    Web->>Game: GET /api/games/rooms/:id/result
-    Game->>DB: SELECT * FROM game_results WHERE roomId
-    Game->>DB: JOIN with room and game info
-    DB-->>Game: Result data
-    Game-->>Web: 200 OK {result}
-    Web-->>User: Display leaderboard & statistics
+    User->>Web: On /room/:pin/game page
+    Web->>Web: Check roomState.status === 'finished'
+    Web->>Web: Render results section (conditional)
+    Note right of Web: Uses leaderboard from<br/>WebSocket 'game-ended' event
+    Web-->>User: Display final leaderboard<br/>🥇🥈🥉 + top 10
 
-    Note over User,DB: Share Results (Optional)
+    Note over User,DB: Future: Fetch Historical Results (API exists)
 
-    User->>Web: Click [Share Results]
+    User->>Web: Visit /results/:roomId (future feature)
+    Web->>Result: GET /api/results/:roomId
+    Result->>DB: SELECT * FROM game_results WHERE roomId
+    Result->>DB: JOIN with room and game info
+    DB-->>Result: Result data
+    Result-->>Web: 200 OK {result, leaderboard, statistics}
+    Web-->>User: Display historical results
+
+    Note over User,DB: Future: Share & Export (Phase 3)
+
+    User->>Web: Click [Share Results] (future)
     Web->>Web: Generate share link
     Web-->>User: Copy to clipboard
 
-    User->>Web: Click [Download PDF] (Pro plan)
-    Web->>Game: GET /api/games/rooms/:id/result?format=pdf
-    Game->>Game: Check user plan (Pro required)
+    User->>Web: Click [Download PDF] (Pro plan, future)
+    Web->>Result: GET /api/results/:roomId?format=pdf
+    Result->>Result: Check user plan
     alt Pro plan
-        Game->>Game: Generate PDF
-        Game-->>Web: 200 OK {pdf file}
+        Result->>Result: Generate PDF
+        Result-->>Web: 200 OK {pdf file}
         Web-->>User: Download results.pdf
     else Free plan
-        Game-->>Web: 403 Forbidden {upgrade required}
+        Result-->>Web: 403 Forbidden
         Web-->>User: Show upgrade modal
     end
 ```
+
+**Current Implementation:**
+
+- Results are shown in `/room/:pin/game` page (status-based rendering)
+- Leaderboard data comes from WebSocket `game-ended` event
+- No navigation to separate results page
+- Result Service API exists but not yet used in frontend (future feature)
 
 ### 3.7 Token Refresh Flow
 
@@ -599,6 +672,8 @@ sequenceDiagram
 
 ### 4.1 Frontend (Next.js 15) Structure
 
+#### Actual Implementation (Updated 2025-11-18)
+
 ```mermaid
 graph TB
     subgraph "App Router (Next.js 15)"
@@ -610,109 +685,174 @@ graph TB
             Signup[app/signup/page.tsx<br/>Signup]
         end
 
-        subgraph "Authenticated Routes"
+        subgraph "Authenticated Routes (Organizer)"
             Browse[app/browse/page.tsx<br/>Browse Templates]
-            MyGames[app/my-games/page.tsx<br/>My Games]
-            EditGame[app/games/edit/[id]/page.tsx<br/>Edit Game]
-            CreateRoom[app/games/[id]/create-room/page.tsx<br/>Create Room]
+            EditGame[app/edit/[id]/page.tsx<br/>Edit Game<br/>+ Create Room]
         end
 
         subgraph "Game Flow"
-            Join[app/rooms/[pin]/join/page.tsx<br/>Nickname Setup]
-            Waiting[app/rooms/[id]/waiting/page.tsx<br/>Waiting Room]
-            Play[app/rooms/[id]/play/page.tsx<br/>Game Play]
-            Results[app/rooms/[id]/results/page.tsx<br/>Results]
+            Join[app/room/[pin]/page.tsx<br/>Participant<br/>Nickname Entry]
+            Waiting[app/room/[pin]/waiting/page.tsx<br/>Organizer<br/>Waiting Room]
+            Game[app/room/[pin]/game/page.tsx<br/>Live Game<br/>+ Results]
         end
 
         Root --> Home
         Root --> Login
         Root --> Signup
         Root --> Browse
-        Root --> MyGames
         Root --> EditGame
-        Root --> CreateRoom
         Root --> Join
         Root --> Waiting
-        Root --> Play
-        Root --> Results
+        Root --> Game
     end
 
     subgraph "Shared Components"
         GameCard[GameCard.tsx]
         QuestionEditor[QuestionEditor.tsx]
         Leaderboard[Leaderboard.tsx]
-        PINDisplay[PINDisplay.tsx]
+        Timer[Timer.tsx]
     end
 
     subgraph "State Management"
-        AuthStore[useAuthStore<br/>Zustand]
-        GameStore[useGameStore<br/>Zustand]
-        SocketStore[useSocketStore<br/>Zustand]
+        TanStackQuery[TanStack Query<br/>Server State]
+        SocketHook[useGameSocket<br/>WebSocket State]
     end
 
     Browse --> GameCard
-    MyGames --> GameCard
     EditGame --> QuestionEditor
-    CreateRoom --> PINDisplay
-    Play --> Leaderboard
-    Results --> Leaderboard
+    Game --> Leaderboard
+    Game --> Timer
 
-    Home --> AuthStore
-    Browse --> AuthStore
-    Browse --> GameStore
-    Play --> SocketStore
+    Home --> TanStackQuery
+    Browse --> TanStackQuery
+    Game --> SocketHook
 ```
 
-### 4.2 State Management (Zustand)
+#### Key Changes from Original Design
 
-**Auth Store:**
+- ❌ **Removed**: `my-games` page (not implemented yet)
+- ✅ **Merged**: Create Room into Edit page (`[Save & Create Room]` button)
+- ✅ **Merged**: Results into Game page (status-based rendering)
+- ✅ **Changed**: `rooms/[pin]` → `room/[pin]` (singular)
+- ✅ **Changed**: `[id]` → `[pin]` for room routes (uses PIN instead of room ID)
+- ✅ **Simplified**: Uses TanStack Query instead of Zustand for most state
+
+### 4.2 State Management (TanStack Query + Hooks)
+
+**Implementation:** Uses TanStack Query (React Query) for server state + custom hooks for WebSocket
+
+#### Auth Hooks (useAuth)
+
 ```typescript
-interface AuthStore {
-  user: User | null
-  accessToken: string | null
-  refreshToken: string | null
+// Custom hooks using TanStack Query
+function useCurrentUser() {
+  return useQuery({
+    queryKey: ['currentUser'],
+    queryFn: authApi.getCurrentUser,
+    enabled: tokenManager.hasValidToken(),
+  });
+}
 
-  login: (email: string, password: string) => Promise<void>
-  signup: (email: string, password: string) => Promise<void>
-  logout: () => Promise<void>
-  refreshAccessToken: () => Promise<void>
+function useLogin() {
+  return useMutation({
+    mutationFn: (data: LoginRequest) => authApi.login(data),
+    onSuccess: (response) => {
+      tokenManager.setTokens(response.accessToken, response.refreshToken);
+      queryClient.setQueryData(['currentUser'], response.user);
+    },
+  });
 }
 ```
 
-**Game Store:**
-```typescript
-interface GameStore {
-  templates: Game[]
-  myGames: Game[]
-  currentGame: Game | null
+#### Game/Template Hooks
 
-  fetchTemplates: (filters: Filters) => Promise<void>
-  fetchMyGames: () => Promise<void>
-  favoriteGame: (gameId: string) => Promise<void>
-  createGame: (game: CreateGameDto) => Promise<void>
-  updateGame: (gameId: string, game: UpdateGameDto) => Promise<void>
-  deleteGame: (gameId: string) => Promise<void>
+```typescript
+// Templates (public games)
+function useTemplates(filters?: TemplateFilters) {
+  return useQuery({
+    queryKey: ['templates', filters],
+    queryFn: () => templatesApi.getTemplates(filters),
+  });
+}
+
+// My games (authenticated)
+function useMyGames() {
+  return useQuery({
+    queryKey: ['myGames'],
+    queryFn: gamesApi.getMyGames,
+  });
+}
+
+// Create game
+function useCreateGame() {
+  return useMutation({
+    mutationFn: (data: CreateGameDto) => gamesApi.createGame(data),
+  });
 }
 ```
 
-**Socket Store:**
-```typescript
-interface SocketStore {
-  socket: Socket | null
-  roomState: RoomState | null
-  participants: Participant[]
-  currentQuestion: Question | null
-  leaderboard: LeaderboardEntry[]
+#### Room Hooks
 
-  connect: () => void
-  disconnect: () => void
-  joinRoom: (pin: string, nickname: string) => void
-  startGame: (roomId: string) => void
-  submitAnswer: (answer: string) => void
-  revealAnswer: () => void
-  nextQuestion: () => void
+```typescript
+function useRoom(pin: string) {
+  return useQuery({
+    queryKey: ['room', pin],
+    queryFn: () => roomsApi.getRoomByPIN(pin),
+    enabled: !!pin && pin.length === 6,
+  });
+}
+
+function useParticipants(pin: string) {
+  return useQuery({
+    queryKey: ['room', pin, 'participants'],
+    queryFn: () => roomsApi.getParticipants(pin),
+    refetchInterval: 3000, // Poll every 3 seconds
+  });
+}
+
+function useCreateRoom() {
+  return useMutation({
+    mutationFn: (data: CreateRoomRequest) => roomsApi.createRoom(data),
+  });
 }
 ```
+
+#### WebSocket Hook (useGameSocket)
+
+```typescript
+interface UseGameSocketReturn {
+  isConnected: boolean;
+  roomState: RoomState | null;
+  game: Game | null;
+  currentQuestion: Question | null;
+  players: Player[];
+  leaderboard: LeaderboardEntry[];
+
+  joinRoom: (nickname: string) => void;
+  startGame: () => void;
+  nextQuestion: () => void;
+  submitAnswer: (answer: unknown, responseTimeMs: number) => void;
+  endQuestion: () => void;
+  endGame: () => void;
+}
+
+function useGameSocket({
+  pin,
+  nickname?,
+  sessionId?,
+  autoJoin = false,
+}: UseGameSocketOptions): UseGameSocketReturn {
+  // WebSocket connection + event handlers
+  // Returns real-time game state
+}
+```
+
+**Key Features:**
+
+- **Server State**: TanStack Query handles caching, refetching, optimistic updates
+- **WebSocket State**: Custom `useGameSocket` hook manages real-time game state
+- **Token Management**: Centralized in `tokenManager` class (localStorage)
+- **Session Storage**: Used for nickname persistence across page reloads
 
 ---
 
@@ -1121,3 +1261,15 @@ graph LR
 | Version | Date | Changes |
 |---------|------|---------|
 | 1.0 | 2025-11-11 | Initial architecture diagrams created |
+| 2.0 | 2025-11-18 | **Major update** - Synchronized with actual implementation |
+
+**Version 2.0 Changes:**
+
+- Updated frontend routes (`/edit/[id]`, `/room/[pin]/*`)
+- Changed URL params from `[id]` to `[pin]` for room routes
+- Merged Create Room into Edit page
+- Merged Results into Game page
+- Updated state management (TanStack Query instead of Zustand)
+- Updated all sequence diagrams (3.3-3.6) with actual flows
+- Added organizer/participant authentication flows
+- Documented WebSocket `isOrganizer` flag usage
