@@ -2,25 +2,30 @@
 
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { useGameSocket } from '@/lib/hooks';
+import { useGameSocket, useAuth } from '@/lib/hooks';
 import { Timer } from '@/components/game/Timer';
 
 export default function LiveGamePage() {
   const params = useParams();
   const router = useRouter();
   const pin = params.pin as string;
+  const { user } = useAuth();
 
-  // Try to get nickname and sessionId from storage (if joined via REST API)
+  // Try to get nickname and participantId from localStorage
   const storedNickname =
-    typeof window !== 'undefined' ? sessionStorage.getItem(`room_${pin}_nickname`) : null;
-  const storedSessionId =
-    typeof window !== 'undefined' ? localStorage.getItem(`room_${pin}_sessionId`) : null;
+    typeof window !== 'undefined' ? localStorage.getItem(`room_${pin}_nickname`) : null;
+  const storedParticipantId =
+    typeof window !== 'undefined' ? localStorage.getItem(`room_${pin}_participantId`) : null;
+
+  // Determine if organizer (has user auth but no nickname)
+  const isOrganizerByAuth = !!user && !storedNickname;
 
   const [nickname, setNickname] = useState(storedNickname || '');
-  const [hasJoined, setHasJoined] = useState(!!storedNickname);
+  const [hasJoined, setHasJoined] = useState(!!storedNickname || isOrganizerByAuth);
   const [answerStartTime, setAnswerStartTime] = useState<number | null>(null);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [showResults, setShowResults] = useState(false);
+  const [showQuestionIntro, setShowQuestionIntro] = useState(false);
 
   const {
     isConnected,
@@ -36,15 +41,16 @@ export default function LiveGamePage() {
     nextQuestion,
     submitAnswer,
     endQuestion,
+    endGame,
   } = useGameSocket({
     pin,
     nickname: storedNickname || undefined,
-    sessionId: storedSessionId || undefined,
-    autoJoin: !!storedNickname,
+    participantId: storedParticipantId || undefined,
+    autoJoin: !!storedNickname || isOrganizerByAuth, // Auto-join for both organizer and participant
   });
 
   const currentPlayer = roomState && players.find((p) => p.nickname === nickname);
-  const isOrganizer = currentPlayer?.isOrganizer || false;
+  const isOrganizer = isOrganizerByAuth || currentPlayer?.isOrganizer || false;
 
   const hasAnswered =
     currentPlayer && currentQuestion
@@ -52,11 +58,19 @@ export default function LiveGamePage() {
       : false;
 
   useEffect(() => {
-    if (currentQuestion) {
+    if (!currentQuestion) return;
+
+    setShowQuestionIntro(true);
+    setSelectedAnswer(null);
+    setShowResults(false);
+
+    // Show intro for 2 seconds, then show the question
+    const timer = setTimeout(() => {
+      setShowQuestionIntro(false);
       setAnswerStartTime(Date.now());
-      setSelectedAnswer(null);
-      setShowResults(false);
-    }
+    }, 2000);
+
+    return () => clearTimeout(timer);
   }, [currentQuestion]);
 
   const handleJoinRoom = (e: React.FormEvent) => {
@@ -81,6 +95,10 @@ export default function LiveGamePage() {
   const handleEndQuestion = () => {
     endQuestion();
     setShowResults(true);
+  };
+
+  const handleEndGame = () => {
+    endGame();
   };
 
   // Show loading state if participant already joined via REST but WebSocket is connecting
@@ -198,15 +216,9 @@ export default function LiveGamePage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-secondary-50 flex items-center justify-center p-4">
         <div className="text-center">
-          <p className="text-xl font-semibold text-gray-700">다음 문제를 준비 중입니다...</p>
-          {isOrganizer && (
-            <button
-              onClick={handleNextQuestion}
-              className="mt-6 bg-primary-500 hover:bg-primary-600 text-white font-semibold px-8 py-3 rounded-lg transition-all hover:scale-105 cursor-pointer"
-            >
-              다음 문제 시작 →
-            </button>
-          )}
+          <div className="animate-spin h-12 w-12 border-4 border-primary-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+          <p className="text-xl font-semibold text-gray-700">문제를 불러오는 중...</p>
+          <p className="text-gray-500 mt-2">잠시만 기다려주세요</p>
         </div>
       </div>
     );
@@ -216,6 +228,22 @@ export default function LiveGamePage() {
   const duration = questionData.duration || 30;
   const questionIndex = roomState.currentQuestionIndex;
   const totalQuestions = game?.questions.length || 0;
+
+  // Show question intro screen
+  if (showQuestionIntro) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary-500 via-primary-600 to-primary-700 flex items-center justify-center p-4">
+        <div className="text-center animate-pulse">
+          <div className="text-white/80 text-2xl font-medium mb-4">문제</div>
+          <div className="text-white text-8xl md:text-9xl font-bold mb-4">
+            {questionIndex + 1}
+            <span className="text-white/60">/{totalQuestions}</span>
+          </div>
+          <div className="text-white/60 text-lg">준비하세요!</div>
+        </div>
+      </div>
+    );
+  }
 
   if (isOrganizer) {
     const answeredCount = players.filter((p) => p.answers[questionIndex] !== undefined).length;
@@ -257,7 +285,7 @@ export default function LiveGamePage() {
                 {currentQuestion.content}
               </h2>
 
-              {questionData.type === 'multiple-choice' && questionData.options && (
+              {(questionData.type === 'multiple-choice' || questionData.type === 'true-false') && questionData.options && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
                   {questionData.options.map((option, idx) => {
                     const count = answerDistribution[option] || 0;
@@ -276,7 +304,8 @@ export default function LiveGamePage() {
                         <div className="relative z-10">
                           <div className="flex items-center justify-between mb-2">
                             <span className="text-xl font-bold text-gray-900">
-                              {String.fromCharCode(65 + idx)}. {option}
+                              {questionData.type === 'multiple-choice' && `${String.fromCharCode(65 + idx)}. `}
+                              {option}
                             </span>
                             <span className="text-lg font-semibold text-primary-600">
                               {percentage}%
@@ -325,12 +354,21 @@ export default function LiveGamePage() {
                     ))}
                   </div>
 
-                  <button
-                    onClick={handleNextQuestion}
-                    className="w-full mt-4 bg-primary-500 hover:bg-primary-600 text-white font-semibold py-3 rounded-lg transition-all hover:scale-105 cursor-pointer"
-                  >
-                    다음 문제 →
-                  </button>
+                  {questionIndex + 1 < totalQuestions ? (
+                    <button
+                      onClick={handleNextQuestion}
+                      className="w-full mt-4 bg-primary-500 hover:bg-primary-600 text-white font-semibold py-3 rounded-lg transition-all hover:scale-105 cursor-pointer"
+                    >
+                      다음 문제 →
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handleEndGame}
+                      className="w-full mt-4 bg-accent-500 hover:bg-accent-600 text-white font-semibold py-3 rounded-lg transition-all hover:scale-105 cursor-pointer"
+                    >
+                      🎉 게임 종료
+                    </button>
+                  )}
                 </div>
               )}
             </div>
@@ -360,7 +398,7 @@ export default function LiveGamePage() {
               {currentQuestion.content}
             </h2>
 
-            {questionData.type === 'multiple-choice' && questionData.options && (
+            {(questionData.type === 'multiple-choice' || questionData.type === 'true-false') && questionData.options && (
               <div className="grid grid-cols-1 gap-4">
                 {questionData.options.map((option, idx) => {
                   const isSelected = selectedAnswer === option;
@@ -382,7 +420,9 @@ export default function LiveGamePage() {
                               : 'bg-gray-100 hover:bg-gray-200 text-gray-900'
                       } ${hasAnswered ? 'cursor-not-allowed' : 'cursor-pointer hover:scale-105'}`}
                     >
-                      <span className="mr-3">{String.fromCharCode(65 + idx)}.</span>
+                      {questionData.type === 'multiple-choice' && (
+                        <span className="mr-3">{String.fromCharCode(65 + idx)}.</span>
+                      )}
                       {option}
                     </button>
                   );

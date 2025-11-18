@@ -219,6 +219,9 @@ async getOrCreateTags(tagNames: string[]): Promise<Tag[]>
 - ✅ Browser E2E testing (Playwright with 18 tests)
 - ✅ **Production build** (All 9 packages build successfully)
 - ✅ **Performance optimizations** (compression, image optimization, SEO)
+- ✅ **Question intro screen** (2-second "1/3" display before each question)
+- ✅ **Multiple question types** (multiple-choice, true-false)
+- ✅ **Template questions loading** (creates copies from template)
 
 ### Known Issues
 

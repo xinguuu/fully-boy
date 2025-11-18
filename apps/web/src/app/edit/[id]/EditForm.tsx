@@ -78,7 +78,20 @@ export default function EditForm() {
           setQuestions([]);
         }
       } else {
-        setQuestions([]);
+        // Load template questions for draft mode (without id since these will be new copies)
+        const templateSource = sourceData as GameWithQuestions;
+        if (templateSource.questions && templateSource.questions.length > 0) {
+          setQuestions(
+            templateSource.questions.map((q) => ({
+              order: q.order,
+              content: q.content,
+              data: q.data as QuestionFormData['data'],
+              imageUrl: q.imageUrl || undefined,
+            }))
+          );
+        } else {
+          setQuestions([]);
+        }
       }
     }
   }, [sourceData, isDraftMode]);

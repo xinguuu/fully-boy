@@ -58,7 +58,9 @@
       "Bash(docker ps:*)",
       "Bash(npx playwright test:*)",
       "Bash(nul)",
-      "Bash(npx turbo:*)"
+      "Bash(npx turbo:*)",
+      "Bash(docker exec:*)",
+      "Bash(done)"
     ],
     "deny": [],
     "ask": []

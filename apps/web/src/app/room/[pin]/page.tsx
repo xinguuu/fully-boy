@@ -1,213 +1,51 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useRoom, useJoinRoom, useValidateSession } from '@/lib/hooks';
+import { useAuth } from '@/lib/hooks';
 
-export default function JoinRoomPage() {
+/**
+ * Session Recovery & Redirect Page
+ * Checks for existing session and redirects appropriately
+ */
+export default function RoomEntryPage() {
   const params = useParams();
   const router = useRouter();
   const pin = params.pin as string;
-
-  const [nickname, setNickname] = useState('');
-  const [isJoining, setIsJoining] = useState(false);
-  const [sessionId, setSessionId] = useState<string | null>(null);
-  const [isCheckingSession, setIsCheckingSession] = useState(true);
-
-  const { data: room, isLoading: roomLoading, error: roomError } = useRoom(pin);
-  const joinRoom = useJoinRoom(pin);
-  const { data: sessionValidation } = useValidateSession(sessionId || '');
+  const { user } = useAuth();
 
   useEffect(() => {
-    const storedSessionId = localStorage.getItem(`room_${pin}_sessionId`);
-    if (storedSessionId) {
-      setSessionId(storedSessionId);
-    } else {
-      setIsCheckingSession(false);
-    }
-  }, [pin]);
+    // Check for participant session
+    const nickname = localStorage.getItem(`room_${pin}_nickname`);
+    const participantId = localStorage.getItem(`room_${pin}_participantId`);
 
-  useEffect(() => {
-    if (!sessionId || !sessionValidation) {
-      setIsCheckingSession(false);
+    if (nickname && participantId) {
+      // Participant with existing session → go to waiting/game
+      // (waiting room will handle actual WebSocket session restoration)
+      console.log(`[Session Recovery] Found participant session: ${nickname} (${participantId})`);
+      router.push(`/room/${pin}/waiting`);
       return;
     }
 
-    if (sessionValidation.isValid && sessionValidation.session) {
-      const storedNickname = sessionStorage.getItem(`room_${pin}_nickname`);
-      if (!storedNickname) {
-        sessionStorage.setItem(`room_${pin}_nickname`, sessionValidation.session.nickname);
-      }
-
-      router.push(`/room/${pin}/game`);
-    } else {
-      localStorage.removeItem(`room_${pin}_sessionId`);
-      sessionStorage.removeItem(`room_${pin}_nickname`);
-      setIsCheckingSession(false);
-    }
-  }, [sessionValidation, sessionId, pin, router]);
-
-  const handleJoin = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!nickname.trim()) {
-      alert('닉네임을 입력해주세요');
+    // Check if user is organizer (logged in)
+    if (user) {
+      // Organizer → go to waiting room
+      // (will verify organizer role via JWT in waiting room)
+      console.log(`[Session Recovery] User is logged in, checking organizer status`);
+      router.push(`/room/${pin}/waiting`);
       return;
     }
 
-    if (nickname.length > 20) {
-      alert('닉네임은 20자 이하로 입력해주세요');
-      return;
-    }
-
-    setIsJoining(true);
-
-    try {
-      // Generate a unique device ID (or use existing one from localStorage)
-      let deviceId = localStorage.getItem('deviceId');
-      if (!deviceId) {
-        deviceId = `device_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        localStorage.setItem('deviceId', deviceId);
-      }
-
-      const response = await joinRoom.mutateAsync({
-        nickname: nickname.trim(),
-        deviceId,
-      });
-
-      // Store sessionId in localStorage (persists across tabs and page reloads)
-      localStorage.setItem(`room_${pin}_sessionId`, response.sessionId);
-
-      // Store nickname in sessionStorage for WebSocket join
-      sessionStorage.setItem(`room_${pin}_nickname`, nickname.trim());
-
-      // Redirect to game page after successful join
-      router.push(`/room/${pin}/game`);
-    } catch (error) {
-      console.error('Failed to join room:', error);
-      alert('방 참여에 실패했습니다. 다시 시도해주세요.');
-      setIsJoining(false);
-    }
-  };
-
-  // Session checking or room loading state
-  if (isCheckingSession || roomLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-500 to-secondary-500">
-        <div className="text-white text-center">
-          <div className="text-2xl mb-2">
-            {isCheckingSession ? '세션 확인 중...' : '로딩 중...'}
-          </div>
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mt-4" />
-        </div>
-      </div>
-    );
-  }
-
-  // Room not found
-  if (roomError || !room) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-500 to-secondary-500">
-        <div className="text-white text-center p-8">
-          <h1 className="text-4xl font-bold mb-4">방을 찾을 수 없습니다</h1>
-          <p className="text-xl mb-8">올바른 PIN을 확인해주세요.</p>
-          <button
-            onClick={() => router.push('/')}
-            className="bg-white text-primary-500 font-semibold px-8 py-3 rounded-xl hover:bg-gray-100 transition-colors"
-          >
-            홈으로 돌아가기
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // Room expired or not active
-  if (room.status !== 'WAITING' && room.status !== 'ACTIVE') {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-500 to-secondary-500">
-        <div className="text-white text-center p-8">
-          <h1 className="text-4xl font-bold mb-4">게임이 종료되었습니다</h1>
-          <p className="text-xl mb-8">이 방은 더 이상 참여할 수 없습니다.</p>
-          <button
-            onClick={() => router.push('/')}
-            className="bg-white text-primary-500 font-semibold px-8 py-3 rounded-xl hover:bg-gray-100 transition-colors"
-          >
-            홈으로 돌아가기
-          </button>
-        </div>
-      </div>
-    );
-  }
+    // No session → redirect to join page for nickname input
+    console.log(`[Session Recovery] No session found, redirecting to join page`);
+    router.push(`/room/${pin}/join`);
+  }, [pin, user, router]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-500 to-secondary-500 flex items-center justify-center p-4">
-      <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl p-10">
-        <div className="text-center mb-8">
-          <div className="text-6xl mb-4">🎮</div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">게임 참여</h1>
-          <div className="text-5xl font-black text-primary-500 mb-4">{pin}</div>
-          <p className="text-gray-600">닉네임을 입력하고 게임에 참여하세요</p>
-        </div>
-
-        <form onSubmit={handleJoin} className="space-y-6">
-          <div>
-            <label htmlFor="nickname" className="block text-sm font-medium text-gray-700 mb-2">
-              닉네임
-            </label>
-            <input
-              id="nickname"
-              type="text"
-              value={nickname}
-              onChange={(e) => setNickname(e.target.value)}
-              placeholder="ex) 김철수"
-              maxLength={20}
-              disabled={isJoining}
-              className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl text-gray-900 placeholder:text-gray-400 focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 focus:outline-none transition-all disabled:bg-gray-100 disabled:cursor-not-allowed"
-              autoFocus
-            />
-            <p className="mt-2 text-sm text-gray-500">{nickname.length} / 20</p>
-          </div>
-
-          <button
-            type="submit"
-            disabled={!nickname.trim() || isJoining}
-            className="w-full bg-primary-500 text-white font-semibold text-lg px-6 py-4 rounded-xl hover:bg-primary-600 active:bg-primary-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg disabled:shadow-none"
-          >
-            {isJoining ? (
-              <span className="flex items-center justify-center gap-2">
-                <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                    fill="none"
-                  />
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  />
-                </svg>
-                참여 중...
-              </span>
-            ) : (
-              '참여하기'
-            )}
-          </button>
-        </form>
-
-        <div className="mt-6 text-center">
-          <button
-            onClick={() => router.push('/')}
-            className="text-gray-500 hover:text-gray-700 transition-colors text-sm"
-          >
-            ← 홈으로 돌아가기
-          </button>
-        </div>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-500 to-secondary-500">
+      <div className="text-white text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4" />
+        <p className="text-xl font-semibold">세션 확인 중...</p>
       </div>
     </div>
   );

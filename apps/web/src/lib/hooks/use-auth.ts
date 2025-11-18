@@ -52,3 +52,17 @@ export function useCurrentUser() {
     retry: false,
   });
 }
+
+/**
+ * Convenient hook to get current user
+ * Returns { user, isLoading, isAuthenticated }
+ */
+export function useAuth() {
+  const { data: user, isLoading } = useCurrentUser();
+
+  return {
+    user: user || null,
+    isLoading,
+    isAuthenticated: !!user,
+  };
+}

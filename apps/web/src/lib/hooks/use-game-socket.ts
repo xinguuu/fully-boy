@@ -16,7 +16,7 @@ import type {
 interface UseGameSocketOptions {
   pin: string;
   nickname?: string;
-  sessionId?: string;
+  participantId?: string;
   autoJoin?: boolean;
 }
 
@@ -30,6 +30,8 @@ interface UseGameSocketReturn {
   lastAnswer: AnswerReceivedResponse | null;
   error: ErrorResponse | null;
   sessionRestored: boolean;
+  participantId: string | null;
+  role: 'organizer' | 'participant' | null;
   joinRoom: (nickname: string) => void;
   startGame: () => void;
   nextQuestion: () => void;
@@ -41,7 +43,7 @@ interface UseGameSocketReturn {
 export function useGameSocket({
   pin,
   nickname,
-  sessionId,
+  participantId: initialParticipantId,
   autoJoin = false,
 }: UseGameSocketOptions): UseGameSocketReturn {
   const [isConnected, setIsConnected] = useState(false);
@@ -52,6 +54,8 @@ export function useGameSocket({
   const [lastAnswer, setLastAnswer] = useState<AnswerReceivedResponse | null>(null);
   const [error, setError] = useState<ErrorResponse | null>(null);
   const [sessionRestored, setSessionRestored] = useState(false);
+  const [participantId, setParticipantId] = useState<string | null>(initialParticipantId || null);
+  const [role, setRole] = useState<'organizer' | 'participant' | null>(null);
 
   const hasJoined = useRef(false);
 
@@ -60,10 +64,10 @@ export function useGameSocket({
   const joinRoom = useCallback(
     (joinNickname: string) => {
       if (hasJoined.current) return;
-      wsClient.joinRoom(pin, joinNickname, sessionId);
+      wsClient.joinRoom(pin, joinNickname, participantId || undefined);
       hasJoined.current = true;
     },
-    [pin, sessionId]
+    [pin, participantId]
   );
 
   const startGame = useCallback(() => {
@@ -98,8 +102,10 @@ export function useGameSocket({
       setIsConnected(true);
       setError(null);
 
-      if (autoJoin && nickname && !hasJoined.current) {
-        joinRoom(nickname);
+      // Auto-join for both organizer (no nickname) and participant (with nickname)
+      if (autoJoin && !hasJoined.current) {
+        wsClient.joinRoom(pin, nickname || undefined, participantId || undefined);
+        hasJoined.current = true;
       }
     };
 
@@ -107,10 +113,29 @@ export function useGameSocket({
       setIsConnected(false);
     };
 
-    const handleJoinedRoom = (data: { room: RoomState; game: Game }) => {
+    const handleJoinedRoom = (data: {
+      role: 'organizer' | 'participant';
+      participantId?: string;
+      room: RoomState;
+      game: Game;
+      sessionRestored?: boolean;
+    }) => {
       setRoomState(data.room);
       setGame(data.game);
+      setRole(data.role);
       setError(null);
+
+      // Save participantId to state and localStorage for participants
+      if (data.role === 'participant' && data.participantId) {
+        setParticipantId(data.participantId);
+        localStorage.setItem(`room_${pin}_participantId`, data.participantId);
+
+        if (data.sessionRestored) {
+          setSessionRestored(true);
+        }
+      }
+
+      console.log(`[JOINED_ROOM] Role: ${data.role}${data.participantId ? `, ParticipantID: ${data.participantId}` : ''}`);
     };
 
     const handleParticipantJoined = (data: { player: Player; playerCount: number }) => {
@@ -138,10 +163,12 @@ export function useGameSocket({
     };
 
     const handleGameStarted = (data: { room: RoomState }) => {
+      console.log('[GAME_STARTED]', data.room.status, 'questionIndex:', data.room.currentQuestionIndex);
       setRoomState(data.room);
     };
 
     const handleQuestionStarted = (data: { questionIndex: number; question: Question }) => {
+      console.log('[QUESTION_STARTED]', 'questionIndex:', data.questionIndex, 'question:', data.question?.content);
       setCurrentQuestion(data.question);
       setRoomState((prev) => {
         if (!prev) return null;
@@ -204,13 +231,16 @@ export function useGameSocket({
     };
 
     const handleSessionRestored = (data: {
-      sessionId: string;
+      participantId: string;
       currentQuestionIndex: number;
       score: number;
       nickname: string;
       message: string;
     }) => {
       setSessionRestored(true);
+      setParticipantId(data.participantId);
+      localStorage.setItem(`room_${pin}_participantId`, data.participantId);
+
       setRoomState((prev) => {
         if (!prev) return null;
         return {
@@ -218,7 +248,7 @@ export function useGameSocket({
           currentQuestionIndex: data.currentQuestionIndex,
         };
       });
-      console.log('[Session Restored]', data.message, `Score: ${data.score}, QuestionIndex: ${data.currentQuestionIndex}`);
+      console.log('[Session Restored]', data.message, `ParticipantID: ${data.participantId}, Score: ${data.score}, QuestionIndex: ${data.currentQuestionIndex}`);
     };
 
     const handleError = (data: ErrorResponse) => {
@@ -258,7 +288,7 @@ export function useGameSocket({
       wsClient.disconnect();
       hasJoined.current = false;
     };
-  }, [pin, nickname, sessionId, autoJoin, joinRoom]);
+  }, [pin, nickname, participantId, autoJoin, joinRoom]);
 
   return {
     isConnected,
@@ -270,6 +300,8 @@ export function useGameSocket({
     lastAnswer,
     error,
     sessionRestored,
+    participantId,
+    role,
     joinRoom,
     startGame,
     nextQuestion,

@@ -498,6 +498,57 @@ docker-compose down      # Stop all
 
 ## 📋 Recent Changes
 
+### 2025-11-18: Game Flow Bug Fixes & UX Improvements 🎮
+
+- **Status**: ✅ Complete
+- **Summary**: Fixed critical game flow bugs and improved UX with question intro screen
+- **Impact**: Game now works correctly from start to finish for both organizer and participants
+- **Files Modified**:
+  1. ✅ [apps/web/src/app/room/[pin]/game/page.tsx](apps/web/src/app/room/[pin]/game/page.tsx) - Multiple fixes
+  2. ✅ [apps/web/src/app/edit/[id]/EditForm.tsx](apps/web/src/app/edit/[id]/EditForm.tsx:80-95) - Template question loading
+
+**Bug Fixes**:
+
+1. **Last Question Button** (line 332-346):
+   - Changed to show "🎉 게임 종료" instead of "다음 문제 →" when on last question
+   - Added `endGame` function call to properly end the game
+
+2. **Template Question Loading** (EditForm.tsx line 80-95):
+   - Fixed: Template questions now load when creating a game from template
+   - Previously: `setQuestions([])` always set empty array in draft mode
+   - Now: Copies template questions (without id) for new game
+
+3. **First Question Skip** (line 206-210):
+   - Fixed: Removed "다음 문제 시작" button that was causing first question to be skipped
+   - Changed to simple loading spinner with "문제를 불러오는 중..." message
+
+4. **Answer Selection for true-false** (line 264, 367):
+   - Fixed: Added support for `'true-false'` question type in answer buttons
+   - Both organizer and participant UIs now handle `'multiple-choice'` OR `'true-false'`
+   - A/B/C labels only shown for multiple-choice questions
+
+**UX Improvements**:
+
+1. **Question Intro Screen** (line 218-232):
+   - Added 2-second intro screen before each question
+   - Shows large "1/3" format (current question / total questions)
+   - Purple gradient background with "문제" text and "준비하세요!" message
+   - Gives participants time to prepare
+
+**Technical Changes**:
+- Added `showQuestionIntro` state
+- Modified useEffect to show intro for 2 seconds before question
+- Timer starts after intro (not during)
+
+**Validation**:
+- ✅ Type-check passes (0 errors)
+- ✅ First question no longer skipped
+- ✅ Participants can select answers for all question types
+- ✅ Template questions load correctly
+- ✅ Game ends properly on last question
+
+---
+
 ### 2025-11-16: Search Functionality Implementation 🔍
 
 - **Status**: ✅ Complete

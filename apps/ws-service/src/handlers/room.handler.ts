@@ -1,20 +1,19 @@
 import { Server, Socket } from 'socket.io';
 import { WS_EVENTS } from '@xingu/shared';
 import { prisma } from '../config/database';
-import { redis } from '../config/redis';
 import { roomStateService } from '../services/room-state.service';
+import { participantSessionService } from '../services/participant-session.service';
 import { Player } from '../types/room.types';
 import { AuthenticatedSocket } from '../middleware/ws-auth.middleware';
-
-const REDIS_SESSION_PREFIX = 'participant:session:';
+import { generateParticipantId } from '../utils/uuid';
 
 export function setupRoomHandlers(io: Server, socket: Socket) {
   socket.on(
     WS_EVENTS.JOIN_ROOM,
-    async (data: { pin: string; nickname: string; sessionId?: string }) => {
+    async (data: { pin: string; nickname?: string; participantId?: string }) => {
       try {
         const authSocket = socket as AuthenticatedSocket;
-        const { pin, nickname, sessionId } = data;
+        const { pin, nickname, participantId } = data;
 
         const room = await prisma.room.findUnique({
           where: { pin },
@@ -45,25 +44,11 @@ export function setupRoomHandlers(io: Server, socket: Socket) {
           return;
         }
 
-        let existingSession = null;
-        let restoredScore = 0;
-        let restoredQuestionIndex = 0;
+        // Check if user is organizer
+        const isOrganizer =
+          authSocket.user !== undefined && authSocket.user.id === room.organizerId;
 
-        if (sessionId) {
-          const sessionKey = `${REDIS_SESSION_PREFIX}${sessionId}`;
-          const sessionData = await redis.get(sessionKey);
-
-          if (sessionData) {
-            const session = JSON.parse(sessionData);
-
-            if (session.roomPin === pin) {
-              existingSession = session;
-              restoredScore = session.score || 0;
-              restoredQuestionIndex = session.currentQuestionIndex || 0;
-            }
-          }
-        }
-
+        // Initialize or get room state
         let state = await roomStateService.getRoomState(pin);
 
         if (!state) {
@@ -79,10 +64,75 @@ export function setupRoomHandlers(io: Server, socket: Socket) {
           await roomStateService.setRoomState(pin, state);
         }
 
+        // Join the room namespace
+        await socket.join(`room:${pin}`);
+
+        // === ORGANIZER LOGIC ===
+        if (isOrganizer) {
+          // Organizer joins room but is NOT added to players list
+          socket.emit(WS_EVENTS.JOINED_ROOM, {
+            role: 'organizer',
+            room: state,
+            game: room.game,
+          });
+
+          // If game is already playing, send current question
+          if (state.status === 'playing' && state.currentQuestionIndex >= 0) {
+            const currentQuestion = room.game.questions[state.currentQuestionIndex];
+            if (currentQuestion) {
+              socket.emit(WS_EVENTS.QUESTION_STARTED, {
+                questionIndex: state.currentQuestionIndex,
+                question: currentQuestion,
+              });
+              console.log(`Sent current question ${state.currentQuestionIndex} to organizer`);
+            }
+          }
+
+          console.log(`Organizer (User ID: ${authSocket.user!.id}) joined room ${pin}`);
+          return;
+        }
+
+        // === PARTICIPANT LOGIC ===
+        if (!nickname) {
+          socket.emit(WS_EVENTS.ERROR, {
+            code: 'NICKNAME_REQUIRED',
+            message: 'Nickname is required for participants',
+          });
+          return;
+        }
+
+        // Check for duplicate nickname (only if not restoring session)
         const existingNickname = Object.values(state.players).find(
           (p) => p.nickname === nickname,
         );
-        if (existingNickname && !existingSession) {
+
+        let finalParticipantId = participantId || generateParticipantId();
+        let session = null;
+        let sessionRestored = false;
+
+        // Try to restore session if participantId provided
+        if (participantId) {
+          const validation = await participantSessionService.validateSession(
+            participantId,
+            pin
+          );
+
+          if (validation.isValid && validation.session) {
+            session = validation.session;
+            sessionRestored = true;
+            finalParticipantId = participantId;
+
+            console.log(
+              `Session restored for ${nickname} (ID: ${participantId}) - Score: ${session.score}, QuestionIndex: ${session.currentQuestionIndex}`
+            );
+          } else {
+            // Session invalid or expired - generate new one
+            finalParticipantId = generateParticipantId();
+          }
+        }
+
+        // Check duplicate nickname only for new participants
+        if (!sessionRestored && existingNickname) {
           socket.emit(WS_EVENTS.ERROR, {
             code: 'DUPLICATE_NICKNAME',
             message: 'Nickname already taken',
@@ -90,19 +140,30 @@ export function setupRoomHandlers(io: Server, socket: Socket) {
           return;
         }
 
-        const isOrganizer =
-          authSocket.user !== undefined && authSocket.user.id === room.organizerId;
+        // Create or update participant session in Redis
+        if (!session) {
+          session = await participantSessionService.createSession(
+            finalParticipantId,
+            pin,
+            nickname
+          );
+        } else {
+          // Refresh session TTL
+          await participantSessionService.refreshSession(finalParticipantId);
+        }
 
+        // Create player object for RoomState
         const player: Player = {
-          id: socket.id,
+          id: finalParticipantId,
           nickname,
           socketId: socket.id,
-          score: restoredScore,
-          answers: {},
-          isOrganizer,
-          joinedAt: new Date(),
+          score: session.score,
+          answers: session.answers as any,
+          isOrganizer: false,
+          joinedAt: new Date(session.joinedAt),
         };
 
+        // Add player to room state
         state = await roomStateService.addPlayer(pin, player);
 
         if (!state) {
@@ -113,33 +174,47 @@ export function setupRoomHandlers(io: Server, socket: Socket) {
           return;
         }
 
-        await socket.join(`room:${pin}`);
-
+        // Send confirmation to participant
         socket.emit(WS_EVENTS.JOINED_ROOM, {
+          role: 'participant',
+          participantId: finalParticipantId,
           room: state,
           game: room.game,
+          sessionRestored,
         });
 
-        if (existingSession) {
+        // Send session restored event if applicable
+        if (sessionRestored && session) {
           socket.emit(WS_EVENTS.SESSION_RESTORED, {
-            sessionId,
-            currentQuestionIndex: restoredQuestionIndex,
-            score: restoredScore,
-            nickname,
+            participantId: finalParticipantId,
+            currentQuestionIndex: session.currentQuestionIndex,
+            score: session.score,
+            nickname: session.nickname,
             message: 'Session restored successfully',
           });
-
-          console.log(
-            `Session restored for ${nickname} in room ${pin} (score: ${restoredScore}, questionIndex: ${restoredQuestionIndex})`,
-          );
         }
 
+        // If game is already playing, send current question
+        if (state.status === 'playing' && state.currentQuestionIndex >= 0) {
+          const currentQuestion = room.game.questions[state.currentQuestionIndex];
+          if (currentQuestion) {
+            socket.emit(WS_EVENTS.QUESTION_STARTED, {
+              questionIndex: state.currentQuestionIndex,
+              question: currentQuestion,
+            });
+            console.log(`Sent current question ${state.currentQuestionIndex} to participant ${nickname}`);
+          }
+        }
+
+        // Notify others in the room (including organizer)
         socket.to(`room:${pin}`).emit(WS_EVENTS.PARTICIPANT_JOINED, {
           player,
           playerCount: Object.keys(state.players).length,
         });
 
-        console.log(`Player ${nickname} joined room ${pin}`);
+        console.log(
+          `Participant ${nickname} (ID: ${finalParticipantId}) joined room ${pin} ${sessionRestored ? '[SESSION RESTORED]' : '[NEW]'}`
+        );
       } catch (error) {
         console.error('Error joining room:', error);
         socket.emit(WS_EVENTS.ERROR, {

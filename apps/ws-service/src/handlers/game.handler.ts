@@ -2,6 +2,7 @@ import { Server, Socket } from 'socket.io';
 import { WS_EVENTS } from '@xingu/shared';
 import { prisma } from '../config/database';
 import { roomStateService } from '../services/room-state.service';
+import { participantSessionService } from '../services/participant-session.service';
 import { scoreCalculator } from '../services/score-calculator.service';
 import { AuthenticatedSocket } from '../middleware/ws-auth.middleware';
 
@@ -78,15 +79,21 @@ export function setupGameHandlers(io: Server, socket: Socket) {
         room: updatedState,
       });
 
-      // Automatically start the first question
-      const firstQuestionState = await roomStateService.nextQuestion(pin);
-      if (firstQuestionState && room.game.questions.length > 0) {
-        const firstQuestion = room.game.questions[0];
-        io.to(`room:${pin}`).emit(WS_EVENTS.QUESTION_STARTED, {
-          questionIndex: 0,
-          question: firstQuestion,
-        });
-        console.log(`Game started in room ${pin} with first question`);
+      // Automatically start the first question if available
+      if (room.game.questions.length > 0) {
+        const firstQuestionState = await roomStateService.nextQuestion(pin);
+        if (firstQuestionState) {
+          const firstQuestion = room.game.questions[firstQuestionState.currentQuestionIndex];
+          if (firstQuestion) {
+            io.to(`room:${pin}`).emit(WS_EVENTS.QUESTION_STARTED, {
+              questionIndex: firstQuestionState.currentQuestionIndex,
+              question: firstQuestion,
+            });
+            console.log(`Game started in room ${pin} with question ${firstQuestionState.currentQuestionIndex}`);
+          } else {
+            console.log(`Game started in room ${pin} but question ${firstQuestionState.currentQuestionIndex} not found`);
+          }
+        }
       } else {
         console.log(`Game started in room ${pin} (no questions)`);
       }
@@ -216,7 +223,8 @@ export function setupGameHandlers(io: Server, socket: Socket) {
           return;
         }
 
-        const player = state.players[socket.id];
+        // Find player by socket ID
+        const player = Object.values(state.players).find((p) => p.socketId === socket.id);
         if (!player) {
           socket.emit(WS_EVENTS.ERROR, {
             code: 'PLAYER_NOT_FOUND',
@@ -224,6 +232,9 @@ export function setupGameHandlers(io: Server, socket: Socket) {
           });
           return;
         }
+
+        // participantId is player.id (not socket.id)
+        const participantId = player.id;
 
         if (player.answers[questionIndex]) {
           socket.emit(WS_EVENTS.ERROR, {
@@ -288,7 +299,18 @@ export function setupGameHandlers(io: Server, socket: Socket) {
           },
         };
 
-        await roomStateService.updatePlayer(pin, socket.id, updatedPlayer);
+        // Update RoomState (keyed by participantId, not socket.id)
+        await roomStateService.updatePlayer(pin, participantId, updatedPlayer);
+
+        // Update Redis session for session recovery
+        await participantSessionService.addAnswer(
+          participantId,
+          questionIndex,
+          answer,
+          isCorrect,
+          scoreResult.points,
+          responseTimeMs
+        );
 
         // Send confirmation to player with score
         socket.emit(WS_EVENTS.ANSWER_RECEIVED, {
