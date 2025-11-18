@@ -35,6 +35,7 @@ export default function LiveGamePage() {
     players,
     leaderboard,
     lastAnswer,
+    questionEnded,
     error,
     sessionRestored: _sessionRestored,
     joinRoom,
@@ -73,6 +74,13 @@ export default function LiveGamePage() {
     return () => clearTimeout(timer);
   }, [currentQuestion]);
 
+  // Sync showResults with questionEnded for organizer
+  useEffect(() => {
+    if (questionEnded) {
+      setShowResults(true);
+    }
+  }, [questionEnded]);
+
   const handleJoinRoom = (e: React.FormEvent) => {
     e.preventDefault();
     if (!nickname.trim()) return;
@@ -88,17 +96,9 @@ export default function LiveGamePage() {
     submitAnswer(answer, responseTimeMs);
   };
 
-  const handleNextQuestion = () => {
-    nextQuestion();
-  };
-
   const handleEndQuestion = () => {
     endQuestion();
     setShowResults(true);
-  };
-
-  const handleEndGame = () => {
-    endGame();
   };
 
   // Show loading state if participant already joined via REST but WebSocket is connecting
@@ -328,12 +328,13 @@ export default function LiveGamePage() {
               </div>
 
               {!showResults && (
-                <button
-                  onClick={handleEndQuestion}
-                  className="w-full bg-accent-500 hover:bg-accent-600 text-white font-semibold py-3 rounded-lg transition-all hover:scale-105 cursor-pointer"
-                >
-                  정답 공개 →
-                </button>
+                <div className="text-center py-4">
+                  <p className="text-gray-600 text-sm">
+                    {answeredCount === players.length && players.length > 0
+                      ? '모든 참가자가 답변했습니다. 곧 정답이 공개됩니다...'
+                      : '참가자들의 답변을 기다리는 중...'}
+                  </p>
+                </div>
               )}
 
               {showResults && leaderboard.length > 0 && (
@@ -354,21 +355,13 @@ export default function LiveGamePage() {
                     ))}
                   </div>
 
-                  {questionIndex + 1 < totalQuestions ? (
-                    <button
-                      onClick={handleNextQuestion}
-                      className="w-full mt-4 bg-primary-500 hover:bg-primary-600 text-white font-semibold py-3 rounded-lg transition-all hover:scale-105 cursor-pointer"
-                    >
-                      다음 문제 →
-                    </button>
-                  ) : (
-                    <button
-                      onClick={handleEndGame}
-                      className="w-full mt-4 bg-accent-500 hover:bg-accent-600 text-white font-semibold py-3 rounded-lg transition-all hover:scale-105 cursor-pointer"
-                    >
-                      🎉 게임 종료
-                    </button>
-                  )}
+                  <div className="mt-4 text-center py-3 bg-primary-50 rounded-lg">
+                    <p className="text-primary-700 font-medium">
+                      {questionIndex + 1 < totalQuestions
+                        ? '5초 후 다음 문제로 이동합니다...'
+                        : '5초 후 게임이 종료됩니다...'}
+                    </p>
+                  </div>
                 </div>
               )}
             </div>
@@ -402,8 +395,8 @@ export default function LiveGamePage() {
               <div className="grid grid-cols-1 gap-4">
                 {questionData.options.map((option, idx) => {
                   const isSelected = selectedAnswer === option;
-                  const isCorrect = lastAnswer?.answer === option && lastAnswer?.isCorrect;
-                  const isWrong = lastAnswer?.answer === option && !lastAnswer?.isCorrect;
+                  const isCorrect = questionEnded && lastAnswer?.answer === option && lastAnswer?.isCorrect;
+                  const isWrong = questionEnded && lastAnswer?.answer === option && !lastAnswer?.isCorrect;
 
                   return (
                     <button
@@ -431,7 +424,11 @@ export default function LiveGamePage() {
             )}
           </div>
 
-          {hasAnswered && lastAnswer && (
+          {hasAnswered && !questionEnded && (
+            <p className="text-center text-gray-500 text-sm">답안이 제출되었습니다. 결과를 기다려주세요...</p>
+          )}
+
+          {hasAnswered && questionEnded && lastAnswer && (
             <div
               className={`p-4 rounded-lg border-l-4 ${lastAnswer.isCorrect ? 'bg-success-light border-success' : 'bg-error-light border-error'}`}
             >
@@ -447,7 +444,7 @@ export default function LiveGamePage() {
             </div>
           )}
 
-          {!hasAnswered && !lastAnswer && (
+          {!hasAnswered && (
             <p className="text-center text-gray-500 text-sm">답을 선택하세요</p>
           )}
         </div>

@@ -549,6 +549,53 @@ docker-compose down      # Stop all
 
 ---
 
+### 2025-11-18: Authentication Guards & React Key Fix 🔒
+
+- **Status**: ✅ Complete
+- **Summary**: Added authentication guards to protected routes and fixed React key prop warnings in leaderboard
+- **Impact**: Browse and Edit pages now require login, improved React rendering performance
+- **Files Modified**:
+  1. ✅ [apps/web/src/app/browse/page.tsx](apps/web/src/app/browse/page.tsx:3-58) - Added authentication guard
+  2. ✅ [apps/web/src/app/edit/[id]/EditForm.tsx](apps/web/src/app/edit/[id]/EditForm.tsx:5-270) - Added authentication guard
+  3. ✅ [apps/web/src/app/room/[pin]/game/page.tsx](apps/web/src/app/room/[pin]/game/page.tsx:184,345) - Fixed React key props
+
+**Authentication Changes**:
+
+1. **Browse Page** (lines 3-58):
+   - ✅ Added `useAuth` hook import
+   - ✅ `useEffect` redirects to `/login` if not authenticated
+   - ✅ Shows loading screen during auth check
+   - ✅ Returns null if not authenticated (prevents flash of content)
+
+2. **Edit Page** (lines 5-270):
+   - ✅ Added `useAuth` hook import
+   - ✅ `useEffect` redirects to `/login` if not authenticated
+   - ✅ Auth check happens before game/template loading
+   - ✅ Returns null if not authenticated (prevents flash of content)
+
+**React Key Fix**:
+
+3. **Live Game Page** (lines 184, 345):
+   - ❌ Previous: `key={entry.playerId}` (could be duplicate or undefined)
+   - ✅ Fixed: `key={`final-${entry.rank}`}` for final leaderboard
+   - ✅ Fixed: `key={`top5-${entry.rank}`}` for TOP 5 leaderboard
+   - ✅ Using `rank` ensures unique keys (1, 2, 3, etc.)
+
+**Security Improvements**:
+- ✅ Protected routes require authentication
+- ✅ Automatic redirect to login page
+- ✅ Prevents unauthorized access to game creation/editing
+- ✅ Consistent auth UX across protected pages
+
+**Validation**:
+- ✅ Type-check passes (0 errors)
+- ✅ Build successful (all 9 packages)
+- ✅ No React warnings in browser console
+- ✅ Login redirect works correctly
+- ✅ Authenticated users can access protected pages
+
+---
+
 ### 2025-11-16: Search Functionality Implementation 🔍
 
 - **Status**: ✅ Complete

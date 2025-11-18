@@ -28,6 +28,7 @@ interface UseGameSocketReturn {
   players: Player[];
   leaderboard: LeaderboardEntry[];
   lastAnswer: AnswerReceivedResponse | null;
+  questionEnded: boolean;
   error: ErrorResponse | null;
   sessionRestored: boolean;
   participantId: string | null;
@@ -52,6 +53,7 @@ export function useGameSocket({
   const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [lastAnswer, setLastAnswer] = useState<AnswerReceivedResponse | null>(null);
+  const [questionEnded, setQuestionEnded] = useState(false);
   const [error, setError] = useState<ErrorResponse | null>(null);
   const [sessionRestored, setSessionRestored] = useState(false);
   const [participantId, setParticipantId] = useState<string | null>(initialParticipantId || null);
@@ -178,6 +180,7 @@ export function useGameSocket({
         };
       });
       setLastAnswer(null);
+      setQuestionEnded(false);
     };
 
     const handleAnswerReceived = (data: AnswerReceivedResponse) => {
@@ -199,6 +202,7 @@ export function useGameSocket({
       leaderboard: LeaderboardEntry[];
       statistics: QuestionStatistics;
     }) => {
+      setQuestionEnded(true);
       setLeaderboard(data.leaderboard);
 
       setRoomState((prev) => {
@@ -228,6 +232,10 @@ export function useGameSocket({
       setLeaderboard(data.leaderboard);
       setRoomState(data.room);
       setCurrentQuestion(null);
+    };
+
+    const handleStateSynced = (data: { room: RoomState }) => {
+      setRoomState(data.room);
     };
 
     const handleSessionRestored = (data: {
@@ -268,6 +276,7 @@ export function useGameSocket({
     socket.on(WS_EVENTS.ANSWER_SUBMITTED, handleAnswerSubmitted);
     socket.on(WS_EVENTS.QUESTION_ENDED, handleQuestionEnded);
     socket.on(WS_EVENTS.GAME_ENDED, handleGameEnded);
+    socket.on(WS_EVENTS.STATE_SYNCED, handleStateSynced);
     socket.on(WS_EVENTS.ERROR, handleError);
 
     return () => {
@@ -283,6 +292,7 @@ export function useGameSocket({
       socket.off(WS_EVENTS.ANSWER_SUBMITTED, handleAnswerSubmitted);
       socket.off(WS_EVENTS.QUESTION_ENDED, handleQuestionEnded);
       socket.off(WS_EVENTS.GAME_ENDED, handleGameEnded);
+      socket.off(WS_EVENTS.STATE_SYNCED, handleStateSynced);
       socket.off(WS_EVENTS.ERROR, handleError);
 
       wsClient.disconnect();
@@ -298,6 +308,7 @@ export function useGameSocket({
     players,
     leaderboard,
     lastAnswer,
+    questionEnded,
     error,
     sessionRestored,
     participantId,
