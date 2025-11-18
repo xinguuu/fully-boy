@@ -1,12 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Search, User, Star, Users, Clock } from 'lucide-react';
 import {
   useTemplates,
   useGames,
-  useCurrentUser,
+  useAuth,
   useDeleteGame,
   useFavoriteIds,
   useAddFavorite,
@@ -17,7 +17,7 @@ import { Select, DropdownMenu } from '@/components/ui';
 
 export default function BrowsePage() {
   const router = useRouter();
-  const { data: user } = useCurrentUser();
+  const { user, isLoading, isAuthenticated } = useAuth();
   const { data: templatesResponse } = useTemplates();
   const { data: myGames = [] } = useGames();
   const { mutateAsync: deleteGame, isPending: isDeleting } = useDeleteGame();
@@ -30,8 +30,32 @@ export default function BrowsePage() {
   const [filter, setFilter] = useState('all');
   const [sortBy, setSortBy] = useState('popular');
 
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      router.push('/login');
+    }
+  }, [isLoading, isAuthenticated, router]);
+
   const templates = templatesResponse?.templates || [];
   const favorites = new Set(favoriteIds);
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-secondary-50 flex items-center justify-center p-4">
+        <div className="text-center">
+          <div className="animate-spin h-12 w-12 border-4 border-primary-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+          <p className="text-xl font-semibold text-gray-700">로딩 중...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Don't render anything if not authenticated (will redirect)
+  if (!isAuthenticated) {
+    return null;
+  }
 
   const filterBySearch = (games: Game[]) => {
     if (!searchQuery.trim()) return games;

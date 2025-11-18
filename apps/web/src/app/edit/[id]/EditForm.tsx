@@ -2,7 +2,7 @@
 
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { useGame, useTemplate, useCreateGame, useUpdateGame, useCreateRoom } from '@/lib/hooks';
+import { useGame, useTemplate, useCreateGame, useUpdateGame, useCreateRoom, useAuth } from '@/lib/hooks';
 import type { Game, Question } from '@xingu/shared';
 import { ArrowLeft, Trash2, Plus, Settings, Edit, Check } from 'lucide-react';
 import { QuestionModal } from '@/components/edit/QuestionModal';
@@ -32,6 +32,8 @@ export default function EditForm() {
   const templateId = searchParams.get('templateId');
   const isDraftMode = gameId === 'new' && !!templateId;
 
+  const { isLoading: authLoading, isAuthenticated } = useAuth();
+
   const { data: gameData, isLoading: gameLoading, error: gameError } = useGame(isDraftMode ? '' : gameId);
   const { data: templateData, isLoading: templateLoading, error: templateError } = useTemplate(templateId || '');
   const createGame = useCreateGame();
@@ -52,6 +54,13 @@ export default function EditForm() {
   const [isQuestionModalOpen, setIsQuestionModalOpen] = useState(false);
   const [editingQuestionIndex, setEditingQuestionIndex] = useState<number | null>(null);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      router.push('/login');
+    }
+  }, [authLoading, isAuthenticated, router]);
 
   useEffect(() => {
     if (sourceData) {
@@ -242,6 +251,23 @@ export default function EditForm() {
     setTimeLimit(newTimeLimit);
     setSoundEnabled(newSoundEnabled);
   };
+
+  // Check auth loading first
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-secondary-50 flex items-center justify-center p-4">
+        <div className="text-center">
+          <div className="animate-spin h-12 w-12 border-4 border-primary-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+          <p className="text-xl font-semibold text-gray-700">로딩 중...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Don't render anything if not authenticated (will redirect)
+  if (!isAuthenticated) {
+    return null;
+  }
 
   if (isLoading) {
     return (
