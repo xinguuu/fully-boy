@@ -4,7 +4,7 @@
 
 **Product Name**: Xingu - 한국형 파티 게임 플랫폼  
 **Version**: 1.0 MVP  
-**Last Updated**: 2025-11-17  
+**Last Updated**: 2025-11-18
 **Status**: In Progress  
 **Owner**: Development Team
 
@@ -597,7 +597,7 @@ currentQuestionIndex = 0
 [정답 공개]        ↓
 (진행자 클릭)      ↓
     ↓             ↓
-[reveal-answer]    ↓
+[end-question]     ↓
 (WebSocket broadcast)
     ↓             ↓
     ├─────────────┤
@@ -863,10 +863,11 @@ SO THAT 내 게임을 저장하고 관리할 수 있다
 - [ ] 로그인 실패 시 401 Unauthorized
 
 **API Endpoint:**
-- POST `/api/auth/signup`
-- POST `/api/auth/login`
-- POST `/api/auth/refresh`
-- POST `/api/auth/logout`
+- POST `/auth/signup`
+- POST `/auth/login`
+- POST `/auth/refresh`
+- POST `/auth/logout`
+- GET `/auth/me`
 
 **Priority:** Must (M-001, M-002)
 
@@ -894,7 +895,15 @@ SO THAT 마음에 드는 게임을 선택할 수 있다
 - [ ] 페이지네이션 (20개씩)
 
 **API Endpoint:**
-- GET `/api/templates?needsMobile=all&sort=popularity&page=1&limit=20`
+- GET `/api/templates?gameType=OX_QUIZ&category=ENTERTAINMENT&sortBy=playCount&order=desc&limit=20&offset=0`
+
+**Query Parameters:**
+- `gameType`: OX_QUIZ, MULTIPLE_CHOICE, TRUE_FALSE, etc.
+- `category`: EDUCATION, ENTERTAINMENT, SPORTS, etc.
+- `sortBy`: playCount, favoriteCount, createdAt
+- `order`: asc, desc
+- `limit`: 1-100
+- `offset`: 0+
 
 **Priority:** Must (M-003)
 
@@ -927,7 +936,8 @@ SO THAT 우리 행사에 맞게 커스터마이징할 수 있다
 **API Endpoint:**
 - POST `/api/games` (새 게임 생성)
 - PUT `/api/games/:id` (기존 게임 수정)
-- POST `/api/games/:id/rooms` (방 생성)
+- DELETE `/api/games/:id` (게임 삭제)
+- POST `/api/rooms` (방 생성 - Room Service)
 
 **Priority:** Must (M-005)
 
@@ -963,15 +973,17 @@ SO THAT 다른 참가자들과 경쟁할 수 있다
 - [ ] [다음 질문] 버튼 (진행자만)
 
 **WebSocket Events:**
-- `start-game` (진행자 → 서버)
-- `game-started` (서버 → 모두)
-- `question-start` (서버 → 모두)
-- `submit-answer` (참가자 → 서버)
-- `answer-submitted` (서버 → 진행자)
-- `reveal-answer` (진행자 → 서버)
-- `answer-revealed` (서버 → 모두)
-- `next-question` (진행자 → 서버)
-- `game-ended` (서버 → 모두)
+- `start-game` (진행자 → 서버) - 게임 시작
+- `game-started` (서버 → 모두) - 게임 시작됨
+- `question-started` (서버 → 모두) - 질문 시작됨
+- `submit-answer` (참가자 → 서버) - 답변 제출
+- `answer-received` (서버 → 제출자) - 답변 결과 (점수, 정답여부)
+- `answer-submitted` (서버 → 모두) - 답변 제출 알림
+- `end-question` (진행자 → 서버) - 질문 종료 (정답 공개)
+- `question-ended` (서버 → 모두) - 질문 종료됨 (결과, 리더보드)
+- `next-question` (진행자 → 서버) - 다음 질문
+- `end-game` (진행자 → 서버) - 게임 종료
+- `game-ended` (서버 → 모두) - 게임 종료됨 (최종 리더보드)
 
 **Priority:** Must (M-009, M-010)
 
@@ -1392,22 +1404,34 @@ SO THAT 폰 없이도 재미있는 게임을 진행할 수 있다
         ↓ HTTPS
    [Nginx:80] ← Reverse Proxy, Load Balancer
         ↓
-┌───────┴────────────────────────────────────┐
-│                                            │
-[Next.js:3000]  [Auth:3001]  [Game:3002]  [WS:3003]
-    ↓               ↓            ↓            ↓
-    └───────────────┴────────────┴────────────┘
-                    ↓                ↓
-              [PostgreSQL:5432]  [Redis:6379]
-              
-7 Containers Total:
-1. nginx (reverse proxy)
-2. postgres (database)
-3. redis (session/cache)
-4. web (Next.js frontend)
-5. auth-service (NestJS)
-6. game-service (Express)
-7. ws-service (Socket.io)
+┌───────┴─────────────────────────────────────────────────────┐
+│                                                              │
+│  [Next.js:3000]                                              │
+│       ↓                                                      │
+│  ┌────┴─────────────────────────────────────────────────┐   │
+│  │                                                       │   │
+│  │  [Auth:3001]  [Template:3002]  [Game:3003]            │   │
+│  │                                                       │   │
+│  │  [Room:3004]  [WS:3005]        [Result:3006]          │   │
+│  │                                                       │   │
+│  └───────────────────────┬───────────────────────────────┘   │
+│                          │                                   │
+└──────────────────────────┼───────────────────────────────────┘
+                           ↓
+              ┌────────────┴────────────┐
+              │                         │
+        [PostgreSQL:5432]         [Redis:6379]
+
+9 Packages Total (Monorepo):
+1. postgres (database)
+2. redis (session/cache)
+3. web (Next.js 16 frontend)
+4. auth-service (NestJS) - Port 3001
+5. template-service (Express) - Port 3002
+6. game-service (Express) - Port 3003
+7. room-service (Express) - Port 3004
+8. ws-service (Socket.io) - Port 3005
+9. result-service (Express) - Port 3006
 ```
 
 ### 8.2 기술 스택
@@ -1444,70 +1468,114 @@ SO THAT 폰 없이도 재미있는 게임을 진행할 수 있다
 
 | Service | Base URL | Endpoints | 설명 |
 |---------|----------|-----------|------|
-| **Auth Service** | `/api/auth` | | |
+| **Auth Service (3001)** | `/auth` | | |
 | | | POST /signup | 회원가입 |
 | | | POST /login | 로그인 |
 | | | POST /refresh | 토큰 갱신 |
 | | | POST /logout | 로그아웃 |
 | | | GET /me | 내 정보 |
-| **Game Service** | `/api/templates` | | |
-| | | GET / | 템플릿 목록 |
-| | | GET /:id | 템플릿 상세 |
+| **Template Service (3002)** | `/api/templates` | | |
+| | | GET / | 템플릿 목록 (필터/정렬/페이지네이션) |
+| | | GET /:id | 템플릿 상세 (질문 포함) |
+| **Game Service (3003)** | `/api/games` | | |
+| | | GET /my-games | 내 게임 목록 |
+| | | GET /favorites | 즐겨찾기 게임 목록 |
+| | | GET /favorites/ids | 즐겨찾기 ID만 조회 |
+| | | GET /:id | 게임 상세 |
+| | | POST / | 게임 생성 |
+| | | PUT /:id | 게임 수정 |
+| | | DELETE /:id | 게임 삭제 |
 | | | POST /:id/favorite | 즐겨찾기 추가 |
 | | | DELETE /:id/favorite | 즐겨찾기 제거 |
-| | | GET /my-games | 내 게임 목록 |
-| | | POST /my-games | 게임 생성 |
-| | | PUT /my-games/:id | 게임 수정 |
-| | | DELETE /my-games/:id | 게임 삭제 |
-| | | POST /rooms | 방 생성 |
-| | | GET /rooms/:pin | 방 정보 |
-| | | GET /rooms/:id/result | 게임 결과 |
-| **WS Service** | `/ws` | | |
+| **Room Service (3004)** | `/api/rooms` | | |
+| | | POST / | 방 생성 |
+| | | GET /:pin | 방 정보 |
+| | | DELETE /:pin | 방 삭제 |
+| **Result Service (3006)** | `/api/results` | | |
+| | | POST / | 결과 저장 |
+| | | GET /room/:roomId | 방 ID로 결과 조회 |
+| | | GET /game/:gameId | 게임별 결과 목록 |
+| **WS Service (3005)** | `ws://localhost:3005` | | |
 | | | (connect) | WebSocket 연결 |
 | | | join-room | 방 입장 |
 | | | start-game | 게임 시작 |
 | | | submit-answer | 답변 제출 |
-| | | reveal-answer | 정답 공개 |
+| | | end-question | 질문 종료 (정답 공개) |
 | | | next-question | 다음 질문 |
+| | | end-game | 게임 종료 |
 
 ### 8.4 WebSocket 이벤트 목록
 
 | 이벤트 | 방향 | 설명 | Payload |
 |--------|------|------|---------|
-| `join-room` | C→S | 참가자 방 입장 | `{ pin, nickname }` |
-| `joined-room` | S→C | 입장 성공 | `{ roomId, participants }` |
-| `participant-joined` | S→All | 새 참가자 입장 | `{ participant, totalCount }` |
-| `participant-left` | S→All | 참가자 퇴장 | `{ nickname, totalCount }` |
-| `start-game` | C→S | 게임 시작 (진행자) | `{ roomId }` |
-| `game-started` | S→All | 게임 시작됨 | `{ firstQuestion }` |
-| `submit-answer` | C→S | 답변 제출 | `{ roomId, questionIndex, answer }` |
-| `answer-submitted` | S→Host | 응답 현황 | `{ responseCount, totalParticipants }` |
-| `reveal-answer` | C→S | 정답 공개 (진행자) | `{ roomId, questionIndex }` |
-| `answer-revealed` | S→All | 정답 공개됨 | `{ correctAnswer, statistics, leaderboard }` |
-| `next-question` | C→S | 다음 질문 (진행자) | `{ roomId }` |
-| `question-started` | S→All | 다음 질문 시작 | `{ question }` |
-| `game-ended` | S→All | 게임 종료 | `{ result, leaderboard, statistics }` |
-| `error` | S→C | 에러 발생 | `{ message, code, details }` |
-| **MC 모드 전용 이벤트** |
-| `add-participant` | C→S | 참가자 추가 (MC 모드) | `{ roomId, name }` |
-| `participant-added` | S→Host | 참가자 추가됨 | `{ participant, totalCount }` |
-| `remove-participant` | C→S | 참가자 제거 (MC 모드) | `{ roomId, participantId }` |
-| `participant-removed` | S→Host | 참가자 제거됨 | `{ participantId, totalCount }` |
-| `award-points` | C→S | 점수 부여 (MC 모드) | `{ roomId, participantId, points }` |
-| `points-awarded` | S→All | 점수 부여됨 | `{ participantName, points, newScore, leaderboard }` |
+| **Room Events** |
+| `join-room` | C→S | 방 입장 | `{ pin, nickname?, participantId? }` |
+| `joined-room` | S→C | 입장 성공 | `{ role, participantId?, room, game, sessionRestored? }` |
+| `participant-joined` | S→All | 새 참가자 입장 | `{ player, playerCount }` |
+| `participant-left` | S→All | 참가자 퇴장 | `{ playerId, playerCount }` |
+| `session-restored` | S→C | 세션 복구됨 | `{ participantId, currentQuestionIndex, score, nickname }` |
+| **Game Control Events (Organizer)** |
+| `start-game` | C→S | 게임 시작 | `{ pin }` |
+| `game-started` | S→All | 게임 시작됨 | `{ room }` |
+| `next-question` | C→S | 다음 질문 | `{ pin }` |
+| `question-started` | S→All | 질문 시작됨 | `{ questionIndex, question }` |
+| `end-question` | C→S | 질문 종료 (정답 공개) | `{ pin, questionIndex }` |
+| `question-ended` | S→All | 질문 종료됨 | `{ questionIndex, correctAnswer, results, leaderboard, statistics }` |
+| `end-game` | C→S | 게임 종료 | `{ pin }` |
+| `game-ended` | S→All | 게임 종료됨 | `{ leaderboard, room }` |
+| **Answer Events** |
+| `submit-answer` | C→S | 답변 제출 | `{ pin, questionIndex, answer, responseTimeMs }` |
+| `answer-received` | S→C | 답변 확인 (제출자에게) | `{ questionIndex, answer, isCorrect, points, breakdown }` |
+| `answer-submitted` | S→All | 답변 제출됨 (알림) | `{ playerId, playerNickname, questionIndex }` |
+| **System Events** |
+| `error` | S→C | 에러 발생 | `{ code, message }` |
 
-**이벤트 설명:**
+**이벤트 상세 Payload:**
 
-**모바일 필요 모드 (OX 퀴즈):**
-- 참가자들이 각자 WebSocket 연결
-- `join-room` → `submit-answer` 플로우
-- 자동 채점, 자동 점수 부여
+**join-room Response (joined-room):**
+```typescript
+{
+  role: 'organizer' | 'participant';
+  participantId?: string;   // 참가자만
+  room: RoomState;          // 방 상태
+  game: Game;               // 게임 정보
+  sessionRestored?: boolean; // 세션 복구 시 true
+}
+```
 
-**MC 모드 (초성 게임):**
-- 진행자만 WebSocket 연결
-- 참가자는 WebSocket 연결 없음 (프로젝터만 봄)
-- `add-participant` → `award-points` 플로우
-- 수동 점수 부여
+**question-ended Response:**
+```typescript
+{
+  questionIndex: number;
+  correctAnswer: unknown;
+  results: [{
+    playerId: string;
+    nickname: string;
+    answer: unknown;
+    isCorrect: boolean;
+    points: number;
+    responseTimeMs: number;
+    currentScore: number;
+  }];
+  leaderboard: [{
+    rank: number;
+    playerId: string;
+    nickname: string;
+    score: number;
+  }];
+  statistics: {
+    totalAnswers: number;
+    correctAnswers: number;
+    averageResponseTime: number;
+  };
+}
+```
+
+**Error Codes:**
+- `ROOM_NOT_FOUND`, `ROOM_EXPIRED`, `NICKNAME_REQUIRED`
+- `DUPLICATE_NICKNAME`, `NOT_ORGANIZER`, `INVALID_STATE`
+- `PLAYER_NOT_FOUND`, `ALREADY_ANSWERED`, `QUESTION_NOT_FOUND`
+- `NO_MORE_QUESTIONS`, `INTERNAL_ERROR`
 
 ---
 
@@ -1630,6 +1698,7 @@ Week 2: 프론트엔드 & 통합
 | 버전 | 날짜 | 작성자 | 변경사항 |
 |------|------|--------|----------|
 | 1.0 | 2025-11-17 | Dev Team | 실무 중심 PRD 작성 (플로우차트, IA, 스토리보드) |
+| 1.1 | 2025-11-18 | Dev Team | 백엔드 코드와 API 스펙 동기화 (6개 서비스 구조, WebSocket 이벤트, API 엔드포인트 수정) |
 
 ---
 
