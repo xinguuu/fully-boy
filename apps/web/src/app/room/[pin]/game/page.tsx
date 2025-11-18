@@ -39,10 +39,8 @@ export default function LiveGamePage() {
     error,
     sessionRestored: _sessionRestored,
     joinRoom,
-    nextQuestion,
     submitAnswer,
     endQuestion,
-    endGame,
   } = useGameSocket({
     pin,
     nickname: storedNickname || undefined,
