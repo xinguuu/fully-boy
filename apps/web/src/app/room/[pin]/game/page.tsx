@@ -181,7 +181,7 @@ export default function LiveGamePage() {
             <div className="space-y-3">
               {leaderboard.slice(0, 10).map((entry) => (
                 <div
-                  key={entry.playerId}
+                  key={`final-${entry.rank}`}
                   className={`flex items-center justify-between p-4 rounded-lg ${
                     entry.rank <= 3 ? 'bg-gradient-to-r from-accent-100 to-accent-50' : 'bg-gray-50'
                   }`}
@@ -342,7 +342,7 @@ export default function LiveGamePage() {
                   <div className="space-y-2">
                     {leaderboard.slice(0, 5).map((entry) => (
                       <div
-                        key={entry.playerId}
+                        key={`top5-${entry.rank}`}
                         className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
                       >
                         <div className="flex items-center gap-3">
