@@ -2,42 +2,48 @@
 
 > **"Kahoot's convenience + Korean entertainment/meme game content"**
 
-Xingu is a Korean-style party game platform that provides ready-to-use game frameworks for MT, workshops, and events.
+Xingu is a real-time party game platform inspired by Kahoot, designed for Korean entertainment culture. Create and play interactive games with friends in MT, workshops, and events.
 
 ---
 
-## 📚 Documentation
+## ✨ Key Features
 
-- [01-overview.md](./docs/01-overview.md) - Project Overview
-- [02-ia.md](./docs/02-ia.md) - Information Architecture
-- [03-prd.md](./docs/03-prd.md) - Product Requirements Document
-- [04-architecture.md](./docs/04-architecture.md) - System Architecture
-- [05-design-guide.md](./docs/05-design-guide.md) - Design System Guide
+- **🎯 Ready-to-Use Templates**: Choose from pre-built game templates and customize questions in 5 minutes
+- **📱 Flexible Play Modes**: Mobile-required mode or MC mode (play without phones)
+- **⚡ Real-time Multiplayer**: Live gameplay with WebSocket-powered synchronization
+- **🎨 Korean Content**: Games inspired by Korean variety shows, SNS trends, and memes
+- **🔒 Secure & Scalable**: JWT authentication, distributed sessions, microservice architecture
 
 ---
 
 ## 🏗️ Architecture
 
-### Microservice Architecture (MSA) + Turborepo
+### Microservice Architecture (MSA)
 
-**7 Services:**
-1. **nginx** - Reverse proxy, load balancing
-2. **postgres** - Main database (users, games, rooms)
-3. **redis** - Session sharing, real-time state
-4. **web** - Next.js 15 frontend (SSR)
-5. **auth-service** - NestJS (authentication, users)
-6. **game-service** - Express (games, rooms, templates)
-7. **ws-service** - Socket.io (real-time WebSocket)
+**9 Containers:**
+- **nginx** - Reverse proxy & load balancing
+- **postgres** - Main database (PostgreSQL 17)
+- **redis** - Session store & cache
+- **web** - Next.js 16 frontend (SSR)
+- **auth-service** - NestJS (authentication & user management)
+- **template-service** - Express (public game templates)
+- **game-service** - Express (game CRUD & favorites)
+- **room-service** - Express (room management & PIN system)
+- **ws-service** - Socket.io (real-time WebSocket)
+- **result-service** - Express (game results & statistics)
 
-### Monorepo Structure
+### Monorepo Structure (Turborepo)
 
 ```
 xingu/
 ├── apps/
-│   ├── web/                    # Next.js 15 Frontend
+│   ├── web/                    # Next.js 16 Frontend
 │   ├── auth-service/           # NestJS Auth Service
+│   ├── template-service/       # Express Template Service
 │   ├── game-service/           # Express Game Service
-│   └── ws-service/             # Socket.io WebSocket
+│   ├── room-service/           # Express Room Service
+│   ├── ws-service/             # Socket.io WebSocket
+│   └── result-service/         # Express Result Service
 ├── packages/
 │   ├── shared/                 # Types, Utils, Constants, Zod schemas
 │   ├── database/               # Shared Prisma Schema
@@ -56,10 +62,34 @@ xingu/
 - **Node.js**: 24+
 - **pnpm**: 9+
 - **Docker**: Docker Desktop or Docker Engine + Docker Compose
-- **PostgreSQL**: 17+ (or use Docker)
-- **Redis**: Latest (or use Docker)
 
-### Option 1: Local Development (Without Docker)
+### Option 1: Docker (Recommended)
+
+```bash
+# 1. Clone repository
+git clone https://github.com/your-org/xingu.git
+cd xingu
+
+# 2. Set up environment variables
+cp .env.example .env
+# Edit .env with your configuration
+
+# 3. Start all containers (builds images on first run)
+docker compose up --build
+
+# Access the application:
+# - Frontend: http://localhost (via Nginx)
+# - All services accessible through Nginx reverse proxy
+
+# Stop all containers
+docker compose down
+
+# View logs
+docker compose logs -f web
+docker compose logs -f auth-service
+```
+
+### Option 2: Local Development
 
 ```bash
 # 1. Clone repository
@@ -73,83 +103,32 @@ pnpm install
 cp .env.example .env
 # Edit .env with your local database and Redis URLs
 
-# 4. Generate Prisma Client
-pnpm db:generate
+# 4. Start databases (Docker)
+docker compose up -d postgres redis
 
-# 5. Run database migrations
-pnpm db:migrate
+# 5. Generate Prisma Client
+pnpm --filter=@xingu/database db:generate
 
-# 6. Seed database with sample data
-pnpm db:seed
+# 6. Run database migrations
+pnpm --filter=@xingu/database db:migrate
 
-# 7. Start all services in development mode
-pnpm dev
+# 7. Start all services (open 7 terminals or use tmux)
+pnpm --filter=@xingu/auth-service dev
+pnpm --filter=@xingu/template-service dev
+pnpm --filter=@xingu/game-service dev
+pnpm --filter=@xingu/room-service dev
+pnpm --filter=@xingu/ws-service dev
+pnpm --filter=@xingu/result-service dev
+pnpm --filter=@xingu/web dev
 
 # Access the application:
 # - Frontend: http://localhost:3000
 # - Auth Service: http://localhost:3001
-# - Game Service: http://localhost:3002
-# - WS Service: http://localhost:3003
-```
-
-### Option 2: Docker Development
-
-```bash
-# 1. Clone repository
-git clone https://github.com/your-org/xingu.git
-cd xingu
-
-# 2. Set up environment variables
-cp .env.example .env
-
-# 3. Start all containers (first time will build images)
-docker-compose up --build
-
-# Access the application:
-# - Frontend: http://localhost (via Nginx)
-# - All services are accessible through Nginx reverse proxy
-
-# Stop all containers
-docker-compose down
-
-# View logs
-docker-compose logs -f web
-docker-compose logs -f auth-service
-```
-
----
-
-## 📦 Available Scripts
-
-### Root Commands
-
-```bash
-# Development
-pnpm dev                     # Start all services in dev mode
-pnpm dev --filter=web        # Start specific service only
-
-# Building
-pnpm build                   # Build all packages
-pnpm build --filter=web      # Build specific package
-
-# Testing
-pnpm test                    # Run all unit tests
-pnpm test:e2e                # Run E2E tests
-pnpm type-check              # Type check all packages
-pnpm lint                    # Lint all packages
-
-# Database
-pnpm db:generate             # Generate Prisma Client
-pnpm db:migrate              # Run migrations
-pnpm db:seed                 # Seed database
-pnpm db:studio               # Open Prisma Studio
-
-# Formatting
-pnpm format                  # Format all files
-pnpm format:check            # Check formatting
-
-# Cleanup
-pnpm clean                   # Clean all build artifacts
+# - Template Service: http://localhost:3002
+# - Game Service: http://localhost:3003
+# - Room Service: http://localhost:3004
+# - WS Service: http://localhost:3005
+# - Result Service: http://localhost:3006
 ```
 
 ---
@@ -157,18 +136,20 @@ pnpm clean                   # Clean all build artifacts
 ## 💻 Technology Stack
 
 ### Frontend
-- **Framework**: Next.js 15 (App Router)
+- **Framework**: Next.js 16 (App Router)
 - **UI Library**: React 19
 - **Language**: TypeScript (Strict Mode)
 - **Styling**: Tailwind CSS
-- **UI Components**: Shadcn UI + Radix UI
-- **State**: Zustand, TanStack Query
-- **Form**: react-hook-form + Zod
+- **State**: React Hooks
+- **Real-time**: Socket.io Client
 
 ### Backend
 - **Auth Service**: NestJS + JWT + Redis sessions
-- **Game Service**: Express + Zod validation
+- **Template Service**: Express + Prisma + Redis cache
+- **Game Service**: Express + Prisma
+- **Room Service**: Express + Prisma + Redis
 - **WS Service**: Socket.io + Redis Pub/Sub
+- **Result Service**: Express + Prisma
 - **Database**: PostgreSQL 17 + Prisma ORM
 - **Session Store**: Redis
 
@@ -179,91 +160,166 @@ pnpm clean                   # Clean all build artifacts
 
 ---
 
-## 🧪 Testing
+## 📦 Available Scripts
+
+### Root Commands
 
 ```bash
-# Unit tests
-pnpm test
+# Development
+pnpm dev                          # Start all services (local mode)
+pnpm dev --filter=web             # Start specific service only
 
-# E2E tests
-pnpm test:e2e
+# Building
+pnpm build                        # Build all packages
+pnpm build --filter=web           # Build specific package
 
-# Coverage
-pnpm test --coverage
+# Testing
+pnpm test                         # Run all unit tests (138 tests)
+pnpm --filter=@xingu/web test:e2e # Run browser E2E tests (18 tests)
+pnpm type-check                   # Type check all packages
+pnpm lint                         # Lint all packages
+
+# Database
+pnpm --filter=@xingu/database db:generate  # Generate Prisma Client
+pnpm --filter=@xingu/database db:migrate   # Run migrations
+pnpm --filter=@xingu/database db:studio    # Open Prisma Studio
+
+# Docker
+docker compose up -d              # Start all containers (detached)
+docker compose down               # Stop all containers
+docker compose logs -f [service]  # View logs
+docker compose ps                 # List running containers
 ```
-
----
-
-## 🔒 Security
-
-- JWT-based authentication (15min access + 7d refresh tokens)
-- bcrypt password hashing (10 salt rounds)
-- Rate limiting (Redis-based)
-- Input validation (Zod schemas)
-- SQL injection prevention (Prisma ORM)
-- XSS prevention (React auto-escaping + CSP)
-- HTTPS only (production)
-
----
-
-## 📝 Environment Variables
-
-See [.env.example](./.env.example) for all available environment variables.
-
-Key variables:
-- `DATABASE_URL` - PostgreSQL connection string
-- `REDIS_URL` - Redis connection string
-- `JWT_SECRET` - Secret key for JWT signing
-- `NODE_ENV` - Environment (development/production)
 
 ---
 
 ## 🐳 Docker Services
 
-| Service | Port | Description |
-|---------|------|-------------|
-| nginx | 80, 443 | Reverse proxy & load balancer |
-| postgres | 5432 | Main database |
-| redis | 6379 | Session store & cache |
-| web | 3000 | Next.js frontend |
-| auth-service | 3001 | Authentication service |
-| game-service | 3002 | Game management service |
-| ws-service | 3003 | Real-time WebSocket service |
+| Service | Port | Description | Dependencies |
+|---------|------|-------------|--------------|
+| nginx | 80, 443 | Reverse proxy & load balancer | All services |
+| postgres | 5432 | Main database (PostgreSQL 17) | - |
+| redis | 6379 | Session store & cache | - |
+| web | 3000 | Next.js 16 frontend | All backend services |
+| auth-service | 3001 | Authentication & user management | postgres, redis |
+| template-service | 3002 | Public game templates | postgres, redis |
+| game-service | 3003 | Game CRUD & favorites | postgres, redis |
+| room-service | 3004 | Room management & PIN system | postgres, redis |
+| ws-service | 3005 | Real-time WebSocket | redis |
+| result-service | 3006 | Game results & statistics | postgres, redis |
 
 ---
 
-## 📊 Project Status
+## 🧪 Testing
 
-**Current Phase**: Infrastructure Setup ✅
+All services include comprehensive test coverage:
 
-### Completed
-- ✅ Turborepo monorepo structure
-- ✅ Shared packages (@xingu/shared, @xingu/database, @xingu/config)
-- ✅ All 4 apps skeleton (web, auth-service, game-service, ws-service)
-- ✅ Docker Compose configuration (7 containers)
-- ✅ Prisma schema with 7 tables
-- ✅ Zod validation schemas
-- ✅ TypeScript + ESLint + Prettier setup
+```bash
+# Backend unit tests (138 tests)
+pnpm test
 
-### Next Steps (Week 1: Backend)
-- [ ] Implement Auth Service endpoints (signup, login, logout, refresh, me)
-- [ ] Implement Game Service endpoints (templates, my-games, rooms)
-- [ ] Implement WebSocket Service events (join-room, start-game, submit-answer, etc.)
-- [ ] Unit tests for all services
-- [ ] Integration tests
+# Backend E2E tests (10 tests)
+node test-websocket.js
 
-### Future (Week 2: Frontend)
-- [ ] Next.js pages (home, browse, my-games, edit, play, results)
-- [ ] UI components (Shadcn UI)
-- [ ] State management (Zustand stores)
-- [ ] Real-time game flow (Socket.io client)
-- [ ] E2E tests (Playwright)
+# Browser E2E tests (18 tests with Playwright)
+pnpm --filter=@xingu/web test:e2e
+
+# Test coverage
+pnpm test --coverage
+```
+
+**Test Coverage**:
+- Auth Service: 17 unit tests
+- Template Service: 18 unit tests
+- Game Service: 26 unit tests
+- Room Service: 28 unit tests
+- WS Service: 28 unit tests
+- Result Service: 21 unit tests
+- **Total**: 138 unit tests + 10 E2E tests + 18 browser E2E tests
+
+---
+
+## 🔒 Security
+
+- **Authentication**: JWT-based (15min access + 7d refresh tokens)
+- **Password Hashing**: bcrypt (10 salt rounds)
+- **Session Management**: Redis-based distributed sessions
+- **Rate Limiting**: Redis-backed API rate limiting
+- **Input Validation**: Zod schemas on all endpoints
+- **SQL Injection Prevention**: Prisma ORM
+- **XSS Prevention**: React auto-escaping + CSP headers
+- **HTTPS Only**: Production deployment
+
+---
+
+## 📝 Environment Variables
+
+See [.env.production.example](./.env.production.example) for production configuration.
+
+Key variables:
+
+```env
+# Database
+DATABASE_URL=postgresql://user:password@host:5432/xingu
+
+# Redis
+REDIS_URL=redis://host:6379
+
+# JWT
+JWT_SECRET=your-secret-key-here
+JWT_ACCESS_EXPIRES_IN=15m
+JWT_REFRESH_EXPIRES_IN=7d
+
+# Environment
+NODE_ENV=production
+CORS_ORIGIN=https://yourdomain.com
+```
+
+---
+
+## 📚 Documentation
+
+Comprehensive documentation available in [docs/](./docs/) folder:
+
+- **[00-INDEX.md](./docs/00-INDEX.md)** - Documentation guide map
+- **[01-overview.md](./docs/01-overview.md)** - Project overview & vision
+- **[02-ia.md](./docs/02-ia.md)** - Information Architecture & UI flows
+- **[03-prd.md](./docs/03-prd.md)** - Product Requirements & API specs
+- **[04-architecture.md](./docs/04-architecture.md)** - System architecture & diagrams
+- **[05-design-guide.md](./docs/05-design-guide.md)** - Design system & styling
+- **[06-development-guide.md](./docs/06-development-guide.md)** - Development guide & conventions
+
+For AI assistant development guidelines, see [CLAUDE.md](./CLAUDE.md).
+
+---
+
+## 🎮 Game Flow
+
+1. **Browse Templates**: Choose from public templates or create your own
+2. **Customize Game**: Edit questions, answers, and settings
+3. **Create Room**: Generate a 6-digit PIN code
+4. **Join Game**: Participants enter PIN on their devices
+5. **Play Live**: Real-time synchronized gameplay with leaderboard
+6. **View Results**: Final rankings and statistics
+
+---
+
+## 🌐 Supported Game Types
+
+- **OX Quiz** (True/False)
+- **Four Choice Quiz** (Multiple choice)
+- **Balance Game** (A vs B choices)
+- **Initial Quiz** (Korean initial consonant quiz)
+- **Speed Quiz** (Quick-fire questions)
 
 ---
 
 ## 👥 Contributing
 
-This is a private project. Please follow the coding conventions in [CLAUDE.md](./CLAUDE.md).
+This is a private project. For development guidelines:
+- Follow conventions in [CLAUDE.md](./CLAUDE.md)
+- Review [docs/06-development-guide.md](./docs/06-development-guide.md)
+- Ensure all tests pass before committing
 
 ---
 
