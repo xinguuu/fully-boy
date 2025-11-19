@@ -78,6 +78,7 @@ export class RoomStateService {
     if (!state) return null;
 
     state.currentQuestionIndex += 1;
+    state.currentQuestionStartedAt = new Date();
     await this.setRoomState(pin, state);
     return state;
   }

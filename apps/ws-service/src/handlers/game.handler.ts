@@ -88,6 +88,7 @@ export function setupGameHandlers(io: Server, socket: Socket) {
             io.to(`room:${pin}`).emit(WS_EVENTS.QUESTION_STARTED, {
               questionIndex: firstQuestionState.currentQuestionIndex,
               question: firstQuestion,
+              startedAt: firstQuestionState.currentQuestionStartedAt,
             });
             console.log(`Game started in room ${pin} with question ${firstQuestionState.currentQuestionIndex}`);
           } else {
@@ -182,6 +183,7 @@ export function setupGameHandlers(io: Server, socket: Socket) {
       io.to(`room:${pin}`).emit(WS_EVENTS.QUESTION_STARTED, {
         questionIndex: updatedState.currentQuestionIndex,
         question: currentQuestion,
+        startedAt: updatedState.currentQuestionStartedAt,
       });
 
       console.log(`Question ${updatedState.currentQuestionIndex} started in room ${pin}`);
@@ -416,6 +418,7 @@ export function setupGameHandlers(io: Server, socket: Socket) {
                         io.to(`room:${pin}`).emit(WS_EVENTS.QUESTION_STARTED, {
                           questionIndex: nextState.currentQuestionIndex,
                           question: nextQuestion,
+                          startedAt: nextState.currentQuestionStartedAt,
                         });
                         console.log(`Auto-advanced to question ${nextState.currentQuestionIndex} in room ${pin}`);
                       }
@@ -606,6 +609,7 @@ export function setupGameHandlers(io: Server, socket: Socket) {
               io.to(`room:${pin}`).emit(WS_EVENTS.QUESTION_STARTED, {
                 questionIndex: nextState.currentQuestionIndex,
                 question: nextQuestion,
+                startedAt: nextState.currentQuestionStartedAt,
               });
               console.log(`Auto-advanced to question ${nextState.currentQuestionIndex} in room ${pin}`);
             }

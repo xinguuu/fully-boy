@@ -222,6 +222,8 @@ async getOrCreateTags(tagNames: string[]): Promise<Tag[]>
 - ✅ **Question intro screen** (2-second "1/3" display before each question)
 - ✅ **Multiple question types** (multiple-choice, true-false)
 - ✅ **Template questions loading** (creates copies from template)
+- ✅ **Server-based synchronized timer** (absolute time sync across all clients)
+- ✅ **Organizer reconnection handling** (auto-detect organizer without nickname prompt)
 
 ### Known Issues
 

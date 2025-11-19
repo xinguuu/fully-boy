@@ -16,6 +16,7 @@ export interface RoomState {
   status: 'waiting' | 'playing' | 'finished';
   players: Record<string, Player>;
   currentQuestionIndex: number;
+  currentQuestionStartedAt?: Date;
   startedAt?: Date;
   endedAt?: Date;
 }

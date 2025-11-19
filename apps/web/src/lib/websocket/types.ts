@@ -26,6 +26,7 @@ export interface RoomState {
   status: 'waiting' | 'playing' | 'finished';
   players: Record<string, Player>;
   currentQuestionIndex: number;
+  currentQuestionStartedAt?: Date | string;
   startedAt?: Date;
 }
 
@@ -129,6 +130,7 @@ export interface GameStartedResponse {
 export interface QuestionStartedResponse {
   questionIndex: number;
   question: Question;
+  startedAt?: Date | string;
 }
 
 export interface AnswerReceivedResponse {

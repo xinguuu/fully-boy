@@ -4,9 +4,10 @@ interface TimerProps {
   duration: number;
   onTimeUp?: () => void;
   autoStart?: boolean;
+  startedAt?: Date | string;
 }
 
-export function Timer({ duration, onTimeUp, autoStart = true }: TimerProps) {
+export function Timer({ duration, onTimeUp, autoStart = true, startedAt }: TimerProps) {
   const [timeLeft, setTimeLeft] = useState(duration);
   const [isRunning, setIsRunning] = useState(autoStart);
 
@@ -15,9 +16,21 @@ export function Timer({ duration, onTimeUp, autoStart = true }: TimerProps) {
   const isDanger = percentage <= 10;
 
   useEffect(() => {
-    setTimeLeft(duration);
-    setIsRunning(autoStart);
-  }, [duration, autoStart]);
+    if (startedAt) {
+      // Server-based timer: calculate remaining time based on server start time
+      const startTime = new Date(startedAt).getTime();
+      const now = Date.now();
+      const elapsedSeconds = Math.floor((now - startTime) / 1000);
+      const remaining = Math.max(0, duration - elapsedSeconds);
+
+      setTimeLeft(remaining);
+      setIsRunning(remaining > 0 && autoStart);
+    } else {
+      // Client-based timer (fallback)
+      setTimeLeft(duration);
+      setIsRunning(autoStart);
+    }
+  }, [duration, autoStart, startedAt]);
 
   useEffect(() => {
     if (!isRunning || timeLeft <= 0) {
@@ -28,18 +41,33 @@ export function Timer({ duration, onTimeUp, autoStart = true }: TimerProps) {
     }
 
     const interval = setInterval(() => {
-      setTimeLeft((prev) => {
-        const next = prev - 1;
-        if (next <= 0) {
+      if (startedAt) {
+        // Recalculate from server time to stay in sync
+        const startTime = new Date(startedAt).getTime();
+        const now = Date.now();
+        const elapsedSeconds = Math.floor((now - startTime) / 1000);
+        const remaining = Math.max(0, duration - elapsedSeconds);
+
+        setTimeLeft(remaining);
+
+        if (remaining <= 0) {
           setIsRunning(false);
-          return 0;
         }
-        return next;
-      });
+      } else {
+        // Client-based countdown (fallback)
+        setTimeLeft((prev) => {
+          const next = prev - 1;
+          if (next <= 0) {
+            setIsRunning(false);
+            return 0;
+          }
+          return next;
+        });
+      }
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [isRunning, timeLeft, onTimeUp]);
+  }, [isRunning, timeLeft, onTimeUp, startedAt, duration]);
 
   const getColor = () => {
     if (isDanger) return 'text-error';

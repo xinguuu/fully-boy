@@ -25,6 +25,7 @@ interface UseGameSocketReturn {
   roomState: RoomState | null;
   game: Game | null;
   currentQuestion: Question | null;
+  currentQuestionStartedAt: Date | string | null;
   players: Player[];
   leaderboard: LeaderboardEntry[];
   lastAnswer: AnswerReceivedResponse | null;
@@ -51,6 +52,7 @@ export function useGameSocket({
   const [roomState, setRoomState] = useState<RoomState | null>(null);
   const [game, setGame] = useState<Game | null>(null);
   const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null);
+  const [currentQuestionStartedAt, setCurrentQuestionStartedAt] = useState<Date | string | null>(null);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [lastAnswer, setLastAnswer] = useState<AnswerReceivedResponse | null>(null);
   const [questionEnded, setQuestionEnded] = useState(false);
@@ -169,14 +171,16 @@ export function useGameSocket({
       setRoomState(data.room);
     };
 
-    const handleQuestionStarted = (data: { questionIndex: number; question: Question }) => {
-      console.log('[QUESTION_STARTED]', 'questionIndex:', data.questionIndex, 'question:', data.question?.content);
+    const handleQuestionStarted = (data: { questionIndex: number; question: Question; startedAt?: Date | string }) => {
+      console.log('[QUESTION_STARTED]', 'questionIndex:', data.questionIndex, 'question:', data.question?.content, 'startedAt:', data.startedAt);
       setCurrentQuestion(data.question);
+      setCurrentQuestionStartedAt(data.startedAt || null);
       setRoomState((prev) => {
         if (!prev) return null;
         return {
           ...prev,
           currentQuestionIndex: data.questionIndex,
+          currentQuestionStartedAt: data.startedAt,
         };
       });
       setLastAnswer(null);
@@ -305,6 +309,7 @@ export function useGameSocket({
     roomState,
     game,
     currentQuestion,
+    currentQuestionStartedAt,
     players,
     leaderboard,
     lastAnswer,

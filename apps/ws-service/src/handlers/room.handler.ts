@@ -83,8 +83,9 @@ export function setupRoomHandlers(io: Server, socket: Socket) {
               socket.emit(WS_EVENTS.QUESTION_STARTED, {
                 questionIndex: state.currentQuestionIndex,
                 question: currentQuestion,
+                startedAt: state.currentQuestionStartedAt,
               });
-              console.log(`Sent current question ${state.currentQuestionIndex} to organizer`);
+              console.log(`Sent current question ${state.currentQuestionIndex} to organizer (reconnection)`);
             }
           }
 
@@ -201,8 +202,9 @@ export function setupRoomHandlers(io: Server, socket: Socket) {
             socket.emit(WS_EVENTS.QUESTION_STARTED, {
               questionIndex: state.currentQuestionIndex,
               question: currentQuestion,
+              startedAt: state.currentQuestionStartedAt,
             });
-            console.log(`Sent current question ${state.currentQuestionIndex} to participant ${nickname}`);
+            console.log(`Sent current question ${state.currentQuestionIndex} to participant ${nickname} (reconnection)`);
           }
         }
 

@@ -9,7 +9,7 @@ export default function LiveGamePage() {
   const params = useParams();
   const router = useRouter();
   const pin = params.pin as string;
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
 
   // Try to get nickname and participantId from localStorage
   const storedNickname =
@@ -32,6 +32,7 @@ export default function LiveGamePage() {
     roomState,
     game,
     currentQuestion,
+    currentQuestionStartedAt,
     players,
     leaderboard,
     lastAnswer,
@@ -98,6 +99,19 @@ export default function LiveGamePage() {
     endQuestion();
     setShowResults(true);
   };
+
+  // Show loading while checking authentication (for organizers)
+  if (authLoading && !storedNickname) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-secondary-50 flex items-center justify-center p-4">
+        <div className="text-center">
+          <div className="animate-spin h-12 w-12 border-4 border-primary-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+          <p className="text-xl font-semibold text-gray-700">인증 확인 중...</p>
+          <p className="text-gray-500 mt-2">잠시만 기다려주세요</p>
+        </div>
+      </div>
+    );
+  }
 
   // Show loading state if participant already joined via REST but WebSocket is connecting
   if (storedNickname && !isConnected) {
@@ -276,7 +290,7 @@ export default function LiveGamePage() {
               </button>
             </div>
 
-            {!showResults && <Timer duration={duration} onTimeUp={handleEndQuestion} />}
+            {!showResults && <Timer duration={duration} onTimeUp={handleEndQuestion} startedAt={currentQuestionStartedAt || undefined} />}
 
             <div className="mt-8 mb-8">
               <h2 className="text-3xl md:text-4xl font-bold text-gray-900 text-center mb-4">
@@ -382,7 +396,7 @@ export default function LiveGamePage() {
             </span>
           </div>
 
-          <Timer duration={duration} />
+          <Timer duration={duration} startedAt={currentQuestionStartedAt || undefined} />
 
           <div className="mt-8 mb-8">
             <h2 className="text-2xl md:text-3xl font-bold text-gray-900 text-center mb-8">
