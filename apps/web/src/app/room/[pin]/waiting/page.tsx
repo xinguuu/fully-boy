@@ -17,6 +17,7 @@ export default function WaitingRoomPage() {
 
   // Copy PIN to clipboard state (must be declared before any returns)
   const [copied, setCopied] = useState(false);
+  const [isStarting, setIsStarting] = useState(false);
 
   useEffect(() => {
     const storedNickname = localStorage.getItem(`room_${pin}_nickname`);
@@ -47,6 +48,7 @@ export default function WaitingRoomPage() {
   // Redirect to game page when game starts
   useEffect(() => {
     if (roomState?.status === 'playing') {
+      setIsStarting(true);
       router.push(`/room/${pin}/game`);
     }
   }, [roomState?.status, pin, router]);
@@ -70,7 +72,8 @@ export default function WaitingRoomPage() {
     );
   }
 
-  if (error) {
+  // Ignore "INVALID_STATE" error if game is already starting (prevents duplicate start requests)
+  if (error && error.code !== 'INVALID_STATE') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-500 to-secondary-500">
         <div className="text-white text-center p-8">
@@ -177,11 +180,16 @@ export default function WaitingRoomPage() {
           <div className="flex gap-4 justify-center">
             {isOrganizer && (
               <button
-                onClick={() => startGame()}
+                onClick={() => {
+                  if (!isStarting) {
+                    setIsStarting(true);
+                    startGame();
+                  }
+                }}
                 className="px-8 py-4 bg-primary-500 text-white text-xl font-bold rounded-xl hover:bg-primary-600 transition-colors cursor-pointer disabled:bg-gray-400 disabled:cursor-not-allowed"
-                disabled={participants.length === 0}
+                disabled={participants.length === 0 || isStarting}
               >
-                게임 시작
+                {isStarting ? '게임 시작 중...' : '게임 시작'}
               </button>
             )}
             <button
