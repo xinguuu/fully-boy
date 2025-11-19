@@ -6,11 +6,16 @@ import { connectDatabase, disconnectDatabase } from './config/database';
 import { disconnectRedis } from './config/redis';
 import { errorMiddleware, notFoundMiddleware } from './middleware/error.middleware';
 import gameRoutes from './routes/game.routes';
+import { initSentry } from './config/sentry.config';
+import * as Sentry from '@sentry/node';
 
 console.log('🔍 [DEBUG] JWT_SECRET loaded:', process.env.JWT_SECRET ? 'YES ✅' : 'NO ❌');
 console.log('🔍 [DEBUG] DATABASE_URL loaded:', process.env.DATABASE_URL ? 'YES ✅' : 'NO ❌');
 
 const app = express();
+
+// Initialize Sentry FIRST (before any middleware)
+initSentry(app, 'game-service');
 
 app.use(
   cors({
@@ -27,6 +32,9 @@ app.get('/health', (_req, res) => {
 });
 
 app.use('/api/games', gameRoutes);
+
+// Sentry error handler (must be before other error middleware)
+Sentry.setupExpressErrorHandler(app);
 
 app.use(notFoundMiddleware);
 app.use(errorMiddleware);

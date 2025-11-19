@@ -4,6 +4,9 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   transpilePackages: ['@xingu/shared'],
 
+  // Docker standalone output
+  output: 'standalone',
+
   typescript: {
     ignoreBuildErrors: false,
   },

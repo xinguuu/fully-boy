@@ -51,7 +51,7 @@ export function QuestionModal({ isOpen, onClose, question, questionNumber, onSav
       content,
       data: {
         type,
-        options: type === 'multiple-choice' ? options : undefined,
+        options: type === 'multiple-choice' ? options : type === 'true-false' ? ['O', 'X'] : undefined,
         correctAnswer,
       },
       imageUrl: question?.imageUrl,

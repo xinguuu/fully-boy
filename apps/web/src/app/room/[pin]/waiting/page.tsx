@@ -3,6 +3,7 @@
 import { useParams, useRouter } from 'next/navigation';
 import { useGameSocket, useAuth } from '@/lib/hooks';
 import { useEffect, useState } from 'react';
+import { QRCodeSVG } from 'qrcode.react';
 
 export default function WaitingRoomPage() {
   const params = useParams();
@@ -13,6 +14,9 @@ export default function WaitingRoomPage() {
   // Get participant session from localStorage
   const [nickname, setNickname] = useState<string | null>(null);
   const [participantId, setParticipantId] = useState<string | null>(null);
+
+  // Copy PIN to clipboard state (must be declared before any returns)
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     const storedNickname = localStorage.getItem(`room_${pin}_nickname`);
@@ -97,13 +101,40 @@ export default function WaitingRoomPage() {
   // Filter out organizer from participant list (organizer doesn't have nickname)
   const participants = players.filter((p) => !p.isOrganizer);
 
+  const handleCopyPin = async () => {
+    try {
+      await navigator.clipboard.writeText(pin);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy PIN:', err);
+    }
+  };
+
+  const joinUrl = typeof window !== 'undefined' ? `${window.location.origin}/room/${pin}/join` : '';
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary-500 to-secondary-500 p-8">
       <div className="max-w-4xl mx-auto">
         <div className="bg-white rounded-3xl shadow-2xl p-12 text-center">
           <h1 className="text-6xl font-bold text-gray-900 mb-4">게임 PIN</h1>
-          <div className="text-9xl font-black text-primary-500 tracking-wider mb-8">
-            {pin}
+          <div className="flex items-center justify-center gap-4 mb-8">
+            <div className="text-9xl font-black text-primary-500 tracking-wider">{pin}</div>
+            <button
+              onClick={handleCopyPin}
+              className="px-6 py-3 bg-gray-100 hover:bg-gray-200 rounded-xl font-semibold text-gray-700 transition-all hover:scale-105 cursor-pointer"
+              title="PIN 복사"
+            >
+              {copied ? '✓ 복사됨!' : '📋 복사'}
+            </button>
+          </div>
+
+          {/* QR Code section */}
+          <div className="mb-8 pb-8 border-b border-gray-200">
+            <p className="text-gray-600 mb-4">또는 QR 코드 스캔</p>
+            <div className="inline-block p-4 bg-white rounded-2xl shadow-lg">
+              <QRCodeSVG value={joinUrl} size={160} level="M" />
+            </div>
           </div>
 
           {isOrganizer && (

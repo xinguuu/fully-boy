@@ -29,6 +29,12 @@ export default function BrowsePage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState('all');
   const [sortBy, setSortBy] = useState('popular');
+  const [mounted, setMounted] = useState(false);
+
+  // Set mounted state after component mounts (client-side only)
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -40,8 +46,8 @@ export default function BrowsePage() {
   const templates = templatesResponse?.templates || [];
   const favorites = new Set(favoriteIds);
 
-  // Show loading state
-  if (isLoading) {
+  // Show loading state only after mounted to avoid hydration mismatch
+  if (!mounted || isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-secondary-50 flex items-center justify-center p-4">
         <div className="text-center">
