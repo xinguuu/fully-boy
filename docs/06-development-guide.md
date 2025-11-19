@@ -498,6 +498,70 @@ docker-compose down      # Stop all
 
 ## 📋 Recent Changes
 
+### 2025-11-19: Multiple Question Types Support 📝
+
+- **Status**: ✅ Complete
+- **Summary**: Added full support for short-answer (주관식) question type in live game UI
+- **Impact**: Users can now create and play games with multiple-choice, true-false, and short-answer questions
+- **Files Modified**:
+  1. ✅ [apps/web/src/app/room/[pin]/game/page.tsx](apps/web/src/app/room/[pin]/game/page.tsx) - Added short-answer UI for both organizer and participant
+
+**Features Added**:
+
+1. **Participant View - Short Answer Input** (lines 27, 66, 100-107, 449-469):
+   - Added `shortAnswerInput` state for storing user input
+   - Added `handleShortAnswerSubmit` function for form submission
+   - Text input field with 100 character limit
+   - Auto-focus for better UX
+   - Submit button disabled until answer is entered
+   - Form submission prevents default and measures response time
+
+2. **Organizer View - Answer List Display** (lines 345-393):
+   - Shows correct answer in blue info box at the top
+   - Displays all submitted answers in a 2-column grid
+   - Color-coded cards: green for correct, red for incorrect
+   - Shows participant nickname and their answer
+   - Checkmark/X emoji for visual feedback
+   - Scrollable list (max-height: 24rem) for many participants
+   - Empty state message when no answers submitted
+
+**Question Types Now Supported**:
+
+| Type | Korean | Input Method | Scoring |
+|------|--------|--------------|---------|
+| `multiple-choice` | 객관식 | Button selection (A/B/C/D) | Auto (exact match) |
+| `true-false` | O/X 퀴즈 | Button selection (O/X) | Auto (exact match) |
+| `short-answer` | 주관식 | Text input | Auto (case-insensitive, trimmed) |
+
+**Backend Support** (Already Implemented):
+- ✅ [apps/ws-service/src/services/score-calculator.service.ts](apps/ws-service/src/services/score-calculator.service.ts:84-133)
+- ✅ `checkShortAnswer`: Case-insensitive, whitespace-trimmed comparison
+- ✅ Supports multiple correct answers (array)
+- ✅ Points calculation based on response time
+
+**Edit Page Support** (Already Implemented):
+- ✅ [apps/web/src/components/edit/QuestionModal.tsx](apps/web/src/components/edit/QuestionModal.tsx:12,29,107-120)
+- ✅ Dropdown selector for 3 question types
+- ✅ Conditional UI: options for multiple-choice, buttons for true-false, input for short-answer
+- ✅ Validation: all question types require correct answer
+
+**Validation**:
+- ✅ Type-check passes (0 errors)
+- ✅ Build successful (all 9 packages)
+- ✅ Short-answer input UI renders correctly
+- ✅ Answer submission works for all 3 question types
+- ✅ Organizer can see all submitted answers with correct/incorrect status
+
+**User Flow**:
+```
+Organizer creates question → Selects "주관식" type → Enters correct answer
+→ Game starts → Participant sees text input field → Enters answer → Submits
+→ Backend checks (case-insensitive) → Returns correct/incorrect + points
+→ Organizer sees all answers with checkmarks/X marks → Shows leaderboard
+```
+
+---
+
 ### 2025-11-18: Game Flow Bug Fixes & UX Improvements 🎮
 
 - **Status**: ✅ Complete

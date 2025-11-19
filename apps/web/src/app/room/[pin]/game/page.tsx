@@ -24,6 +24,7 @@ export default function LiveGamePage() {
   const [hasJoined, setHasJoined] = useState(!!storedNickname || isOrganizerByAuth);
   const [answerStartTime, setAnswerStartTime] = useState<number | null>(null);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
+  const [shortAnswerInput, setShortAnswerInput] = useState('');
   const [showResults, setShowResults] = useState(false);
   const [showQuestionIntro, setShowQuestionIntro] = useState(false);
 
@@ -62,6 +63,7 @@ export default function LiveGamePage() {
 
     setShowQuestionIntro(true);
     setSelectedAnswer(null);
+    setShortAnswerInput('');
     setShowResults(false);
 
     // Show intro for 2 seconds, then show the question
@@ -93,6 +95,15 @@ export default function LiveGamePage() {
     const responseTimeMs = Date.now() - answerStartTime;
     setSelectedAnswer(answer);
     submitAnswer(answer, responseTimeMs);
+  };
+
+  const handleShortAnswerSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (hasAnswered || !answerStartTime || !shortAnswerInput.trim()) return;
+
+    const responseTimeMs = Date.now() - answerStartTime;
+    setSelectedAnswer(shortAnswerInput);
+    submitAnswer(shortAnswerInput, responseTimeMs);
   };
 
   const handleEndQuestion = () => {
@@ -330,6 +341,56 @@ export default function LiveGamePage() {
                   })}
                 </div>
               )}
+
+              {questionData.type === 'short-answer' && (
+                <div className="mt-8">
+                  <div className="mb-4 p-4 bg-primary-50 rounded-lg border border-primary-200">
+                    <p className="text-sm font-medium text-primary-700">
+                      💡 정답: <span className="font-bold">{questionData.correctAnswer}</span>
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-96 overflow-y-auto">
+                    {players
+                      .filter((p) => p.answers[questionIndex]?.answer)
+                      .map((player, idx) => {
+                        const playerAnswer = player.answers[questionIndex];
+                        const isCorrect = playerAnswer?.isCorrect || false;
+
+                        return (
+                          <div
+                            key={idx}
+                            className={`p-4 rounded-lg border-2 ${
+                              isCorrect
+                                ? 'bg-success-light border-success'
+                                : 'bg-error-light border-error/30'
+                            }`}
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="flex-1 min-w-0">
+                                <p className="font-medium text-gray-900 truncate">
+                                  {player.nickname}
+                                </p>
+                                <p className={`text-sm mt-1 ${isCorrect ? 'text-success-dark' : 'text-error-dark'}`}>
+                                  {String(playerAnswer.answer)}
+                                </p>
+                              </div>
+                              <span className="text-xl flex-shrink-0">
+                                {isCorrect ? '✅' : '❌'}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+
+                  {answeredCount === 0 && (
+                    <div className="text-center py-8 text-gray-500">
+                      아직 제출된 답변이 없습니다
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="border-t pt-6">
@@ -433,6 +494,28 @@ export default function LiveGamePage() {
                   );
                 })}
               </div>
+            )}
+
+            {questionData.type === 'short-answer' && (
+              <form onSubmit={handleShortAnswerSubmit} className="space-y-4">
+                <input
+                  type="text"
+                  value={shortAnswerInput}
+                  onChange={(e) => setShortAnswerInput(e.target.value)}
+                  disabled={hasAnswered}
+                  placeholder="정답을 입력하세요"
+                  className="h-14 w-full px-6 border-2 border-gray-300 rounded-xl bg-white text-gray-900 text-lg placeholder:text-gray-400 transition-all duration-200 hover:border-gray-400 focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 focus:outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  maxLength={100}
+                  autoFocus
+                />
+                <button
+                  type="submit"
+                  disabled={hasAnswered || !shortAnswerInput.trim()}
+                  className="w-full py-4 bg-primary-500 hover:bg-primary-600 text-white font-bold text-lg rounded-xl transition-all duration-200 hover:scale-105 active:scale-100 disabled:bg-gray-300 disabled:cursor-not-allowed disabled:scale-100 cursor-pointer"
+                >
+                  {hasAnswered ? '제출 완료' : '제출하기'}
+                </button>
+              </form>
             )}
           </div>
 
