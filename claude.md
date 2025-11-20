@@ -1,35 +1,83 @@
 # Xingu Project - Claude AI Assistant Guide
 
-> **핵심 가이드**: 프로젝트 정체성, 필수 규칙, 현재 상태만 포함
-> **상세 내용**: [docs/06-development-guide.md](docs/06-development-guide.md) 참조
-> **전체 문서**: [docs/00-INDEX.md](docs/00-INDEX.md) (문서 가이드 맵)
+> **Core Guide**: Project identity, mandatory rules, current status only
+> **Detailed Content**: See [docs/06-development-guide.md](docs/06-development-guide.md)
+> **Full Documentation**: [docs/00-INDEX.md](docs/00-INDEX.md) (Documentation guide map)
 
 ---
 
 ## 📌 Project Overview
 
-**Xingu**는 Kahoot 스타일의 한국형 파티 게임 플랫폼입니다.
+**Xingu** is a Korean-style party game platform inspired by Kahoot.
 
-### 핵심 차별점
-- **게임 프레임워크 제공**: 템플릿 커스터마이징만으로 5분 내 게임 생성
-- **유연한 참여 모드**: 모바일 필수 모드 + MC 모드 (폰 없이 진행)
-- **트렌디한 컨텐츠**: 한국 예능, SNS 트렌드, 밈 중심
-- **간편한 커스터마이징**: 질문/컨텐츠만 수정, 프레임워크는 제공됨
+### Key Differentiators
+- **Game Framework Provided**: Create games in 5 minutes with template customization only
+- **Flexible Participation Modes**: Mobile-required mode + MC mode (host-driven without phones)
+- **Trendy Content**: Focused on Korean variety shows, SNS trends, and memes
+- **Easy Customization**: Just modify questions/content, framework is provided
 
 ---
 
 ## 🏗️ Architecture
 
-**MSA (Microservice Architecture)**: 6개 백엔드 서비스 + Frontend + 3 Infrastructure
-**상세 다이어그램**: [docs/04-architecture.md](docs/04-architecture.md)
+**MSA (Microservice Architecture)**: 6 Backend Services + Frontend + 3 Infrastructure
+**Detailed Diagrams**: [docs/04-architecture.md](docs/04-architecture.md)
 
-### 핵심 구조
+### Core Structure
 - **Frontend**: Next.js 16 (App Router) + React 19
-- **Backend**: 6개 서비스 (NestJS + Express + Socket.io)
+- **Backend**: 6 Services (NestJS + Express + Socket.io)
 - **Database**: PostgreSQL 17 + Redis
 - **Infra**: Docker + Nginx + Turborepo monorepo
 
-**→ 상세 정보**: [docs/01-overview.md](docs/01-overview.md#technology-stack) | [docs/04-architecture.md](docs/04-architecture.md)
+**→ Detailed Info**: [docs/01-overview.md](docs/01-overview.md#technology-stack) | [docs/04-architecture.md](docs/04-architecture.md)
+
+---
+
+## 🌟 Development Philosophy
+
+**Xingu is a project with a long-term vision. We look to the distant future.**
+
+### Core Principles
+
+1. **Scalability > Quick Implementation**
+   - Prioritize long-term architecture over short-term solutions
+   - Choose "easily scalable later" over "fix it quickly now"
+   - Always ask: "What happens if this structure scales 10x?"
+
+2. **Don't Fear Refactoring**
+   - If you find a bad structure, refactor it immediately
+   - Technical debt compounds - fixing early is always cheaper
+   - "We'll fix it later" is a banned phrase
+
+3. **Design for Future Changes**
+   - Can new game types be added?
+   - Can new scoring methods be added?
+   - Can new participation modes be added?
+   - **Is it extensible via a plugin system?**
+
+4. **Zero Technical Debt Policy**
+   - Don't leave "temporary implementation" in TODO comments
+   - Document compromised designs and create improvement plans
+   - Conduct weekly technical debt reviews
+
+5. **Quality > Speed**
+   - Doing it right is more important than doing it fast
+   - However, "right" doesn't mean over-engineering
+   - Balance YAGNI (You Aren't Gonna Need It) with scalability
+
+### Decision Framework
+
+**When implementing new features/changes, ask yourself:**
+
+```
+1. Will this structure work if it scales 10x?
+2. Will adding new game types/features require modifying existing code? (OCP violation)
+3. Will another developer understand this code in 6 months?
+4. Are you confident changing this code without tests?
+5. Is this pattern acceptable to apply project-wide?
+```
+
+**If any answer is "No", consider refactoring.**
 
 ---
 
@@ -67,31 +115,33 @@ pnpm build       # All packages
 2. **No code without tests** (min 80% coverage)
 3. **No next task until build/test pass**
 4. **No work completion without documentation update**
+5. **No quick fixes without considering scalability** (Always ask: "Does this scale 10x?")
+6. **No postponing refactoring** ("We'll fix it later" is banned)
 
 ### Code Quality
-5. **No `any` type** (use `unknown`)
-6. **No `console.log` in production** (use structured logging)
-7. **No hardcoding** (use env vars or constants)
-8. **No files over 500 lines** (must split)
-9. **No missing async error handling**
-10. **No redundant comments** (complex logic only)
+7. **No `any` type** (use `unknown`)
+8. **No `console.log` in production** (use structured logging)
+9. **No hardcoding** (use env vars or constants)
+10. **No files over 500 lines** (must split)
+11. **No missing async error handling**
+12. **No redundant comments** (complex logic only)
 
 ### Frontend Rules
-11. **ALWAYS follow [docs/02-ia.md](docs/02-ia.md)** (UI structure, user flows)
-12. **ALWAYS follow [docs/05-design-guide.md](docs/05-design-guide.md)** (colors, typography, styling)
-13. **ALWAYS check backend code when developing frontend APIs**:
+13. **ALWAYS follow [docs/02-ia.md](docs/02-ia.md)** (UI structure, user flows)
+14. **ALWAYS follow [docs/05-design-guide.md](docs/05-design-guide.md)** (colors, typography, styling)
+15. **ALWAYS check backend code when developing frontend APIs**:
     - Read backend DTO schemas
     - Match request/response types exactly
     - Frontend validation must match backend validation
 
 ### Backend Rules
-14. **ALWAYS follow [docs/03-prd.md](docs/03-prd.md)** (API specs, business requirements):
+16. **ALWAYS follow [docs/03-prd.md](docs/03-prd.md)** (API specs, business requirements):
     - Check API endpoints definition
     - Verify request/response schemas
     - Follow business logic requirements
 
 ### Deployment Rules
-15. **No deployment without passing ALL checks**:
+17. **No deployment without passing ALL checks**:
     - ✅ Type-check (0 errors)
     - ✅ Lint (0 warnings)
     - ✅ Unit tests (>80% coverage)
@@ -99,20 +149,20 @@ pnpm build       # All packages
     - ✅ Security scan (no CRITICAL vulnerabilities)
 
 ### Security Rules
-16. **No production secrets in code** (use secret management)
-17. **No unencrypted PII** (encrypt at rest and in transit)
-18. **No single point of failure** (min 2 replicas)
-19. **No skipping error tracking** (Sentry mandatory)
+18. **No production secrets in code** (use secret management)
+19. **No unencrypted PII** (encrypt at rest and in transit)
+20. **No single point of failure** (min 2 replicas)
+21. **No skipping error tracking** (Sentry mandatory)
 
 ### Accessibility & Standards
-20. **No ignoring accessibility** (WCAG 2.1 AA compliance)
-21. **Follow language policy**: Code/docs in English, UI in Korean (i18n)
+22. **No ignoring accessibility** (WCAG 2.1 AA compliance)
+23. **Follow language policy**: Code/docs in English, UI in Korean (i18n)
 
 ---
 
 ## 📝 Coding Conventions (Summary)
 
-**상세 내용**: [docs/06-development-guide.md](docs/06-development-guide.md#coding-conventions)
+**Detailed Content**: [docs/06-development-guide.md](docs/06-development-guide.md#coding-conventions)
 
 ### File Naming
 - Components: `Button.tsx` (PascalCase)
@@ -158,11 +208,11 @@ async getOrCreateTags(tagNames: string[]): Promise<Tag[]>
 2. Fix immediately if failed
 3. Check TODO completion
 4. **Sync documentation if changed** (MANDATORY):
-   - UI 흐름/화면 순서 변경 시 → [docs/02-ia.md](docs/02-ia.md) 업데이트
-   - 디자인/스타일 변경 시 → [docs/05-design-guide.md](docs/05-design-guide.md) 업데이트
-   - API 스펙 변경 시 → [docs/03-prd.md](docs/03-prd.md) 업데이트
-5. **Update [docs/06-development-guide.md](docs/06-development-guide.md) "Recent Changes"** (모든 작업 완료 시)
-6. **Update CLAUDE.md "Current Status" / "Next Steps"** (중요한 프로젝트 변경 시)
+   - UI flow/screen order changes → Update [docs/02-ia.md](docs/02-ia.md)
+   - Design/style changes → Update [docs/05-design-guide.md](docs/05-design-guide.md)
+   - API spec changes → Update [docs/03-prd.md](docs/03-prd.md)
+5. **Update [docs/06-development-guide.md](docs/06-development-guide.md) "Recent Changes"** (after all work completed)
+6. **Update CLAUDE.md "Current Status" / "Next Steps"** (for significant project changes)
 7. Move to next TODO
 
 ### Work Session Completion (MANDATORY)
@@ -201,12 +251,12 @@ async getOrCreateTags(tagNames: string[]): Promise<Tag[]>
 |------|--------|---------|
 | Homepage (PIN Entry) | ✅ Complete | Kahoot-style, Korean text |
 | Login / Signup | ✅ Complete | JWT auth, token refresh |
-| Browse (둘러보기) | ✅ Complete | 2 tabs, filters, favorites |
-| Edit Screen (편집) | ✅ Complete | Modal-based UX, draft mode |
-| Join Page (입장) | ✅ Complete | `/room/[pin]` - Nickname entry |
-| Waiting Room (대기실) | ✅ Complete | PIN display, real-time participants |
-| Live Game (게임 진행) | ✅ Complete | WebSocket integration, real-time scoring |
-| **Game Results (결과)** | ✅ Complete | **Integrated in Live Game page** - Final leaderboard |
+| Browse | ✅ Complete | 2 tabs, filters, favorites |
+| Edit Screen | ✅ Complete | Modal-based UX, draft mode |
+| Join Page | ✅ Complete | `/room/[pin]` - Nickname entry |
+| Waiting Room | ✅ Complete | PIN display, real-time participants |
+| Live Game | ✅ Complete | WebSocket integration, real-time scoring |
+| **Game Results** | ✅ Complete | **Integrated in Live Game page** - Final leaderboard |
 
 ### What's Working
 - ✅ All 6 backend services (local dev ready)
@@ -277,12 +327,12 @@ pnpm --filter=@xingu/web dev
 
 **Reference**: [.env.production.example](.env.production.example)
 
-#### 필수 설정 항목 (반드시 변경해야 함)
+#### Required Configuration (Must Change)
 
 **1. Database (PostgreSQL)**
 ```bash
 DATABASE_URL=postgresql://USER:PASSWORD@HOST:PORT/DATABASE
-# 예: postgresql://xingu_prod:STRONG_PASSWORD@db.example.com:5432/xingu_production
+# Example: postgresql://xingu_prod:STRONG_PASSWORD@db.example.com:5432/xingu_production
 ```
 
 **2. Redis**
@@ -292,32 +342,32 @@ REDIS_PORT=6379
 REDIS_PASSWORD=STRONG_REDIS_PASSWORD
 ```
 
-**3. JWT Secret (반드시 변경!)**
+**3. JWT Secret (Must Change!)**
 ```bash
-# 생성 방법: openssl rand -base64 32
+# Generate with: openssl rand -base64 32
 JWT_SECRET=CHANGE_THIS_TO_32_BYTE_RANDOM_STRING
 JWT_EXPIRES_IN=15m
 ```
 
 **4. CORS Origin**
 ```bash
-CORS_ORIGIN=https://your-domain.com  # 실제 프론트엔드 도메인
+CORS_ORIGIN=https://your-domain.com  # Actual frontend domain
 ```
 
 **5. Sentry Error Tracking**
 ```bash
-# Backend Services (모든 서비스에 동일하게 설정)
+# Backend Services (same configuration for all services)
 SENTRY_DSN=https://xxxxx@xxxxx.ingest.sentry.io/xxxxx
 
 # Frontend (apps/web/.env.production)
-NEXT_PUBLIC_SENTRY_DSN=https://yyyyy@yyyyy.ingest.sentry.io/yyyyy  # 브라우저용
-SENTRY_DSN=https://zzzzz@zzzzz.ingest.sentry.io/zzzzz              # 서버용
+NEXT_PUBLIC_SENTRY_DSN=https://yyyyy@yyyyy.ingest.sentry.io/yyyyy  # Browser
+SENTRY_DSN=https://zzzzz@zzzzz.ingest.sentry.io/zzzzz              # Server
 
 # Optional: Release tracking
 SENTRY_RELEASE=v1.0.0
 ```
 
-**6. Service Ports (Docker 내부)**
+**6. Service Ports (Docker Internal)**
 ```bash
 AUTH_SERVICE_PORT=3001
 TEMPLATE_SERVICE_PORT=3002
@@ -338,9 +388,9 @@ NEXT_PUBLIC_API_RESULT_URL=https://api.your-domain.com/api/results
 NEXT_PUBLIC_WS_URL=wss://ws.your-domain.com
 ```
 
-#### 설정 파일 위치
+#### Configuration File Locations
 
-- **Backend Services** (각 서비스 디렉토리):
+- **Backend Services** (each service directory):
   - `apps/auth-service/.env`
   - `apps/template-service/.env`
   - `apps/game-service/.env`
@@ -351,26 +401,26 @@ NEXT_PUBLIC_WS_URL=wss://ws.your-domain.com
 - **Frontend**:
   - `apps/web/.env.production`
 
-#### 보안 체크리스트
+#### Security Checklist
 
-- [ ] `JWT_SECRET` 변경 (기본값 절대 사용 금지!)
-- [ ] Database 비밀번호 강력하게 설정
-- [ ] Redis 비밀번호 설정
-- [ ] `.env` 파일들이 `.gitignore`에 포함되어 있는지 확인
-- [ ] Production 환경에서 `NODE_ENV=production` 설정
-- [ ] CORS_ORIGIN을 실제 도메인으로 변경 (와일드카드 사용 금지)
-- [ ] Sentry DSN 프로젝트별로 분리 (Frontend/Backend)
+- [ ] Change `JWT_SECRET` (never use default!)
+- [ ] Set strong Database password
+- [ ] Set Redis password
+- [ ] Verify `.env` files are in `.gitignore`
+- [ ] Set `NODE_ENV=production` in production
+- [ ] Change CORS_ORIGIN to actual domain (no wildcards)
+- [ ] Separate Sentry DSN per project (Frontend/Backend)
 
-#### 빠른 생성 명령어
+#### Quick Generation Commands
 
 ```bash
-# JWT Secret 생성
+# Generate JWT Secret
 openssl rand -base64 32
 
-# Random Password 생성 (32자)
+# Generate Random Password (32 chars)
 openssl rand -base64 24
 
-# .env 파일 권한 설정 (Linux/Mac)
+# Set .env file permissions (Linux/Mac)
 chmod 600 .env
 ```
 
@@ -398,7 +448,7 @@ chore: Build/config
 
 ### Phase 1 Launch Checklist
 - [ ] SSL certificate (Let's Encrypt)
-- [x] Sentry setup (error tracking) - Frontend + auth-service complete, others documented
+- [x] Sentry setup (error tracking) - ✅ All 7 services complete (Frontend + 6 backend services)
 - [ ] UptimeRobot (service monitoring)
 - [x] Production .env files - `.env.production.example` created with full documentation
 - [ ] Database backup script (daily)
@@ -412,41 +462,50 @@ chore: Build/config
 
 ```
 xingu/
-├── CLAUDE.md                    # 🤖 AI 전용 (이 파일)
-├── README.md                    # 👋 사용자용 Quick Start
+├── CLAUDE.md                    # 🤖 AI-only guide (this file)
+├── README.md                    # 👋 User Quick Start
 ├── SENTRY_COMPLETION.md         # 📋 Sentry integration completion checklist
 ├── .env.production.example      # 🔐 Production environment template
 │
 └── docs/
-    ├── 00-INDEX.md              # 📌 문서 가이드 맵 (시작점)
+    ├── 00-INDEX.md              # 📌 Documentation guide map (starting point)
     │
-    ├── 01-overview.md           # 📖 프로젝트 전체 개요
+    ├── 01-overview.md           # 📖 Project overview
     ├── 02-ia.md                 # 🗂️ Information Architecture
     ├── 03-prd.md                # 📋 Product Requirements
-    ├── 04-architecture.md       # 🏗️ 시스템 아키텍처
-    ├── 05-design-guide.md       # 🎨 디자인 시스템
-    ├── 06-development-guide.md  # 💻 개발 가이드 & 컨벤션
+    ├── 04-architecture.md       # 🏗️ System Architecture
+    ├── 05-design-guide.md       # 🎨 Design System
+    ├── 06-development-guide.md  # 💻 Development Guide & Conventions
     ├── 07-deployment-guide.md   # 🚀 Deployment guide (NEW)
     └── 08-sentry-setup.md       # 🐛 Sentry setup guide (NEW)
 ```
 
 ---
 
-## 📚 상세 문서 (개발 시 필수 참조)
+## 📚 Detailed Documentation (Required for Development)
 
-### 개발 시 항상 확인
-- **[docs/02-ia.md](docs/02-ia.md)** - UI 구조, 화면별 플로우 (Frontend 필수)
-- **[docs/03-prd.md](docs/03-prd.md)** - API 스펙, 요구사항 (Backend/Frontend 필수)
-- **[docs/05-design-guide.md](docs/05-design-guide.md)** - 디자인 시스템 (Frontend 필수)
-- **[docs/06-development-guide.md](docs/06-development-guide.md)** - 코딩 컨벤션, Recent Changes
+### Always Check During Development
+- **[docs/02-ia.md](docs/02-ia.md)** - UI structure, screen flows (Frontend required)
+- **[docs/03-prd.md](docs/03-prd.md)** - API specs, requirements (Backend/Frontend required)
+- **[docs/05-design-guide.md](docs/05-design-guide.md)** - Design system (Frontend required)
+- **[docs/06-development-guide.md](docs/06-development-guide.md)** - Coding conventions, Recent Changes
 
-### 전체 이해
-- **[docs/01-overview.md](docs/01-overview.md)** - 프로젝트 비전, 비즈니스, 기술 스택
-- **[docs/04-architecture.md](docs/04-architecture.md)** - 시스템 구조, DB 스키마, 다이어그램
+### Overall Understanding
+- **[docs/01-overview.md](docs/01-overview.md)** - Project vision, business, tech stack
+- **[docs/04-architecture.md](docs/04-architecture.md)** - System structure, DB schema, diagrams
 
-### 빠른 탐색
-- **[docs/00-INDEX.md](docs/00-INDEX.md)** - 📌 모든 문서 가이드 (어떤 문서를 언제 봐야 하는지)
+### Quick Navigation
+- **[docs/00-INDEX.md](docs/00-INDEX.md)** - 📌 All documentation guide (which docs to read when)
 
 ---
 
-**Remember**: Quality over Speed. 올바르게 작성하는 것이 빠르게 작성하는 것보다 중요합니다.
+## 🎓 Remember
+
+**Xingu is a project that looks to the distant future.**
+
+- **Scalability > Speed**: Designing for scalability is more important than quick fixes
+- **Don't Fear Refactoring**: If you find a bad structure, refactor it immediately
+- **Zero Technical Debt**: "We'll fix it later" is a banned phrase
+- **Quality > Speed**: Doing it right is more important than doing it fast
+
+**Always ask yourself: "Will this structure work if it scales 10x?"**
