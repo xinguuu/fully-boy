@@ -41,79 +41,69 @@ export class TrueFalseFrontendPlugin implements FrontendGameTypePlugin {
   }
 
   renderOrganizerView(props: OrganizerViewProps) {
-    const { questionData, participants, answerStats } = props;
+    const { questionData, participants, answerStats, showResults } = props;
 
     const tfData = questionData as TrueFalseQuestionData;
     const options = tfData.options || ['O', 'X'];
+    const correctAnswer = tfData.correctAnswer;
     const totalResponses = participants.filter((p) => p.hasAnswered).length;
 
     return (
       <div className="space-y-6">
-        {/* Answer Statistics */}
-        <div className="bg-white rounded-xl p-6 shadow-lg">
-          <h3 className="text-xl font-bold text-gray-900 mb-4">
-            응답 현황 ({totalResponses}/{participants.length}명)
-          </h3>
-          <div className="space-y-3">
-            {options.map((option: string) => {
-              const count = answerStats?.[option] || 0;
-              const percentage = totalResponses > 0 ? (count / totalResponses) * 100 : 0;
+        {/* Answer Options Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {options.map((option: string) => {
+            const count = answerStats?.[option] || 0;
+            const percentage = totalResponses > 0 ? (count / totalResponses) * 100 : 0;
+            const isCorrect = showResults && option === correctAnswer;
 
-              return (
-                <div key={option}>
-                  <div className="flex justify-between items-center mb-1">
-                    <span className="text-lg font-semibold text-gray-700">{option}</span>
-                    <span className="text-sm text-gray-500">
-                      {count}명 ({percentage.toFixed(0)}%)
+            return (
+              <div
+                key={option}
+                className={`p-8 rounded-2xl border-4 transition-all ${
+                  isCorrect
+                    ? 'bg-green-50 border-green-500 shadow-xl shadow-green-200'
+                    : 'bg-white border-gray-200'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <div
+                    className={`w-16 h-16 rounded-full flex items-center justify-center text-3xl font-bold ${
+                      isCorrect ? 'bg-green-500 text-white' : 'bg-gray-100 text-gray-600'
+                    }`}
+                  >
+                    {option}
+                  </div>
+                  {isCorrect && (
+                    <div className="flex items-center gap-2 bg-green-500 text-white px-4 py-2 rounded-full">
+                      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span className="font-bold text-lg">정답</span>
+                    </div>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className={isCorrect ? 'text-green-600 font-semibold' : 'text-gray-600'}>
+                      {count}명 응답
+                    </span>
+                    <span className={isCorrect ? 'text-green-600 font-semibold' : 'text-gray-500'}>
+                      {percentage.toFixed(0)}%
                     </span>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-4">
+                  <div className={`w-full rounded-full h-3 ${isCorrect ? 'bg-green-200' : 'bg-gray-200'}`}>
                     <div
-                      className={`h-4 rounded-full transition-all duration-300 ${
-                        option === 'O' ? 'bg-green-500' : 'bg-red-500'
+                      className={`h-3 rounded-full transition-all duration-500 ${
+                        isCorrect ? 'bg-green-500' : option === 'O' ? 'bg-blue-500' : 'bg-gray-400'
                       }`}
                       style={{ width: `${percentage}%` }}
                     />
                   </div>
                 </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Participant List */}
-        <div className="bg-white rounded-xl p-6 shadow-lg">
-          <h3 className="text-xl font-bold text-gray-900 mb-4">참가자 응답</h3>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-            {participants.map((participant) => (
-              <div
-                key={participant.id}
-                className={`p-3 rounded-lg border-2 ${
-                  participant.hasAnswered
-                    ? participant.isCorrect
-                      ? 'border-green-500 bg-green-50'
-                      : 'border-red-500 bg-red-50'
-                    : 'border-gray-200 bg-gray-50'
-                }`}
-              >
-                <div className="font-medium text-sm truncate">{participant.nickname}</div>
-                <div className="text-xs text-gray-500 mt-1">
-                  {participant.hasAnswered ? (
-                    <>
-                      {participant.answer}{' '}
-                      {participant.isCorrect ? (
-                        <span className="text-green-600">✓</span>
-                      ) : (
-                        <span className="text-red-600">✗</span>
-                      )}
-                    </>
-                  ) : (
-                    <span className="text-gray-400">대기 중...</span>
-                  )}
-                </div>
               </div>
-            ))}
-          </div>
+            );
+          })}
         </div>
       </div>
     );

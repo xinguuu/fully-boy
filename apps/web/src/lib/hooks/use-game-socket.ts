@@ -130,6 +130,11 @@ export function useGameSocket({
       setRole(data.role);
       setError(null);
 
+      // Save organizer flag to localStorage for reconnection
+      if (data.role === 'organizer') {
+        localStorage.setItem(STORAGE_KEYS.ROOM_IS_ORGANIZER(pin), 'true');
+      }
+
       // Save participantId to state and localStorage for participants
       if (data.role === 'participant' && data.participantId) {
         setParticipantId(data.participantId);

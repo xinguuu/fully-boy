@@ -22,13 +22,15 @@ export default function WaitingRoomPage() {
     if (typeof window === 'undefined') return null;
     return localStorage.getItem(STORAGE_KEYS.ROOM_PARTICIPANT_ID(pin));
   });
+  const storedIsOrganizer =
+    typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEYS.ROOM_IS_ORGANIZER(pin)) === 'true' : false;
 
   // Copy PIN to clipboard state (must be declared before any returns)
   const [copied, setCopied] = useState(false);
   const [isStarting, setIsStarting] = useState(false);
 
   // Determine if organizer or participant
-  const isOrganizer = !!user && !nickname;
+  const isOrganizer = !!user && (storedIsOrganizer || !nickname);
 
   // WebSocket connection - everyone joins the room now
   const {

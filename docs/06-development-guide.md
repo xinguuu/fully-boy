@@ -498,6 +498,204 @@ docker-compose down      # Stop all
 
 ## 📋 Recent Changes
 
+### 2025-11-20: Plugin System Architecture - Extensible Game Types! 🧩
+
+- **Status**: ✅ Complete
+- **Summary**: Implemented production-grade plugin system for frontend and backend game type extensibility
+- **Impact**: New game types can be added without modifying existing code (Open-Closed Principle)
+- **Total Code**: 554 lines (frontend plugins)
+- **Components Created**:
+  1. ✅ [apps/web/src/lib/plugins/types.ts](../apps/web/src/lib/plugins/types.ts) - Plugin interface definitions
+  2. ✅ [apps/web/src/lib/plugins/registry.ts](../apps/web/src/lib/plugins/registry.ts) - Singleton registry
+  3. ✅ [apps/web/src/lib/plugins/game-types/MultipleChoicePlugin.tsx](../apps/web/src/lib/plugins/game-types/MultipleChoicePlugin.tsx) - Multiple-choice implementation
+  4. ✅ [apps/web/src/lib/plugins/game-types/TrueFalsePlugin.tsx](../apps/web/src/lib/plugins/game-types/TrueFalsePlugin.tsx) - True-false implementation
+  5. ✅ [apps/web/src/lib/plugins/game-types/ShortAnswerPlugin.tsx](../apps/web/src/lib/plugins/game-types/ShortAnswerPlugin.tsx) - Short-answer implementation
+  6. ✅ [packages/shared/src/utils/question.utils.ts](../packages/shared/src/utils/question.utils.ts) - Question data utilities (10 tests passing)
+
+**Plugin System Architecture**:
+
+1. **FrontendGameTypePlugin Interface** (types.ts):
+   - `type`: Unique identifier (must match backend)
+   - `name`: Human-readable name
+   - `renderParticipantView()`: Player screen UI
+   - `renderOrganizerView()`: Host screen UI
+   - `renderEditView()`: Question editor UI (optional)
+
+2. **FrontendGameTypeRegistry** (registry.ts):
+   - Singleton pattern for global plugin management
+   - `register()`: Add new plugin
+   - `get(type)`: Retrieve plugin by type
+   - `getAll()`: List all registered plugins
+   - Prevents duplicate registration
+
+3. **Question Utilities** (question.utils.ts):
+   - `parseQuestionData()`: Validates question data with plugin
+   - `isQuestionData()`: Type guard for QuestionData
+   - `getQuestionDuration()`: Extract duration with fallback
+   - `getQuestionType()`: Safe type extraction
+   - 10 unit tests passing (100% coverage)
+
+**Current Plugin Implementations**:
+
+| Plugin | Type | Features | Lines |
+|--------|------|----------|-------|
+| MultipleChoice | `multiple-choice` | 2-6 options, A-F labels, answer stats | ~200 |
+| TrueFalse | `true-false` | O/X buttons, percentage display | ~150 |
+| ShortAnswer | `short-answer` | Text input, case-insensitive check | ~200 |
+
+**Adding New Game Types**:
+
+```typescript
+// 1. Create plugin file: plugins/game-types/NewTypePlugin.tsx
+export const NewTypePlugin: FrontendGameTypePlugin = {
+  type: 'new-type',
+  name: 'New Game Type',
+  renderParticipantView: (props) => <ParticipantUI {...props} />,
+  renderOrganizerView: (props) => <OrganizerUI {...props} />,
+};
+
+// 2. Register in plugins/game-types/index.ts
+import { NewTypePlugin } from './NewTypePlugin';
+frontendGameTypeRegistry.register(NewTypePlugin);
+
+// 3. No changes needed to existing code! ✅
+```
+
+**Backend Integration**:
+- Backend plugins in `packages/shared/src/plugins/`
+- Shared `QuestionData` type in `packages/shared/src/types/plugin.types.ts`
+- Frontend and backend plugins must use matching `type` identifiers
+
+**Validation**:
+- ✅ Type-check passes (0 errors)
+- ✅ Build successful (all 9 packages)
+- ✅ Question utilities: 10/10 tests passing
+- ✅ All 3 game types working in live games
+
+**Benefits**:
+- ✨ **OCP Compliance**: Add new types without modifying existing code
+- ✨ **Type Safety**: Full TypeScript support with strict mode
+- ✨ **Reusable**: Common UI components (Timer, QuestionMedia, Leaderboard)
+- ✨ **Testable**: Each plugin independently testable
+- ✨ **Scalable**: Registry pattern supports unlimited game types
+
+---
+
+### 2025-11-20: Centralized Constants - Configuration Management! 📐
+
+- **Status**: ✅ Complete
+- **Summary**: Centralized all game configuration constants for better maintainability
+- **Impact**: Single source of truth for timing, limits, and configuration values
+- **Files Created**:
+  1. ✅ [apps/web/src/lib/constants/game.ts](../apps/web/src/lib/constants/game.ts) - Frontend game constants (160 lines)
+  2. ✅ [packages/shared/src/constants/redis.ts](../packages/shared/src/constants/redis.ts) - Redis key patterns
+  3. ✅ [packages/shared/src/constants/game.ts](../packages/shared/src/constants/game.ts) - Shared game constants
+
+**Frontend Constants** (apps/web/src/lib/constants/game.ts):
+
+```typescript
+// Game UI Timing
+GAME_UI_TIMING = {
+  QUESTION_INTRO_MS: 2000,        // Question intro screen
+  ANSWER_REVEAL_MS: 3000,         // Answer reveal
+  LEADERBOARD_TRANSITION_MS: 5000,// Leaderboard transition
+  NEXT_QUESTION_COUNTDOWN_MS: 5000,// Next question countdown
+}
+
+// Timer Thresholds
+TIMER_THRESHOLDS = {
+  WARNING_PERCENT: 30,  // Yellow at 30%
+  DANGER_PERCENT: 10,   // Red at 10%
+}
+
+// Game Settings
+GAME_SETTINGS = {
+  DEFAULT_QUESTION_DURATION_SEC: 30,
+  DEFAULT_MAX_PLAYERS: 30,
+  TIME_LIMIT_OPTIONS: [10, 20, 30, 45, 60, 90],
+}
+
+// Leaderboard Configuration
+LEADERBOARD_CONFIG = {
+  FINAL_MAX_ENTRIES: 10,  // Final leaderboard
+  LIVE_TOP_ENTRIES: 5,     // Live TOP 5
+}
+
+// Question Configuration
+QUESTION_CONFIG = {
+  DEFAULT_OPTION_COUNT: 4,
+  MIN_OPTION_COUNT: 2,
+  MAX_OPTION_COUNT: 6,
+  PREVIEW_LENGTH: 60,
+}
+
+// PIN Configuration
+PIN_CONFIG = {
+  LENGTH: 6,
+  MIN: 100000,
+  MAX: 999999,
+}
+```
+
+**Benefits**:
+- ✨ **Single Source of Truth**: All magic numbers centralized
+- ✨ **Type Safety**: All constants are `const` with type inference
+- ✨ **Documentation**: Inline JSDoc comments explain each constant
+- ✨ **Easy Modification**: Change timing/limits in one place
+- ✨ **Consistent UX**: All components use same timing values
+
+**Validation**:
+- ✅ Type-check passes (0 errors)
+- ✅ Build successful (all 9 packages)
+- ✅ All components using centralized constants
+
+---
+
+### 2025-11-20: Room Status Protection - Secure Game Flow! 🔒
+
+- **Status**: ✅ Complete (Commit: dcd28bb)
+- **Summary**: Added robust room status checks to prevent new joins after game has started or finished
+- **Impact**: Prevents mid-game join exploits and ensures fair gameplay
+- **Files Modified**:
+  1. ✅ [apps/room-service/src/controllers/room.controller.ts](../apps/room-service/src/controllers/room.controller.ts) - Added status validation
+  2. ✅ [apps/web/src/app/room/[pin]/page.tsx](../apps/web/src/app/room/[pin]/page.tsx) - Status-based error messages
+
+**Security Improvements**:
+
+1. **Backend Validation** (room-service):
+   ```typescript
+   // Check room status before allowing join
+   if (room.status !== 'WAITING') {
+     if (room.status === 'ACTIVE') {
+       throw new ConflictError('게임이 이미 시작되었습니다');
+     }
+     if (room.status === 'FINISHED') {
+       throw new ConflictError('게임이 종료되었습니다');
+     }
+   }
+   ```
+
+2. **Frontend Error Handling**:
+   - "게임이 이미 시작되었습니다" - Game already started
+   - "게임이 종료되었습니다" - Game finished
+   - Clear error messages with retry/home buttons
+
+**Room Status Flow**:
+```
+WAITING → ACTIVE → FINISHED
+   ↑        ↑         ↑
+  Join   Can't    Can't
+Allowed   Join     Join
+```
+
+**Validation**:
+- ✅ Type-check passes (0 errors)
+- ✅ Build successful (all 9 packages)
+- ✅ Join blocked after game starts
+- ✅ Error messages display correctly
+
+---
+
 ### 2025-11-19: Multiple Question Types Support 📝
 
 - **Status**: ✅ Complete

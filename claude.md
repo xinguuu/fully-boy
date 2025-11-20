@@ -270,10 +270,14 @@ async getOrCreateTags(tagNames: string[]): Promise<Tag[]>
 - ✅ **Production build** (All 9 packages build successfully)
 - ✅ **Performance optimizations** (compression, image optimization, SEO)
 - ✅ **Question intro screen** (2-second "1/3" display before each question)
-- ✅ **Multiple question types** (multiple-choice, true-false)
+- ✅ **Multiple question types** (multiple-choice, true-false, short-answer)
 - ✅ **Template questions loading** (creates copies from template)
 - ✅ **Server-based synchronized timer** (absolute time sync across all clients)
 - ✅ **Organizer reconnection handling** (auto-detect organizer without nickname prompt)
+- ✅ **Plugin System** (frontend + backend, 554 lines, 3 game types)
+- ✅ **Question media support** (image, audio, video with QuestionMedia component)
+- ✅ **Room status protection** (prevents joins after game started/finished)
+- ✅ **Centralized constants** (game timing, Redis keys in shared constants)
 
 ### Known Issues
 

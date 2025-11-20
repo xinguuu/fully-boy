@@ -7,13 +7,19 @@ interface NextQuestionCountdownProps {
   duration?: number;
   /** Show the countdown */
   show: boolean;
+  /** Variant: 'inline' for embedded display, 'overlay' for full-screen transition */
+  variant?: 'inline' | 'overlay';
 }
 
 /**
- * Countdown component shown when all participants have answered
- * Displays "Next question in X..." message
+ * Countdown component shown when transitioning to next question
+ * Design: Subtle inline progress bar instead of intrusive popup
  */
-export function NextQuestionCountdown({ duration = 5, show }: NextQuestionCountdownProps) {
+export function NextQuestionCountdown({
+  duration = 5,
+  show,
+  variant = 'inline',
+}: NextQuestionCountdownProps) {
   const [timeLeft, setTimeLeft] = useState(duration);
 
   useEffect(() => {
@@ -42,15 +48,64 @@ export function NextQuestionCountdown({ duration = 5, show }: NextQuestionCountd
     return null;
   }
 
-  return (
-    <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-50 animate-bounce">
-      <div className="bg-primary-600 text-white px-8 py-4 rounded-2xl shadow-2xl border-4 border-white">
-        <div className="text-center">
-          <p className="text-sm font-semibold mb-1 text-white/90">다음 문제로 이동</p>
-          <div className="flex items-center gap-3">
-            <div className="text-4xl font-black">{timeLeft}</div>
-            <div className="text-lg font-medium">초 후</div>
+  const progressPercent = ((duration - timeLeft) / duration) * 100;
+
+  if (variant === 'overlay') {
+    // Full-screen transition overlay (optional, not used by default)
+    return (
+      <div className="fixed inset-0 z-50 bg-black/20 backdrop-blur-sm flex items-center justify-center animate-fade-in">
+        <div className="bg-white dark:bg-dark-2 rounded-3xl shadow-2xl p-12 max-w-md w-full mx-4 animate-scale-in">
+          <div className="text-center">
+            <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+              다음 문제 준비 중
+            </h3>
+            <div className="relative w-32 h-32 mx-auto mb-6">
+              <svg className="transform -rotate-90 w-32 h-32">
+                <circle
+                  cx="64"
+                  cy="64"
+                  r="56"
+                  stroke="currentColor"
+                  strokeWidth="8"
+                  fill="none"
+                  className="text-gray-200"
+                />
+                <circle
+                  cx="64"
+                  cy="64"
+                  r="56"
+                  stroke="currentColor"
+                  strokeWidth="8"
+                  fill="none"
+                  strokeDasharray={`${2 * Math.PI * 56}`}
+                  strokeDashoffset={`${2 * Math.PI * 56 * (1 - progressPercent / 100)}`}
+                  className="text-primary-500 transition-all duration-1000 ease-linear"
+                />
+              </svg>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="text-5xl font-bold text-primary-600">{timeLeft}</span>
+              </div>
+            </div>
+            <p className="text-gray-600 dark:text-gray-400">곧 시작됩니다...</p>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Inline variant: Subtle progress bar (default)
+  return (
+    <div className="animate-slide-down">
+      <div className="bg-gradient-to-r from-primary-500 to-secondary-500 rounded-lg p-4 mb-4 shadow-lg">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-white font-semibold text-lg">다음 문제로 이동</span>
+          <span className="text-white text-2xl font-bold">{timeLeft}초</span>
+        </div>
+        <div className="w-full h-2 bg-white/30 rounded-full overflow-hidden">
+          <div
+            className="h-full bg-white rounded-full transition-all duration-1000 ease-linear"
+            style={{ width: `${progressPercent}%` }}
+          />
         </div>
       </div>
     </div>

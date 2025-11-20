@@ -182,10 +182,55 @@ export function setupGameHandlers(io: Server, socket: Socket) {
       const currentQuestion = room.game.questions[updatedState.currentQuestionIndex];
 
       if (!currentQuestion) {
-        socket.emit(WS_EVENTS.ERROR, {
-          code: 'NO_MORE_QUESTIONS',
-          message: 'No more questions',
-        });
+        // No more questions - end the game
+        const finalState = await roomStateService.updateRoomStatus(pin, 'finished');
+        if (finalState) {
+          const finalPlayers = Object.values(finalState.players);
+          const finalLeaderboard = finalPlayers
+            .sort((a, b) => b.score - a.score)
+            .slice(0, 10)
+            .map((p, index) => ({
+              rank: index + 1,
+              nickname: p.nickname,
+              score: p.score,
+            }));
+
+          await prisma.gameResult.create({
+            data: {
+              roomId: finalState.roomId,
+              participantCount: finalPlayers.length,
+              duration: finalState.startedAt
+                ? Math.floor(
+                    (new Date().getTime() - new Date(finalState.startedAt).getTime()) / 1000,
+                  )
+                : 0,
+              averageScore:
+                finalPlayers.reduce((sum, p) => sum + p.score, 0) / finalPlayers.length || 0,
+              leaderboard: finalLeaderboard as never,
+              questionStats: {} as never,
+            },
+          });
+
+          await prisma.room.update({
+            where: { pin },
+            data: {
+              status: 'FINISHED',
+              endedAt: new Date(),
+            },
+          });
+
+          io.to(`room:${pin}`).emit(WS_EVENTS.GAME_ENDED, {
+            leaderboard: finalLeaderboard,
+            room: finalState,
+          });
+
+          console.log(`Game ended in room ${pin}`);
+
+          // Clean up room state after 5 minutes
+          setTimeout(async () => {
+            await roomStateService.deleteRoomState(pin);
+          }, 300000);
+        }
         return;
       }
 
@@ -437,75 +482,7 @@ export function setupGameHandlers(io: Server, socket: Socket) {
                   },
                 });
 
-                // Auto-advance to next question after 5 seconds (Kahoot-style)
-                setTimeout(async () => {
-                  const totalQuestions = questionRoom.game.questions.length;
-
-                  if (questionIndex + 1 < totalQuestions) {
-                    // Move to next question
-                    const nextState = await roomStateService.nextQuestion(pin);
-                    if (nextState) {
-                      const nextQuestion = questionRoom.game.questions[nextState.currentQuestionIndex];
-                      if (nextQuestion) {
-                        io.to(`room:${pin}`).emit(WS_EVENTS.QUESTION_STARTED, {
-                          questionIndex: nextState.currentQuestionIndex,
-                          question: nextQuestion,
-                          startedAt: nextState.currentQuestionStartedAt,
-                        });
-                        console.log(`Auto-advanced to question ${nextState.currentQuestionIndex} in room ${pin}`);
-                      }
-                    }
-                  } else {
-                    // Last question - end game
-                    const finalState = await roomStateService.updateRoomStatus(pin, 'finished');
-                    if (finalState) {
-                      const finalPlayers = Object.values(finalState.players);
-                      const finalLeaderboard = finalPlayers
-                        .sort((a, b) => b.score - a.score)
-                        .slice(0, 10)
-                        .map((p, index) => ({
-                          rank: index + 1,
-                          nickname: p.nickname,
-                          score: p.score,
-                        }));
-
-                      await prisma.gameResult.create({
-                        data: {
-                          roomId: finalState.roomId,
-                          participantCount: finalPlayers.length,
-                          duration: finalState.startedAt
-                            ? Math.floor(
-                                (new Date().getTime() - new Date(finalState.startedAt).getTime()) / 1000,
-                              )
-                            : 0,
-                          averageScore:
-                            finalPlayers.reduce((sum, p) => sum + p.score, 0) / finalPlayers.length || 0,
-                          leaderboard: finalLeaderboard as never,
-                          questionStats: {} as never,
-                        },
-                      });
-
-                      await prisma.room.update({
-                        where: { pin },
-                        data: {
-                          status: 'FINISHED',
-                          endedAt: new Date(),
-                        },
-                      });
-
-                      io.to(`room:${pin}`).emit(WS_EVENTS.GAME_ENDED, {
-                        leaderboard: finalLeaderboard,
-                        room: finalState,
-                      });
-
-                      console.log(`Game auto-ended in room ${pin}`);
-
-                      setTimeout(async () => {
-                        await roomStateService.deleteRoomState(pin);
-                      }, 300000);
-                    }
-                  }
-                }, 5000);
+                console.log(`Question ${questionIndex} ended in room ${pin}, waiting for organizer to advance`);
               }
             }
           }

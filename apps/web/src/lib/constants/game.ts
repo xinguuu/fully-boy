@@ -23,10 +23,10 @@ export const GAME_UI_TIMING = {
   ANSWER_REVEAL_MS: 3000,
 
   /**
-   * Leaderboard transition duration (3 seconds)
+   * Leaderboard transition duration (5 seconds)
    * Time before showing leaderboard after answer reveal
    */
-  LEADERBOARD_TRANSITION_MS: 3000,
+  LEADERBOARD_TRANSITION_MS: 5000,
 
   /**
    * Score animation display duration (3 seconds)

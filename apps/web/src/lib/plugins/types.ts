@@ -62,6 +62,9 @@ export interface OrganizerViewProps {
     nickname: string;
     score: number;
   }>;
+
+  // Show results (answers revealed)
+  showResults?: boolean;
 }
 
 /**

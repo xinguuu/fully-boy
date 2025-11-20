@@ -66,8 +66,8 @@ export function ParticipantView({
     );
   }
 
-  // Phase 2: Answer reveal with score animation
-  if (phase === 'ANSWER_REVEAL' && questionEnded && lastAnswer) {
+  // Phase 2: Answer reveal with score animation (and leaderboard waiting)
+  if ((phase === 'ANSWER_REVEAL' || phase === 'LEADERBOARD') && questionEnded && lastAnswer) {
     return (
       <>
         <ScoreAnimation
@@ -75,31 +75,68 @@ export function ParticipantView({
           points={lastAnswer.points}
           message={lastAnswer.isCorrect ? undefined : '다음 문제에서 도전하세요!'}
         />
-        <NextQuestionCountdown show={true} duration={5} />
         <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-secondary-50 p-4 flex items-center justify-center">
           <div className="max-w-2xl w-full">
-            <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8">
+            <NextQuestionCountdown show={true} duration={5} variant="inline" />
+
+            <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8 animate-slide-up">
               <div className="text-center">
-                <h2 className="text-3xl font-bold text-gray-900 mb-4">
+                <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-6">
                   {currentQuestion.content}
                 </h2>
                 <div
-                  className={`p-6 rounded-lg border-l-4 ${lastAnswer.isCorrect ? 'bg-success-light border-success' : 'bg-error-light border-error'}`}
+                  className={`p-6 rounded-xl border-2 transition-all duration-300 ${
+                    lastAnswer.isCorrect
+                      ? 'bg-success-light/50 border-success'
+                      : 'bg-error-light/50 border-error'
+                  }`}
                 >
-                  <h3
-                    className={`font-semibold text-xl mb-2 ${lastAnswer.isCorrect ? 'text-success-dark' : 'text-error-dark'}`}
-                  >
-                    {lastAnswer.isCorrect ? '✓ 정답입니다!' : '✗ 오답입니다'}
-                  </h3>
-                  <p className="text-lg text-gray-700">
-                    정답: <strong>{questionData.correctAnswer}</strong>
-                  </p>
-                  {lastAnswer.isCorrect && (
-                    <p className="text-lg text-success-dark mt-2">+{lastAnswer.points}점 획득!</p>
-                  )}
+                  <div className="flex items-center justify-center gap-3 mb-3">
+                    <div
+                      className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                        lastAnswer.isCorrect ? 'bg-success' : 'bg-error'
+                      }`}
+                    >
+                      <span className="text-2xl text-white">
+                        {lastAnswer.isCorrect ? '✓' : '✗'}
+                      </span>
+                    </div>
+                    <h3
+                      className={`font-bold text-2xl ${
+                        lastAnswer.isCorrect ? 'text-success-dark' : 'text-error-dark'
+                      }`}
+                    >
+                      {lastAnswer.isCorrect ? '정답입니다!' : '오답입니다'}
+                    </h3>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="bg-white/70 rounded-lg p-4">
+                      <p className="text-sm text-gray-600 mb-1">정답</p>
+                      <p className="text-xl font-bold text-gray-900">{questionData.correctAnswer}</p>
+                    </div>
+
+                    {lastAnswer.isCorrect && (
+                      <div className="bg-success/10 rounded-lg p-4">
+                        <p className="text-success-dark font-semibold text-lg">
+                          +{lastAnswer.points}점 획득!
+                        </p>
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <div className="mt-6 text-gray-600">
-                  <p>다음 문제를 준비하세요...</p>
+
+                <div className="mt-8 flex items-center justify-between bg-gray-50 rounded-lg p-4">
+                  <div className="text-left">
+                    <p className="text-sm text-gray-600">현재 점수</p>
+                    <p className="text-2xl font-bold text-primary-600">{currentScore}점</p>
+                  </div>
+                  {currentRank && (
+                    <div className="text-right">
+                      <p className="text-sm text-gray-600">순위</p>
+                      <p className="text-2xl font-bold text-secondary-600">{currentRank}등</p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

@@ -83,7 +83,8 @@
       "Bash(do cp /Users/junyoungoh/xingu/apps/template-service/src/config/sentry.config.ts /Users/junyoungoh/xingu/apps/$service/src/config/sentry.config.ts echo \"Updated $service\" done)",
       "Bash(node:*)",
       "Bash(npx eslint:*)",
-      "Bash(kill:*)"
+      "Bash(kill:*)",
+      "Bash(git checkout:*)"
     ],
     "deny": [],
     "ask": []

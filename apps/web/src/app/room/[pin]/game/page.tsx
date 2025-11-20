@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { useGameSocket, useAuth } from '@/lib/hooks';
 import { ParticipantView } from '@/components/game/ParticipantView';
 import { OrganizerView } from '@/components/game/OrganizerView';
+import { LeaderboardScreen } from '@/components/game/LeaderboardScreen';
 import { STORAGE_KEYS } from '@/lib/constants/storage';
 import { GAME_UI_TIMING, GAME_SETTINGS } from '@/lib/constants/game';
 import type { GamePhase } from '@/types/game.types';
@@ -19,8 +20,10 @@ export default function LiveGamePage() {
     typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEYS.ROOM_NICKNAME(pin)) : null;
   const storedParticipantId =
     typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEYS.ROOM_PARTICIPANT_ID(pin)) : null;
+  const storedIsOrganizer =
+    typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEYS.ROOM_IS_ORGANIZER(pin)) === 'true' : false;
 
-  const isOrganizerByAuth = !!user && !storedNickname;
+  const isOrganizerByAuth = !!user && (storedIsOrganizer || !storedNickname);
 
   const [nickname, setNickname] = useState(storedNickname || '');
   const [hasJoined, setHasJoined] = useState(!!storedNickname || isOrganizerByAuth);
@@ -46,6 +49,7 @@ export default function LiveGamePage() {
     joinRoom,
     submitAnswer,
     endQuestion,
+    nextQuestion,
   } = useGameSocket({
     pin,
     nickname: storedNickname || undefined,
@@ -66,7 +70,7 @@ export default function LiveGamePage() {
 
   // Question intro screen
   useEffect(() => {
-    if (!currentQuestion) return;
+    if (!currentQuestion || !roomState) return;
 
     setShowQuestionIntro(true);
     setSelectedAnswer(null);
@@ -81,7 +85,7 @@ export default function LiveGamePage() {
     }, GAME_UI_TIMING.QUESTION_INTRO_MS);
 
     return () => clearTimeout(timer);
-  }, [currentQuestion]);
+  }, [currentQuestion, roomState?.currentQuestionIndex]);
 
   // Handle answer submission phase
   useEffect(() => {
@@ -90,20 +94,21 @@ export default function LiveGamePage() {
     }
   }, [hasAnswered, questionEnded, isOrganizer]);
 
-  // Handle answer reveal phase
+  // Handle answer reveal phase -> leaderboard
   useEffect(() => {
     if (questionEnded) {
       setShowResults(true);
-      if (!isOrganizer) {
-        setGamePhase('ANSWER_REVEAL');
-        const timer = setTimeout(() => {
-          setGamePhase('LEADERBOARD');
-        }, GAME_UI_TIMING.LEADERBOARD_TRANSITION_MS);
-        return () => clearTimeout(timer);
-      }
+      setGamePhase('ANSWER_REVEAL');
+
+      // Auto-transition to leaderboard after showing results
+      const timer = setTimeout(() => {
+        setGamePhase('LEADERBOARD');
+      }, GAME_UI_TIMING.LEADERBOARD_TRANSITION_MS);
+
+      return () => clearTimeout(timer);
     }
     return undefined;
-  }, [questionEnded, isOrganizer]);
+  }, [questionEnded]);
 
   const handleJoinRoom = (e: React.FormEvent) => {
     e.preventDefault();
@@ -134,8 +139,13 @@ export default function LiveGamePage() {
     setShowResults(true);
   };
 
+  const handleNextQuestion = () => {
+    // Request next question from server
+    nextQuestion();
+  };
+
   // Loading states
-  if (authLoading && !storedNickname) {
+  if (authLoading && !storedNickname && !storedIsOrganizer) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-secondary-50 flex items-center justify-center p-4">
         <div className="text-center">
@@ -146,7 +156,7 @@ export default function LiveGamePage() {
     );
   }
 
-  if (storedNickname && !isConnected) {
+  if ((storedNickname || storedIsOrganizer) && !isConnected) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-secondary-50 flex items-center justify-center p-4">
         <div className="text-center">
@@ -157,8 +167,8 @@ export default function LiveGamePage() {
     );
   }
 
-  // Nickname form
-  if (!hasJoined) {
+  // Nickname form (skip for organizer)
+  if (!hasJoined && !storedIsOrganizer) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-secondary-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full">
@@ -285,6 +295,19 @@ export default function LiveGamePage() {
           <div className="text-white/60 text-lg">준비하세요!</div>
         </div>
       </div>
+    );
+  }
+
+  // Leaderboard screen (both organizer and participants)
+  if (gamePhase === 'LEADERBOARD' && questionEnded) {
+    return (
+      <LeaderboardScreen
+        leaderboard={leaderboard}
+        questionIndex={questionIndex}
+        totalQuestions={totalQuestions}
+        isOrganizer={isOrganizer}
+        onNextQuestion={isOrganizer ? handleNextQuestion : undefined}
+      />
     );
   }
 
