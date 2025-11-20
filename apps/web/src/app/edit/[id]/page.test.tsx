@@ -15,6 +15,7 @@ vi.mock('next/navigation', () => ({
     push: mockPush,
     back: mockBack,
   }),
+  useSearchParams: () => new URLSearchParams(),
 }));
 
 vi.mock('@/lib/hooks');

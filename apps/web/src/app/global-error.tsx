@@ -1,55 +1,49 @@
 'use client';
 
-import * as Sentry from '@sentry/nextjs';
-import { useEffect } from 'react';
-import Link from 'next/link';
-
 export default function GlobalError({
   error,
+  reset,
 }: {
   error: Error & { digest?: string };
+  reset: () => void;
 }) {
-  useEffect(() => {
-    Sentry.captureException(error);
-  }, [error]);
-
   return (
     <html lang="ko">
       <body>
-        <div className="min-h-screen flex items-center justify-center bg-gray-50">
-          <div className="text-center px-4 max-w-2xl">
-            <h1 className="text-9xl font-bold text-red-500">500</h1>
-            <h2 className="text-3xl font-bold text-gray-900 mt-4 mb-2">
+        <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f9fafb' }}>
+          <div style={{ textAlign: 'center', padding: '0 1rem', maxWidth: '42rem' }}>
+            <h1 style={{ fontSize: '6rem', fontWeight: 'bold', color: '#ef4444' }}>500</h1>
+            <h2 style={{ fontSize: '1.875rem', fontWeight: 'bold', color: '#111827', marginTop: '1rem', marginBottom: '0.5rem' }}>
               심각한 오류가 발생했습니다
             </h2>
-            <p className="text-gray-600 mb-2">
+            <p style={{ color: '#4b5563', marginBottom: '0.5rem' }}>
               예상치 못한 문제가 발생했습니다. 관리자에게 문의해주세요.
             </p>
             {process.env.NODE_ENV === 'development' && error.message && (
-              <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg text-left">
-                <p className="text-sm text-red-800 font-mono break-all">
+              <div style={{ marginTop: '1rem', padding: '1rem', backgroundColor: '#fef2f2', border: '1px solid #fecaca', borderRadius: '0.5rem', textAlign: 'left' }}>
+                <p style={{ fontSize: '0.875rem', color: '#991b1b', fontFamily: 'monospace', wordBreak: 'break-all' }}>
                   {error.message}
                 </p>
                 {error.digest && (
-                  <p className="text-xs text-red-600 mt-2">
+                  <p style={{ fontSize: '0.75rem', color: '#dc2626', marginTop: '0.5rem' }}>
                     Error ID: {error.digest}
                   </p>
                 )}
               </div>
             )}
-            <div className="flex items-center justify-center gap-4 mt-8">
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem', marginTop: '2rem' }}>
               <button
-                onClick={() => window.location.reload()}
-                className="px-6 py-3 bg-primary-500 text-white font-semibold rounded-lg hover:bg-primary-600 transition-colors duration-200"
+                onClick={() => reset()}
+                style={{ padding: '0.75rem 1.5rem', backgroundColor: '#3b82f6', color: 'white', fontWeight: '600', borderRadius: '0.5rem', border: 'none', cursor: 'pointer' }}
               >
-                새로고침
+                다시 시도
               </button>
-              <Link
+              <a
                 href="/"
-                className="px-6 py-3 border-2 border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-colors duration-200"
+                style={{ padding: '0.75rem 1.5rem', border: '2px solid #d1d5db', color: '#374151', fontWeight: '600', borderRadius: '0.5rem', textDecoration: 'none', display: 'inline-block' }}
               >
                 홈으로 가기
-              </Link>
+              </a>
             </div>
           </div>
         </div>

@@ -12,20 +12,19 @@ export default function WaitingRoomPage() {
   const { user } = useAuth();
 
   // Get participant session from localStorage
-  const [nickname, setNickname] = useState<string | null>(null);
-  const [participantId, setParticipantId] = useState<string | null>(null);
+  // Initialize from localStorage immediately to avoid race condition
+  const [nickname] = useState<string | null>(() => {
+    if (typeof window === 'undefined') return null;
+    return localStorage.getItem(`room_${pin}_nickname`);
+  });
+  const [participantId, setParticipantId] = useState<string | null>(() => {
+    if (typeof window === 'undefined') return null;
+    return localStorage.getItem(`room_${pin}_participantId`);
+  });
 
   // Copy PIN to clipboard state (must be declared before any returns)
   const [copied, setCopied] = useState(false);
   const [isStarting, setIsStarting] = useState(false);
-
-  useEffect(() => {
-    const storedNickname = localStorage.getItem(`room_${pin}_nickname`);
-    const storedParticipantId = localStorage.getItem(`room_${pin}_participantId`);
-
-    setNickname(storedNickname);
-    setParticipantId(storedParticipantId);
-  }, [pin]);
 
   // Determine if organizer or participant
   const isOrganizer = !!user && !nickname;

@@ -1,9 +1,6 @@
-import Link from 'next/link';
-import type { Metadata } from 'next';
+'use client';
 
-export const metadata: Metadata = {
-  title: '페이지를 찾을 수 없습니다',
-};
+import Link from 'next/link';
 
 export default function NotFound() {
   return (
