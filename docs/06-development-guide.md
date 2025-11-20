@@ -1233,6 +1233,32 @@ docs/
 
 ---
 
+### 2025-11-20: Sentry Integration Complete - Full Error Tracking Ready! 🐛
+
+- **Status**: ✅ Complete
+- **Services**: All 7 services integrated (Frontend + 6 backend services)
+  - **Backend**: auth-service (NestJS), template-service, game-service, room-service, ws-service, result-service (Express)
+  - **Frontend**: Client-side, server-side, and edge runtime support
+- **Features**:
+  - ✨ Production-only activation (NODE_ENV check)
+  - ✨ Release tracking (SENTRY_RELEASE)
+  - ✨ Sensitive data filtering (auth headers, cookies)
+  - ✨ WebSocket error tracking (connection, disconnect, transport errors)
+  - ✨ User context tracking (authenticated requests)
+  - ✨ Performance profiling (10% sample rate)
+- **Documentation**:
+  - [SENTRY_COMPLETION.md](../SENTRY_COMPLETION.md) - Complete integration checklist
+  - [.env.production.example](../.env.production.example) - Production environment template
+  - [docs/08-sentry-setup.md](08-sentry-setup.md) - Detailed setup guide
+
+**Implementation Highlights**:
+- **Express Services**: `initSentry()` + `Sentry.setupExpressErrorHandler()`
+- **NestJS Service**: Custom `SentryExceptionFilter` for exception capturing
+- **WebSocket Service**: Enhanced error tracking for Socket.io connections, disconnects, and server errors
+- **Dependencies**: `@sentry/node` + `@sentry/profiling-node` (v10.26.0)
+
+---
+
 ## 🌐 Language Policy
 
 **All code, documentation, and services use English by default.**
@@ -1248,7 +1274,7 @@ This includes:
 
 ---
 
-**Last Updated**: 2025-11-18
+**Last Updated**: 2025-11-20
 **Maintained By**: Claude AI Assistant
 
 **See Also**:
