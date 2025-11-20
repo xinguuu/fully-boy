@@ -1,8 +1,8 @@
 # 🎮 Xingu - 한국형 파티 게임 플랫폼
 
-## 🎯 현재 상태 (2025-11-18)
+## 🎯 현재 상태 (2025-11-20)
 
-### 프로젝트 진행도: ~95% 🎉
+### 프로젝트 진행도: ~97% 🎉
 
 **✅ 완료된 항목:**
 - **Backend 6개 서비스 (100%)**
@@ -13,13 +13,16 @@
   - Homepage, Login/Signup, Browse, Edit, Join, Waiting, Live Game, Results
 - **Production build 성공** (All 9 packages)
 - **Performance optimizations** (compression, image optimization, SEO)
+- **Sentry 에러 추적** (✅ All 7 services - Frontend + 6 backend services)
+- **Production 환경변수 템플릿** (`.env.production.example` 완료)
+- **배포 가이드 문서화** (`docs/07-deployment-guide.md`, `docs/08-sentry-setup.md`)
 
 **🔄 남은 작업 (Phase 1 Launch):**
 - [ ] SSL 인증서 설정 (Let's Encrypt)
-- [ ] Sentry 에러 추적 설정
 - [ ] CI/CD 파이프라인 (GitHub Actions)
 - [ ] Production 환경 배포
 - [ ] Database backup script (daily)
+- [ ] UptimeRobot 서비스 모니터링 설정
 
 **→ 상세 현황**: [CLAUDE.md](../CLAUDE.md#current-status)
 

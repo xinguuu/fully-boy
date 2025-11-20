@@ -10,6 +10,8 @@
 xingu/
 ├── CLAUDE.md                    # 🤖 AI 어시스턴트 전용
 ├── README.md                    # 👋 첫 방문자용 (Quick Start)
+├── SENTRY_COMPLETION.md         # 📋 Sentry 통합 완료 체크리스트
+├── .env.production.example      # 🔐 Production 환경변수 템플릿
 │
 └── docs/
     ├── 00-INDEX.md              # 📌 이 문서 (시작점)
@@ -18,7 +20,9 @@ xingu/
     ├── 03-prd.md                # 📋 Product Requirements
     ├── 04-architecture.md       # 🏗️ 시스템 아키텍처
     ├── 05-design-guide.md       # 🎨 디자인 시스템
-    └── 06-development-guide.md  # 💻 개발 가이드 & 컨벤션
+    ├── 06-development-guide.md  # 💻 개발 가이드 & 컨벤션
+    ├── 07-deployment-guide.md   # 🚀 배포 가이드
+    └── 08-sentry-setup.md       # 🐛 Sentry 설정 가이드
 ```
 
 ---
@@ -118,6 +122,8 @@ README → 01-overview → 02-ia → 04-architecture → 06-development-guide
 | [04-architecture.md](04-architecture.md) | 시스템 아키텍처, DB 스키마, 다이어그램 | Backend, DevOps | 1,200줄 |
 | [05-design-guide.md](05-design-guide.md) | 디자인 시스템, 컴포넌트, 컬러, 타이포 | 디자이너, Frontend | 1,900줄 |
 | [06-development-guide.md](06-development-guide.md) | 코딩 컨벤션, 파일 구조, Recent Changes | 개발자 | 1,000줄 |
+| [07-deployment-guide.md](07-deployment-guide.md) | Production 배포 가이드, 인프라 설정 | DevOps, Backend | 중량 |
+| [08-sentry-setup.md](08-sentry-setup.md) | Sentry 에러 추적 설정 상세 가이드 | DevOps, Backend | 중량 |
 
 ---
 
@@ -146,6 +152,12 @@ README → 01-overview → 02-ia → 04-architecture → 06-development-guide
 
 ### "프로젝트 현재 상태는?"
 → [CLAUDE.md](../CLAUDE.md) - Current Status 섹션
+
+### "Production 배포는 어떻게 하나요?"
+→ [07-deployment-guide.md](07-deployment-guide.md)
+
+### "Sentry 에러 추적 설정 방법은?"
+→ [08-sentry-setup.md](08-sentry-setup.md)
 
 ---
 
@@ -205,5 +217,5 @@ pnpm dev
 
 ---
 
-**마지막 업데이트**: 2025-11-18
-**버전**: 1.0
+**마지막 업데이트**: 2025-11-20
+**버전**: 1.1
