@@ -1,135 +1,68 @@
+import {
+  gameTypeRegistry,
+  parseQuestionData,
+  type ScoreCalculationOptions,
+  type ScoreResult,
+} from '@xingu/shared';
+
 /**
- * Score Calculator Service
+ * Score Calculator Service (Plugin-based)
  *
- * Calculates scores based on:
- * - Correctness (base points)
- * - Response time (bonus points for speed)
+ * Delegates score calculation and answer checking to registered game type plugins.
+ * This service is now plugin-agnostic and extensible with type-safe validation.
  */
-
-interface ScoreCalculationOptions {
-  isCorrect: boolean;
-  responseTimeMs: number;
-  questionDuration: number; // in seconds
-  basePoints?: number;
-  speedBonusMultiplier?: number;
-}
-
-interface ScoreResult {
-  points: number;
-  isCorrect: boolean;
-  responseTimeMs: number;
-  breakdown: {
-    basePoints: number;
-    speedBonus: number;
-    totalPoints: number;
-  };
-}
-
 export class ScoreCalculatorService {
-  private readonly DEFAULT_BASE_POINTS = 1000;
-  private readonly DEFAULT_SPEED_BONUS_MULTIPLIER = 0.5;
-
   /**
-   * Calculate score for an answer
+   * Calculate score for an answer using the appropriate plugin
    *
-   * Formula:
-   * - Correct answer: basePoints + speedBonus
-   * - Wrong answer: 0 points
-   * - Speed bonus: (remainingTime / totalTime) * basePoints * multiplier
+   * @param questionType - Type of the question (e.g., 'multiple-choice', 'true-false')
+   * @param options - Score calculation options
+   * @returns Score result with breakdown
+   * @throws Error if plugin for question type is not registered
    */
-  calculateScore(options: ScoreCalculationOptions): ScoreResult {
-    const {
-      isCorrect,
-      responseTimeMs,
-      questionDuration,
-      basePoints = this.DEFAULT_BASE_POINTS,
-      speedBonusMultiplier = this.DEFAULT_SPEED_BONUS_MULTIPLIER,
-    } = options;
+  calculateScore(questionType: string, options: ScoreCalculationOptions): ScoreResult {
+    const plugin = gameTypeRegistry.get(questionType);
 
-    if (!isCorrect) {
-      return {
-        points: 0,
-        isCorrect: false,
-        responseTimeMs,
-        breakdown: {
-          basePoints: 0,
-          speedBonus: 0,
-          totalPoints: 0,
-        },
-      };
+    if (!plugin) {
+      throw new Error(
+        `No plugin registered for question type: "${questionType}". ` +
+          `Available types: ${gameTypeRegistry.getAllTypes().join(', ')}`
+      );
     }
 
-    const responseTimeSec = responseTimeMs / 1000;
-    const remainingTime = Math.max(0, questionDuration - responseTimeSec);
-    const timeRatio = remainingTime / questionDuration;
-
-    const speedBonus = Math.floor(basePoints * speedBonusMultiplier * timeRatio);
-    const totalPoints = basePoints + speedBonus;
-
-    return {
-      points: totalPoints,
-      isCorrect: true,
-      responseTimeMs,
-      breakdown: {
-        basePoints,
-        speedBonus,
-        totalPoints,
-      },
-    };
+    return plugin.calculateScore(options);
   }
 
   /**
    * Check if answer is correct based on question type
+   *
+   * Uses parseQuestionData for type-safe validation before checking answer.
+   *
+   * @param question - Question object with data field
+   * @param userAnswer - User's submitted answer
+   * @returns true if answer is correct, false otherwise
    */
-  checkAnswer(question: any, userAnswer: any): boolean {
-    const questionData = question.data;
-    const questionType = questionData.type || 'multiple-choice';
+  checkAnswer(question: { data: unknown }, userAnswer: unknown): boolean {
+    // Parse and validate question data with type safety
+    const questionData = parseQuestionData(question.data);
 
-    switch (questionType) {
-      case 'multiple-choice':
-        return this.checkMultipleChoice(questionData, userAnswer);
-      case 'true-false':
-        return this.checkTrueFalse(questionData, userAnswer);
-      case 'short-answer':
-        return this.checkShortAnswer(questionData, userAnswer);
-      default:
-        console.warn(`Unknown question type: ${questionType}`);
-        return false;
-    }
-  }
-
-  private checkMultipleChoice(questionData: any, userAnswer: any): boolean {
-    const correctAnswer = questionData.correctAnswer;
-
-    if (Array.isArray(correctAnswer)) {
-      // Multiple correct answers
-      if (!Array.isArray(userAnswer)) return false;
-
-      const sortedCorrect = [...correctAnswer].sort();
-      const sortedUser = [...userAnswer].sort();
-
-      return JSON.stringify(sortedCorrect) === JSON.stringify(sortedUser);
+    if (!questionData) {
+      console.warn('Invalid or missing question data:', question.data);
+      return false;
     }
 
-    return correctAnswer === userAnswer;
-  }
+    const questionType = questionData.type;
+    const plugin = gameTypeRegistry.get(questionType);
 
-  private checkTrueFalse(questionData: any, userAnswer: any): boolean {
-    return questionData.correctAnswer === userAnswer;
-  }
+    if (!plugin) {
+      console.warn(
+        `No plugin registered for question type: "${questionType}". ` +
+          `Available types: ${gameTypeRegistry.getAllTypes().join(', ')}`
+      );
+      return false;
+    }
 
-  private checkShortAnswer(questionData: any, userAnswer: any): boolean {
-    if (typeof userAnswer !== 'string') return false;
-
-    const correctAnswers = Array.isArray(questionData.correctAnswer)
-      ? questionData.correctAnswer
-      : [questionData.correctAnswer];
-
-    const normalizedUserAnswer = userAnswer.trim().toLowerCase();
-
-    return correctAnswers.some((correct: string) =>
-      correct.trim().toLowerCase() === normalizedUserAnswer
-    );
+    return plugin.checkAnswer(questionData, userAnswer);
   }
 }
 

@@ -1,5 +1,5 @@
 import { Server, Socket } from 'socket.io';
-import { WS_EVENTS } from '@xingu/shared';
+import { WS_EVENTS, parseQuestionData, getQuestionDuration, getQuestionType } from '@xingu/shared';
 import { prisma } from '../config/database';
 import { roomStateService } from '../services/room-state.service';
 import { participantSessionService } from '../services/participant-session.service';
@@ -277,10 +277,21 @@ export function setupGameHandlers(io: Server, socket: Socket) {
           return;
         }
 
-        // Calculate score
+        // Parse and validate question data
+        const questionData = parseQuestionData(question.data);
+        if (!questionData) {
+          socket.emit(WS_EVENTS.ERROR, {
+            code: 'INVALID_QUESTION_DATA',
+            message: 'Invalid question data format',
+          });
+          return;
+        }
+
+        // Calculate score with type-safe data
         const isCorrect = scoreCalculator.checkAnswer(question, answer);
-        const questionDuration = (question.data as any).duration || 30; // Default 30s
-        const scoreResult = scoreCalculator.calculateScore({
+        const questionDuration = getQuestionDuration(questionData, 30);
+        const questionType = getQuestionType(questionData);
+        const scoreResult = scoreCalculator.calculateScore(questionType, {
           isCorrect,
           responseTimeMs,
           questionDuration,
@@ -367,9 +378,21 @@ export function setupGameHandlers(io: Server, socket: Socket) {
             if (questionRoom) {
               const revealQuestion = questionRoom.game.questions[questionIndex];
               if (revealQuestion) {
+                // Parse question data for type-safe access
+                const revealQuestionData = parseQuestionData(revealQuestion.data);
+                if (!revealQuestionData) {
+                  console.error(`Invalid question data at index ${questionIndex} in room ${pin}`);
+                  return;
+                }
+
                 // Collect all answers and calculate results
                 const results = allPlayers.map((p) => {
-                  const answerData = p.answers[questionIndex] as any;
+                  const answerData = p.answers[questionIndex] as {
+                    answer: unknown;
+                    isCorrect: boolean;
+                    points: number;
+                    responseTimeMs: number;
+                  } | undefined;
                   return {
                     playerId: p.id,
                     nickname: p.nickname,
@@ -394,7 +417,7 @@ export function setupGameHandlers(io: Server, socket: Socket) {
                 // Broadcast results to all players
                 io.to(`room:${pin}`).emit(WS_EVENTS.QUESTION_ENDED, {
                   questionIndex,
-                  correctAnswer: (revealQuestion.data as any).correctAnswer,
+                  correctAnswer: revealQuestionData.correctAnswer,
                   results,
                   leaderboard,
                   statistics: {
@@ -555,10 +578,25 @@ export function setupGameHandlers(io: Server, socket: Socket) {
         return;
       }
 
+      // Parse question data for type-safe access
+      const endQuestionData = parseQuestionData(question.data);
+      if (!endQuestionData) {
+        socket.emit(WS_EVENTS.ERROR, {
+          code: 'INVALID_QUESTION_DATA',
+          message: 'Invalid question data format',
+        });
+        return;
+      }
+
       // Collect all answers and calculate results
       const playersList = Object.values(state.players);
       const results = playersList.map((p) => {
-        const answerData = p.answers[questionIndex] as any;
+        const answerData = p.answers[questionIndex] as {
+          answer: unknown;
+          isCorrect: boolean;
+          points: number;
+          responseTimeMs: number;
+        } | undefined;
         return {
           playerId: p.id,
           nickname: p.nickname,
@@ -583,7 +621,7 @@ export function setupGameHandlers(io: Server, socket: Socket) {
       // Broadcast results to all players
       io.to(`room:${pin}`).emit(WS_EVENTS.QUESTION_ENDED, {
         questionIndex,
-        correctAnswer: (question.data as any).correctAnswer,
+        correctAnswer: endQuestionData.correctAnswer,
         results,
         leaderboard,
         statistics: {

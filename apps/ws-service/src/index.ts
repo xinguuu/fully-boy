@@ -2,7 +2,7 @@ import 'dotenv/config';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import { createAdapter } from '@socket.io/redis-adapter';
-import { WS_EVENTS } from '@xingu/shared';
+import { WS_EVENTS, registerBuiltInPlugins } from '@xingu/shared';
 import * as Sentry from '@sentry/node';
 import { connectDatabase, disconnectDatabase } from './config/database';
 import { redisPub, redisSub, disconnectRedis } from './config/redis';
@@ -13,6 +13,33 @@ import { initSentry } from './config/sentry.config';
 
 // Initialize Sentry (WebSocket service doesn't use Express middleware)
 initSentry(null, 'ws-service');
+
+// Register built-in game type plugins
+registerBuiltInPlugins();
+
+// Validate that all required plugins are registered (fail-fast on startup)
+const { gameTypeRegistry } = require('@xingu/shared');
+const requiredPlugins = ['multiple-choice', 'true-false', 'short-answer'];
+const missingPlugins: string[] = [];
+
+requiredPlugins.forEach((type) => {
+  if (!gameTypeRegistry.has(type)) {
+    missingPlugins.push(type);
+    console.error(`❌ CRITICAL: Required plugin "${type}" is not registered`);
+  }
+});
+
+if (missingPlugins.length > 0) {
+  const errorMsg = `Failed to register required plugins: ${missingPlugins.join(', ')}`;
+  console.error(`❌ ${errorMsg}`);
+  Sentry.captureException(new Error(errorMsg), {
+    level: 'fatal',
+    tags: { component: 'plugin-initialization' },
+  });
+  process.exit(1);
+}
+
+console.log(`✅ Built-in game type plugins registered: ${requiredPlugins.join(', ')}`);
 
 const httpServer = createServer((req, res) => {
   if (req.url === '/health' && req.method === 'GET') {
