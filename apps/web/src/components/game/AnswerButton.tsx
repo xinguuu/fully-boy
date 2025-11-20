@@ -53,13 +53,15 @@ export function AnswerButton({
     >
       <div className="flex items-center gap-3">
         {showLabel && (
-          <span className="flex-shrink-0 w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center font-black text-sm">
+          <span className="flex-shrink-0 w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center font-black text-sm text-white">
             {String.fromCharCode(65 + index)}
           </span>
         )}
-        <span className="flex-1 text-left">{option}</span>
-        {isCorrect && <span className="text-2xl">✓</span>}
-        {isWrong && <span className="text-2xl">✗</span>}
+        <span className={`flex-1 font-bold ${showLabel ? 'text-left text-lg' : 'text-center text-4xl'} text-white`}>
+          {option}
+        </span>
+        {isCorrect && <span className="text-2xl text-white">✓</span>}
+        {isWrong && <span className="text-2xl text-white">✗</span>}
       </div>
     </button>
   );

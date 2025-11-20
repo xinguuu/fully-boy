@@ -1,9 +1,12 @@
+'use client';
+
 import { Timer } from './Timer';
-import { AnswerButton } from './AnswerButton';
 import { AnswerSubmittedScreen } from './AnswerSubmittedScreen';
 import { ScoreAnimation } from './ScoreAnimation';
+import { NextQuestionCountdown } from './NextQuestionCountdown';
 import type { GamePhase } from '@/types/game.types';
 import type { Question } from '@/lib/websocket/types';
+import { usePluginRegistry } from '@/lib/plugins/usePluginRegistry';
 
 interface PlayerAnswer {
   answer: unknown;
@@ -48,6 +51,7 @@ export function ParticipantView({
   onShortAnswerChange,
   onShortAnswerSubmit,
 }: ParticipantViewProps) {
+  const pluginRegistry = usePluginRegistry();
   const questionData = currentQuestion.data;
 
   // Phase 1: Answer submitted, waiting
@@ -70,6 +74,7 @@ export function ParticipantView({
           points={lastAnswer.points}
           message={lastAnswer.isCorrect ? undefined : '다음 문제에서 도전하세요!'}
         />
+        <NextQuestionCountdown show={true} duration={5} />
         <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-secondary-50 p-4 flex items-center justify-center">
           <div className="max-w-2xl w-full">
             <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8">
@@ -129,58 +134,35 @@ export function ParticipantView({
               {currentQuestion.content}
             </h2>
 
-            {(questionData.type === 'multiple-choice' || questionData.type === 'true-false') &&
-              questionData.options && (
-                <div className="grid grid-cols-1 gap-4">
-                  {questionData.options.map((option, idx) => {
-                    const isSelected = selectedAnswer === option;
-                    const isCorrect =
-                      questionEnded &&
-                      lastAnswer?.answer === option &&
-                      lastAnswer?.isCorrect;
-                    const isWrong =
-                      questionEnded &&
-                      lastAnswer?.answer === option &&
-                      !lastAnswer?.isCorrect;
+            {(() => {
+              const plugin = pluginRegistry.get(questionData.type);
 
-                    return (
-                      <AnswerButton
-                        key={idx}
-                        option={option}
-                        index={idx}
-                        isSelected={isSelected}
-                        isCorrect={isCorrect}
-                        isWrong={isWrong}
-                        isDisabled={hasAnswered}
-                        showLabel={questionData.type === 'multiple-choice'}
-                        onClick={() => onAnswerSelect(option)}
-                      />
-                    );
-                  })}
-                </div>
-              )}
+              if (!plugin) {
+                return (
+                  <div className="text-center text-red-600">
+                    <p>지원하지 않는 질문 유형입니다: {questionData.type}</p>
+                  </div>
+                );
+              }
 
-            {questionData.type === 'short-answer' && (
-              <form onSubmit={onShortAnswerSubmit} className="space-y-4">
-                <input
-                  type="text"
-                  value={shortAnswerInput}
-                  onChange={(e) => onShortAnswerChange(e.target.value)}
-                  disabled={hasAnswered}
-                  placeholder="정답을 입력하세요"
-                  className="h-14 w-full px-6 border-2 border-gray-300 rounded-xl bg-white text-gray-900 text-lg placeholder:text-gray-400 transition-all duration-200 hover:border-gray-400 focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 focus:outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
-                  maxLength={100}
-                  autoFocus
-                />
-                <button
-                  type="submit"
-                  disabled={hasAnswered || !shortAnswerInput.trim()}
-                  className="w-full py-4 bg-primary-500 hover:bg-primary-600 text-white font-bold text-lg rounded-xl transition-all duration-200 hover:scale-105 active:scale-100 disabled:bg-gray-300 disabled:cursor-not-allowed disabled:scale-100 cursor-pointer"
-                >
-                  {hasAnswered ? '제출 완료' : '제출하기'}
-                </button>
-              </form>
-            )}
+              return plugin.renderParticipantView({
+                questionData,
+                questionIndex,
+                totalQuestions,
+                duration,
+                currentQuestionStartedAt,
+                hasAnswered,
+                questionEnded,
+                currentScore,
+                currentRank,
+                selectedAnswer,
+                shortAnswerInput,
+                onAnswerSelect,
+                onShortAnswerChange,
+                onShortAnswerSubmit,
+                lastAnswer,
+              });
+            })()}
           </div>
 
           {hasAnswered && !questionEnded && (

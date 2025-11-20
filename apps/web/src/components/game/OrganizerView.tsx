@@ -1,7 +1,10 @@
+'use client';
+
 import { useRouter } from 'next/navigation';
 import { Timer } from './Timer';
-import { KAHOOT_COLORS } from '@/types/game.types';
+import { NextQuestionCountdown } from './NextQuestionCountdown';
 import type { Question, Player, LeaderboardEntry } from '@/lib/websocket/types';
+import { usePluginRegistry } from '@/lib/plugins/usePluginRegistry';
 
 interface OrganizerViewProps {
   pin: string;
@@ -31,26 +34,39 @@ export function OrganizerView({
   onNextQuestion,
 }: OrganizerViewProps) {
   const router = useRouter();
+  const pluginRegistry = usePluginRegistry();
   const questionData = currentQuestion.data;
 
   const answeredCount = players.filter((p) => p.answers[questionIndex] !== undefined).length;
-  const answerDistribution: Record<string, number> = {};
 
+  // Calculate answer statistics for the plugin
+  const answerStats: Record<string, number> = {};
   if (questionData.options) {
     questionData.options.forEach((option) => {
-      answerDistribution[option] = 0;
+      answerStats[option] = 0;
     });
 
     players.forEach((player) => {
       const answer = String(player.answers[questionIndex]?.answer || '');
-      if (answer && answerDistribution[answer] !== undefined) {
-        answerDistribution[answer]++;
+      if (answer && answerStats[answer] !== undefined) {
+        answerStats[answer]++;
       }
     });
   }
 
+  // Transform players to match plugin's expected participants format
+  const participants = players.map((player) => ({
+    id: player.id,
+    nickname: player.nickname,
+    score: player.score,
+    hasAnswered: player.answers[questionIndex] !== undefined,
+    answer: player.answers[questionIndex]?.answer,
+    isCorrect: player.answers[questionIndex]?.isCorrect,
+  }));
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-secondary-50 p-4 md:p-8">
+      <NextQuestionCountdown show={showResults} duration={5} />
       <div className="max-w-6xl mx-auto">
         <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8 mb-6">
           <div className="flex items-center justify-between mb-6">
@@ -74,95 +90,30 @@ export function OrganizerView({
               {currentQuestion.content}
             </h2>
 
-            {(questionData.type === 'multiple-choice' || questionData.type === 'true-false') &&
-              questionData.options && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
-                  {questionData.options.map((option, idx) => {
-                    const count = answerDistribution[option] || 0;
-                    const percentage = answeredCount > 0 ? Math.round((count / answeredCount) * 100) : 0;
-                    const color = KAHOOT_COLORS[idx % KAHOOT_COLORS.length];
-                    const isCorrect = showResults && option === questionData.correctAnswer;
+            <div className="mt-8">
+              {(() => {
+                const plugin = pluginRegistry.get(questionData.type);
 
-                    return (
-                      <div
-                        key={idx}
-                        className={`
-                          relative p-6 border-2 rounded-xl overflow-hidden transition-all
-                          ${isCorrect ? 'border-success bg-success-light' : 'border-gray-200 bg-gray-50'}
-                        `}
-                      >
-                        <div
-                          className={`absolute inset-0 transition-all duration-500 ${color.bg} opacity-20`}
-                          style={{ width: `${percentage}%` }}
-                        />
-                        <div className="relative z-10">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                              {questionData.type === 'multiple-choice' && (
-                                <span
-                                  className={`w-8 h-8 rounded-lg ${color.bg} text-white flex items-center justify-center text-sm font-black`}
-                                >
-                                  {String.fromCharCode(65 + idx)}
-                                </span>
-                              )}
-                              {option}
-                              {isCorrect && <span className="text-2xl">✓</span>}
-                            </span>
-                            <span className={`text-lg font-semibold ${color.text}`}>{percentage}%</span>
-                          </div>
-                          <div className="text-sm text-gray-600">{count}명 선택</div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+                if (!plugin) {
+                  return (
+                    <div className="text-center text-red-600">
+                      <p>지원하지 않는 질문 유형입니다: {questionData.type}</p>
+                    </div>
+                  );
+                }
 
-            {questionData.type === 'short-answer' && (
-              <div className="mt-8">
-                <div className="mb-4 p-4 bg-primary-50 rounded-lg border border-primary-200">
-                  <p className="text-sm font-medium text-primary-700">
-                    💡 정답: <span className="font-bold">{questionData.correctAnswer}</span>
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-96 overflow-y-auto">
-                  {players
-                    .filter((p) => p.answers[questionIndex]?.answer)
-                    .map((player, idx) => {
-                      const playerAnswer = player.answers[questionIndex];
-                      const isCorrect = playerAnswer?.isCorrect || false;
-
-                      return (
-                        <div
-                          key={idx}
-                          className={`p-4 rounded-lg border-2 ${
-                            isCorrect
-                              ? 'bg-success-light border-success'
-                              : 'bg-error-light border-error/30'
-                          }`}
-                        >
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="flex-1 min-w-0">
-                              <p className="font-medium text-gray-900 truncate">{player.nickname}</p>
-                              <p
-                                className={`text-sm mt-1 ${isCorrect ? 'text-success-dark' : 'text-error-dark'}`}
-                              >
-                                {String(playerAnswer.answer)}
-                              </p>
-                            </div>
-                            <span className="text-xl flex-shrink-0">{isCorrect ? '✅' : '❌'}</span>
-                          </div>
-                        </div>
-                      );
-                    })}
-                </div>
-
-                {answeredCount === 0 && (
-                  <div className="text-center py-8 text-gray-500">아직 제출된 답변이 없습니다</div>
-                )}
-              </div>
-            )}
+                return plugin.renderOrganizerView({
+                  questionData,
+                  questionIndex,
+                  totalQuestions,
+                  duration,
+                  currentQuestionStartedAt,
+                  participants,
+                  answerStats,
+                  leaderboard,
+                });
+              })()}
+            </div>
           </div>
 
           <div className="border-t pt-6">
