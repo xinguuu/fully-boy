@@ -22,3 +22,5 @@ export function calculateExpiryTime(hoursFromNow: number): Date {
   now.setHours(now.getHours() + hoursFromNow);
   return now;
 }
+
+export * from './question.utils';
