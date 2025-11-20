@@ -349,7 +349,8 @@
 
 ### Prerequisites
 
-- **Node.js**: 24+
+- **Node.js**: 24.0.0+
+- **pnpm**: 10.21.0+
 - **Docker**: Docker Desktop or Docker Engine + Docker Compose
 - **PostgreSQL**: 17+ (or use Docker)
 - **Redis**: Latest (or use Docker)
@@ -462,8 +463,8 @@ pnpm lint
 6. **game-service** - Express (games, rooms, templates)
 7. **ws-service** - Socket.io (real-time WebSocket)
 
-### 🌐 Frontend (Next.js 15)
-- **Framework**: Next.js 15 (App Router)
+### 🌐 Frontend (Next.js 16)
+- **Framework**: Next.js 16 (App Router)
 - **UI Library**: React 19
 - **Language**: TypeScript (Strict Mode)
 - **Styling**: Tailwind CSS
