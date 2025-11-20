@@ -1,6 +1,5 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 import { Timer } from './Timer';
 import { NextQuestionCountdown } from './NextQuestionCountdown';
 import { QuestionMedia } from './QuestionMedia';
@@ -34,7 +33,6 @@ export function OrganizerView({
   onEndQuestion,
   onNextQuestion,
 }: OrganizerViewProps) {
-  const router = useRouter();
   const pluginRegistry = usePluginRegistry();
   const questionData = currentQuestion.data;
 
@@ -74,12 +72,11 @@ export function OrganizerView({
             <span className="text-lg font-semibold text-gray-600">
               Q {questionIndex + 1} / {totalQuestions}
             </span>
-            <button
-              onClick={() => router.push(`/room/${pin}/waiting`)}
-              className="text-error hover:text-error-dark font-medium cursor-pointer"
-            >
-              [종료]
-            </button>
+            <div className="flex items-center gap-4">
+              <div className="bg-primary-500 text-white px-4 py-2 rounded-lg font-bold text-lg">
+                PIN: {pin}
+              </div>
+            </div>
           </div>
 
           {!showResults && (

@@ -205,13 +205,35 @@ describe('RoomService', () => {
       expect(redis.expire).toHaveBeenCalled();
     });
 
-    it('should throw ConflictError if room is not waiting', async () => {
+    it('should throw ConflictError if room is not waiting (PLAYING status)', async () => {
       const mockRoom = {
         id: 'room-123',
         pin: '123456',
         gameId: 'game-123',
         organizerId: 'user-123',
-        status: 'IN_PROGRESS',
+        status: 'PLAYING',
+        createdAt: new Date(),
+        expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+      };
+
+      const joinDto = {
+        nickname: 'Player 1',
+        deviceId: 'device-123',
+      };
+
+      vi.mocked(prisma.room.findUnique).mockResolvedValue(mockRoom as any);
+      vi.mocked(redis.lrange).mockResolvedValue([]);
+
+      await expect(roomService.joinRoom('123456', joinDto)).rejects.toThrow(ConflictError);
+    });
+
+    it('should throw ConflictError if room is finished', async () => {
+      const mockRoom = {
+        id: 'room-123',
+        pin: '123456',
+        gameId: 'game-123',
+        organizerId: 'user-123',
+        status: 'FINISHED',
         createdAt: new Date(),
         expiresAt: new Date(Date.now() + 60 * 60 * 1000),
       };

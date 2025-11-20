@@ -75,6 +75,15 @@ export function setupGameHandlers(io: Server, socket: Socket) {
         return;
       }
 
+      // Update PostgreSQL room status to prevent new joins
+      await prisma.room.update({
+        where: { pin },
+        data: {
+          status: 'PLAYING',
+          startedAt: new Date(),
+        },
+      });
+
       io.to(`room:${pin}`).emit(WS_EVENTS.GAME_STARTED, {
         room: updatedState,
       });

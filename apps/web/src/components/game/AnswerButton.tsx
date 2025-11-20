@@ -1,5 +1,3 @@
-import { KAHOOT_COLORS } from '@/types/game.types';
-
 interface AnswerButtonProps {
   option: string;
   index: number;
@@ -21,7 +19,7 @@ export function AnswerButton({
   showLabel = true,
   onClick,
 }: AnswerButtonProps) {
-  const color = KAHOOT_COLORS[index % KAHOOT_COLORS.length];
+  const colorIndex = index % 4;
 
   const getButtonClass = () => {
     // Correct answer state
@@ -32,12 +30,20 @@ export function AnswerButton({
     if (isWrong) {
       return 'bg-error text-white ring-4 ring-error/30';
     }
-    // Selected state
+
+    // Selected state - Xingu brand colors
     if (isSelected) {
-      return `${color.bg} text-white ring-4 ring-offset-2 ${color.bg.replace('bg-', 'ring-')}/50 scale-105`;
+      if (colorIndex === 0) return 'bg-primary-500 text-white ring-4 ring-offset-2 ring-primary-500/50 scale-105';
+      if (colorIndex === 1) return 'bg-secondary-500 text-white ring-4 ring-offset-2 ring-secondary-500/50 scale-105';
+      if (colorIndex === 2) return 'bg-accent-500 text-white ring-4 ring-offset-2 ring-accent-500/50 scale-105';
+      return 'bg-purple-500 text-white ring-4 ring-offset-2 ring-purple-500/50 scale-105';
     }
-    // Default state
-    return `${color.bg} ${color.hover} text-white hover:scale-105 hover:ring-4 ${color.bg.replace('bg-', 'ring-')}/30`;
+
+    // Default state - Xingu brand colors with hover effects
+    if (colorIndex === 0) return 'bg-primary-500 hover:bg-primary-600 text-white hover:scale-105 hover:ring-4 ring-primary-500/30';
+    if (colorIndex === 1) return 'bg-secondary-500 hover:bg-secondary-600 text-white hover:scale-105 hover:ring-4 ring-secondary-500/30';
+    if (colorIndex === 2) return 'bg-accent-500 hover:bg-accent-600 text-white hover:scale-105 hover:ring-4 ring-accent-500/30';
+    return 'bg-purple-500 hover:bg-purple-600 text-white hover:scale-105 hover:ring-4 ring-purple-500/30';
   };
 
   return (
