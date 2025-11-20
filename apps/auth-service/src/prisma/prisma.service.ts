@@ -1,5 +1,6 @@
 import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
+import { DB_CONFIG } from '@xingu/shared';
 
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
@@ -19,7 +20,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
 
   async onModuleInit() {
     const maxRetries = 10;
-    const retryDelay = 5000;
+    const retryDelay = DB_CONFIG.RETRY_DELAY_MS;
     let attempts = 0;
 
     while (attempts < maxRetries) {

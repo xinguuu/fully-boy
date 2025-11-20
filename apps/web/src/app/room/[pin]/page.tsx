@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/hooks';
+import { STORAGE_KEYS } from '@/lib/constants/storage';
 
 /**
  * Session Recovery & Redirect Page
@@ -16,8 +17,8 @@ export default function RoomEntryPage() {
 
   useEffect(() => {
     // Check for participant session
-    const nickname = localStorage.getItem(`room_${pin}_nickname`);
-    const participantId = localStorage.getItem(`room_${pin}_participantId`);
+    const nickname = localStorage.getItem(STORAGE_KEYS.ROOM_NICKNAME(pin));
+    const participantId = localStorage.getItem(STORAGE_KEYS.ROOM_PARTICIPANT_ID(pin));
 
     if (nickname && participantId) {
       // Participant with existing session → go to waiting/game

@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { WS_EVENTS } from '@xingu/shared';
 import { wsClient } from '../websocket/client';
+import { STORAGE_KEYS } from '../constants/storage';
 import type {
   RoomState,
   Game,
@@ -132,7 +133,7 @@ export function useGameSocket({
       // Save participantId to state and localStorage for participants
       if (data.role === 'participant' && data.participantId) {
         setParticipantId(data.participantId);
-        localStorage.setItem(`room_${pin}_participantId`, data.participantId);
+        localStorage.setItem(STORAGE_KEYS.ROOM_PARTICIPANT_ID(pin), data.participantId);
 
         if (data.sessionRestored) {
           setSessionRestored(true);
@@ -251,7 +252,7 @@ export function useGameSocket({
     }) => {
       setSessionRestored(true);
       setParticipantId(data.participantId);
-      localStorage.setItem(`room_${pin}_participantId`, data.participantId);
+      localStorage.setItem(STORAGE_KEYS.ROOM_PARTICIPANT_ID(pin), data.participantId);
 
       setRoomState((prev) => {
         if (!prev) return null;

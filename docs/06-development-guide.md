@@ -1233,6 +1233,47 @@ docs/
 
 ---
 
+### 2025-11-20: Media Support for Questions + K-POP Quiz Template 🎵
+
+- **Status**: ✅ Complete
+- **Features Added**:
+  - ✨ QuestionMedia component for displaying images, audio, and video
+  - ✨ Audio player integration (HTML5 with auto-play)
+  - ✨ Image support using Next.js Image component
+  - ✨ Video player integration
+  - ✨ K-POP Song Quiz template (10 questions, 4-choice)
+- **Components Updated**:
+  - `apps/web/src/components/game/QuestionMedia.tsx` (NEW)
+  - `apps/web/src/components/game/ParticipantView.tsx` (media integration)
+  - `apps/web/src/components/game/OrganizerView.tsx` (media integration)
+- **Database**:
+  - `packages/database/prisma/seed.ts` - Added "K-POP 노래 제목 맞추기" template
+  - GameType: `FOUR_CHOICE_QUIZ`
+  - Category: `MUSIC`
+
+**Implementation Highlights**:
+- Questions now support `imageUrl`, `audioUrl`, and `videoUrl` fields
+- Audio player auto-plays when question loads
+- Next.js Image component for optimized image loading
+- Styled audio player with music icon
+- Media displays in both participant and organizer views
+
+**Database Schema (already existed)**:
+```prisma
+model Question {
+  imageUrl  String?  // ✅ Image URL
+  videoUrl  String?  // ✅ Video URL
+  audioUrl  String?  // ✅ Audio URL
+}
+```
+
+**Validation**:
+- ✅ Type-check passed (all packages)
+- ✅ Lint passed (QuestionMedia.tsx)
+- ✅ Database seed successful
+
+---
+
 ### 2025-11-20: Sentry Integration Complete - Full Error Tracking Ready! 🐛
 
 - **Status**: ✅ Complete

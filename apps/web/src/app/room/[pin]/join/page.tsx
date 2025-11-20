@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import { STORAGE_KEYS } from '@/lib/constants/storage';
+import { INPUT_LIMITS } from '@/lib/constants/validation';
 
 export default function JoinRoomPage() {
   const params = useParams();
@@ -19,15 +21,15 @@ export default function JoinRoomPage() {
       return;
     }
 
-    if (nickname.length > 20) {
-      alert('닉네임은 20자 이하로 입력해주세요');
+    if (nickname.length > INPUT_LIMITS.NICKNAME) {
+      alert(`닉네임은 ${INPUT_LIMITS.NICKNAME}자 이하로 입력해주세요`);
       return;
     }
 
     setIsLoading(true);
 
     // Store nickname in localStorage
-    localStorage.setItem(`room_${pin}_nickname`, nickname.trim());
+    localStorage.setItem(STORAGE_KEYS.ROOM_NICKNAME(pin), nickname.trim());
 
     // Redirect to waiting room (WebSocket join happens there)
     router.push(`/room/${pin}/waiting`);
@@ -54,12 +56,12 @@ export default function JoinRoomPage() {
               value={nickname}
               onChange={(e) => setNickname(e.target.value)}
               placeholder="ex) 김철수"
-              maxLength={20}
+              maxLength={INPUT_LIMITS.NICKNAME}
               disabled={isLoading}
               className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl text-gray-900 placeholder:text-gray-400 focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 focus:outline-none transition-all disabled:bg-gray-100 disabled:cursor-not-allowed"
               autoFocus
             />
-            <p className="mt-2 text-sm text-gray-500">{nickname.length} / 20</p>
+            <p className="mt-2 text-sm text-gray-500">{nickname.length} / {INPUT_LIMITS.NICKNAME}</p>
           </div>
 
           <button

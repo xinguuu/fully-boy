@@ -1,25 +1,24 @@
-const ACCESS_TOKEN_KEY = 'access_token';
-const REFRESH_TOKEN_KEY = 'refresh_token';
+import { STORAGE_KEYS } from '../constants/storage';
 
 export class TokenManager {
   getAccessToken(): string | null {
     if (typeof window === 'undefined') return null;
-    return localStorage.getItem(ACCESS_TOKEN_KEY);
+    return localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
   }
 
   setAccessToken(token: string): void {
     if (typeof window === 'undefined') return;
-    localStorage.setItem(ACCESS_TOKEN_KEY, token);
+    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, token);
   }
 
   getRefreshToken(): string | null {
     if (typeof window === 'undefined') return null;
-    return localStorage.getItem(REFRESH_TOKEN_KEY);
+    return localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
   }
 
   setRefreshToken(token: string): void {
     if (typeof window === 'undefined') return;
-    localStorage.setItem(REFRESH_TOKEN_KEY, token);
+    localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, token);
   }
 
   setTokens(accessToken: string, refreshToken: string): void {
@@ -29,8 +28,8 @@ export class TokenManager {
 
   clearTokens(): void {
     if (typeof window === 'undefined') return;
-    localStorage.removeItem(ACCESS_TOKEN_KEY);
-    localStorage.removeItem(REFRESH_TOKEN_KEY);
+    localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
+    localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
   }
 
   hasValidToken(): boolean {

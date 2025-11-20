@@ -4,6 +4,7 @@ import { Timer } from './Timer';
 import { AnswerSubmittedScreen } from './AnswerSubmittedScreen';
 import { ScoreAnimation } from './ScoreAnimation';
 import { NextQuestionCountdown } from './NextQuestionCountdown';
+import { QuestionMedia } from './QuestionMedia';
 import type { GamePhase } from '@/types/game.types';
 import type { Question } from '@/lib/websocket/types';
 import { usePluginRegistry } from '@/lib/plugins/usePluginRegistry';
@@ -133,6 +134,13 @@ export function ParticipantView({
             <h2 className="text-2xl md:text-3xl font-bold text-gray-900 text-center mb-8">
               {currentQuestion.content}
             </h2>
+
+            <QuestionMedia
+              imageUrl={currentQuestion.imageUrl}
+              videoUrl={currentQuestion.videoUrl}
+              audioUrl={currentQuestion.audioUrl}
+              autoPlay={true}
+            />
 
             {(() => {
               const plugin = pluginRegistry.get(questionData.type);

@@ -24,6 +24,7 @@ vi.mock('../config/redis', () => ({
   redis: {
     get: vi.fn(),
     set: vi.fn(),
+    setex: vi.fn(),
     del: vi.fn(),
     lpush: vi.fn(),
     lrange: vi.fn(),

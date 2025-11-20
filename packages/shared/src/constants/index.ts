@@ -19,6 +19,7 @@ export const API_ENDPOINTS = {
 } as const;
 
 export * from './websocket';
+export * from './redis';
 
 export const ERROR_CODES = {
   VALIDATION_ERROR: 'VALIDATION_ERROR',

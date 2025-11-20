@@ -9,16 +9,30 @@ import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../prisma/prisma.service';
 import { RedisService } from '../redis/redis.service';
 import { SignupDto, LoginDto, AuthResponse, UserResponse } from './dto/auth.dto';
+import { REDIS_KEYS, REDIS_TTL, TOKEN_CONFIG } from '@xingu/shared';
 
 @Injectable()
 export class AuthService {
-  private readonly REFRESH_TOKEN_TTL = 7 * 24 * 60 * 60;
+  private readonly refreshSecret: string;
 
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
     private redis: RedisService,
-  ) {}
+  ) {
+    // Validate JWT_REFRESH_SECRET in production
+    if (process.env.NODE_ENV === 'production' && !process.env.JWT_REFRESH_SECRET) {
+      throw new Error('JWT_REFRESH_SECRET must be set in production environment');
+    }
+
+    // Use environment variable or fallback for development only
+    this.refreshSecret = process.env.JWT_REFRESH_SECRET || 'xingu-refresh-secret-dev-only';
+
+    // Warn if using fallback in development
+    if (!process.env.JWT_REFRESH_SECRET && process.env.NODE_ENV !== 'production') {
+      console.warn('⚠️  WARNING: Using default JWT_REFRESH_SECRET. Set JWT_REFRESH_SECRET in .env for production!');
+    }
+  }
 
   async signup(dto: SignupDto): Promise<AuthResponse> {
     const existingUser = await this.prisma.user.findUnique({
@@ -29,7 +43,7 @@ export class AuthService {
       throw new ConflictException('Email already exists');
     }
 
-    const passwordHash = await bcrypt.hash(dto.password, 10);
+    const passwordHash = await bcrypt.hash(dto.password, TOKEN_CONFIG.BCRYPT_SALT_ROUNDS);
 
     const user = await this.prisma.user.create({
       data: {
@@ -61,17 +75,17 @@ export class AuthService {
   }
 
   async logout(userId: string, refreshToken: string): Promise<void> {
-    const key = `refresh_token:${userId}:${refreshToken}`;
+    const key = REDIS_KEYS.REFRESH_TOKEN(userId, refreshToken);
     await this.redis.del(key);
   }
 
   async refresh(refreshToken: string): Promise<AuthResponse> {
     try {
       const payload = this.jwtService.verify(refreshToken, {
-        secret: process.env.JWT_REFRESH_SECRET || 'xingu-refresh-secret-change-in-production',
+        secret: this.refreshSecret,
       });
 
-      const key = `refresh_token:${payload.sub}:${refreshToken}`;
+      const key = REDIS_KEYS.REFRESH_TOKEN(payload.sub, refreshToken);
       const exists = await this.redis.exists(key);
 
       if (!exists) {
@@ -127,12 +141,12 @@ export class AuthService {
     const accessToken = this.jwtService.sign(payload);
 
     const refreshToken = this.jwtService.sign(payload, {
-      secret: process.env.JWT_REFRESH_SECRET || 'xingu-refresh-secret-change-in-production',
-      expiresIn: '7d',
+      secret: this.refreshSecret,
+      expiresIn: TOKEN_CONFIG.REFRESH_TOKEN_EXPIRY,
     });
 
-    const key = `refresh_token:${user.id}:${refreshToken}`;
-    await this.redis.set(key, '1', this.REFRESH_TOKEN_TTL);
+    const key = REDIS_KEYS.REFRESH_TOKEN(user.id, refreshToken);
+    await this.redis.set(key, '1', REDIS_TTL.REFRESH_TOKEN);
 
     return {
       accessToken,

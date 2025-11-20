@@ -4,6 +4,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useGameSocket, useAuth } from '@/lib/hooks';
 import { useEffect, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
+import { STORAGE_KEYS } from '@/lib/constants/storage';
 
 export default function WaitingRoomPage() {
   const params = useParams();
@@ -15,11 +16,11 @@ export default function WaitingRoomPage() {
   // Initialize from localStorage immediately to avoid race condition
   const [nickname] = useState<string | null>(() => {
     if (typeof window === 'undefined') return null;
-    return localStorage.getItem(`room_${pin}_nickname`);
+    return localStorage.getItem(STORAGE_KEYS.ROOM_NICKNAME(pin));
   });
   const [participantId, setParticipantId] = useState<string | null>(() => {
     if (typeof window === 'undefined') return null;
-    return localStorage.getItem(`room_${pin}_participantId`);
+    return localStorage.getItem(STORAGE_KEYS.ROOM_PARTICIPANT_ID(pin));
   });
 
   // Copy PIN to clipboard state (must be declared before any returns)

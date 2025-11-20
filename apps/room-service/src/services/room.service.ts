@@ -2,6 +2,7 @@ import { randomUUID } from 'crypto';
 import { prisma } from '../config/database';
 import { redis } from '../config/redis';
 import { NotFoundError, ConflictError } from '../middleware/error.middleware';
+import { REDIS_KEYS, REDIS_TTL } from '@xingu/shared';
 import type {
   CreateRoomDto,
   RoomResponse,
@@ -10,10 +11,6 @@ import type {
   ParticipantSession,
   JoinRoomResponse,
 } from '../types/room.types';
-
-const REDIS_PARTICIPANT_PREFIX = 'room:participants:';
-const REDIS_SESSION_PREFIX = 'participant:session:';
-const REDIS_PARTICIPANT_TTL = 7200;
 
 export class RoomService {
   private generatePIN(): string {
@@ -45,7 +42,7 @@ export class RoomService {
   }
 
   async createRoom(dto: CreateRoomDto): Promise<RoomResponse> {
-    const { gameId, organizerId, expiresInMinutes = 120 } = dto;
+    const { gameId, organizerId, expiresInMinutes = REDIS_TTL.DEFAULT_ROOM_EXPIRATION_MINUTES } = dto;
 
     const game = await prisma.game.findUnique({
       where: { id: gameId },
@@ -142,12 +139,12 @@ export class RoomService {
       score: 0,
     };
 
-    const participantKey = `${REDIS_PARTICIPANT_PREFIX}${pin}`;
+    const participantKey = REDIS_KEYS.ROOM_PARTICIPANTS(pin);
     await redis.lpush(participantKey, JSON.stringify(participant));
-    await redis.expire(participantKey, REDIS_PARTICIPANT_TTL);
+    await redis.expire(participantKey, REDIS_TTL.PARTICIPANT_SESSION);
 
-    const sessionKey = `${REDIS_SESSION_PREFIX}${sessionId}`;
-    await redis.setex(sessionKey, REDIS_PARTICIPANT_TTL, JSON.stringify(participantSession));
+    const sessionKey = REDIS_KEYS.PARTICIPANT_SESSION(sessionId);
+    await redis.setex(sessionKey, REDIS_TTL.PARTICIPANT_SESSION, JSON.stringify(participantSession));
 
     return {
       sessionId,
@@ -158,14 +155,14 @@ export class RoomService {
   }
 
   async getParticipants(pin: string): Promise<Participant[]> {
-    const key = `${REDIS_PARTICIPANT_PREFIX}${pin}`;
+    const key = REDIS_KEYS.ROOM_PARTICIPANTS(pin);
     const data = await redis.lrange(key, 0, -1);
 
     return data.map((item) => JSON.parse(item));
   }
 
   async getSession(sessionId: string): Promise<ParticipantSession | null> {
-    const key = `${REDIS_SESSION_PREFIX}${sessionId}`;
+    const key = REDIS_KEYS.PARTICIPANT_SESSION(sessionId);
     const data = await redis.get(key);
 
     if (!data) {
@@ -192,8 +189,8 @@ export class RoomService {
       score,
     };
 
-    const key = `${REDIS_SESSION_PREFIX}${sessionId}`;
-    await redis.setex(key, REDIS_PARTICIPANT_TTL, JSON.stringify(updatedSession));
+    const key = REDIS_KEYS.PARTICIPANT_SESSION(sessionId);
+    await redis.setex(key, REDIS_TTL.PARTICIPANT_SESSION, JSON.stringify(updatedSession));
   }
 
   async deleteRoom(pin: string, organizerId: string): Promise<void> {
@@ -209,7 +206,7 @@ export class RoomService {
       throw new ConflictError('Only the organizer can delete the room');
     }
 
-    await redis.del(`${REDIS_PARTICIPANT_PREFIX}${pin}`);
+    await redis.del(REDIS_KEYS.ROOM_PARTICIPANTS(pin));
 
     await prisma.room.delete({
       where: { pin },

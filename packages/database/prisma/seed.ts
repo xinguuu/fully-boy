@@ -224,6 +224,173 @@ async function main() {
 
   console.log('✅ Created Company Trivia template:', companyQuiz.title);
 
+  const kpopSongQuiz = await prisma.game.create({
+    data: {
+      title: 'K-POP 노래 제목 맞추기',
+      description: '가사를 보고 노래 제목을 맞춰보세요!',
+      thumbnail: null,
+      gameType: GameType.FOUR_CHOICE_QUIZ,
+      category: Category.MUSIC,
+      isPublic: true,
+      duration: 15,
+      minPlayers: 5,
+      maxPlayers: 100,
+      needsMobile: true,
+      settings: {
+        timeLimit: 20,
+        pointsPerCorrect: 100,
+        timeBonusEnabled: true,
+        soundEnabled: true,
+      },
+      questions: {
+        create: [
+          {
+            order: 1,
+            content: '"작은 것들을 위한 시" - 이 노래의 제목은?',
+            data: {
+              type: 'multiple-choice',
+              options: ['Boy With Luv', 'Dynamite', 'Butter', 'Spring Day'],
+              correctAnswer: 'Boy With Luv',
+              explanation: 'BTS의 "Boy With Luv (작은 것들을 위한 시)"는 2019년 발매되었습니다.',
+              duration: 20,
+            },
+            audioUrl: null,
+            imageUrl: null,
+            videoUrl: null,
+          },
+          {
+            order: 2,
+            content: '"뜨거운 여름밤은 가고 남은 건 볼품없지만" - 이 노래는?',
+            data: {
+              type: 'multiple-choice',
+              options: ['밤편지', '가을 아침', 'Celebrity', '너의 의미'],
+              correctAnswer: '가을 아침',
+              explanation: 'IU의 "가을 아침"의 유명한 가사입니다.',
+              duration: 20,
+            },
+            audioUrl: null,
+            imageUrl: null,
+            videoUrl: null,
+          },
+          {
+            order: 3,
+            content: '"Kill This Love" - 이 곡을 부른 그룹은?',
+            data: {
+              type: 'multiple-choice',
+              options: ['BLACKPINK', 'TWICE', 'Red Velvet', 'ITZY'],
+              correctAnswer: 'BLACKPINK',
+              explanation: 'BLACKPINK의 대표곡 "Kill This Love"는 2019년 발매되었습니다.',
+              duration: 20,
+            },
+            audioUrl: null,
+            imageUrl: null,
+            videoUrl: null,
+          },
+          {
+            order: 4,
+            content: '"신호등을 지나 왼쪽으로 돌아" - 이 노래의 제목은?',
+            data: {
+              type: 'multiple-choice',
+              options: ['길', 'TAXI', 'Eight', 'strawberry moon'],
+              correctAnswer: 'strawberry moon',
+              explanation: 'IU의 "strawberry moon"의 가사입니다.',
+              duration: 20,
+            },
+            audioUrl: null,
+            imageUrl: null,
+            videoUrl: null,
+          },
+          {
+            order: 5,
+            content: '"I am a supa dupa fly" - 이 노래를 부른 가수는?',
+            data: {
+              type: 'multiple-choice',
+              options: ['비', 'PSY', 'Jay Park', 'CL'],
+              correctAnswer: 'PSY',
+              explanation: 'PSY의 "DADDY"의 유명한 가사입니다.',
+              duration: 20,
+            },
+            audioUrl: null,
+            imageUrl: null,
+            videoUrl: null,
+          },
+          {
+            order: 6,
+            content: '"넌 나의 어둠 속의 한 줄기 빛" - 이 노래는?',
+            data: {
+              type: 'multiple-choice',
+              options: ['사랑에 빠지고 싶다', '한 페이지가 될 수 있게', 'Love poem', '에잇'],
+              correctAnswer: 'Love poem',
+              explanation: 'IU의 "Love poem"의 감성적인 가사입니다.',
+              duration: 20,
+            },
+            audioUrl: null,
+            imageUrl: null,
+            videoUrl: null,
+          },
+          {
+            order: 7,
+            content: '"강남스타일" - 이 곡을 부른 가수는?',
+            data: {
+              type: 'multiple-choice',
+              options: ['PSY', '빅뱅', '싸이', '박재상'],
+              correctAnswer: 'PSY',
+              explanation: '2012년 전 세계를 강타한 PSY의 "강남스타일"입니다. (PSY = 싸이 = 박재상)',
+              duration: 20,
+            },
+            audioUrl: null,
+            imageUrl: null,
+            videoUrl: null,
+          },
+          {
+            order: 8,
+            content: '"Dynamite" - 이 곡을 부른 그룹은?',
+            data: {
+              type: 'multiple-choice',
+              options: ['BTS', 'EXO', 'SEVENTEEN', 'Stray Kids'],
+              correctAnswer: 'BTS',
+              explanation: 'BTS의 첫 빌보드 핫 100 1위 곡 "Dynamite"입니다.',
+              duration: 20,
+            },
+            audioUrl: null,
+            imageUrl: null,
+            videoUrl: null,
+          },
+          {
+            order: 9,
+            content: '"DDU-DU DDU-DU" - 이 곡을 부른 그룹은?',
+            data: {
+              type: 'multiple-choice',
+              options: ['BLACKPINK', '2NE1', 'TWICE', 'Red Velvet'],
+              correctAnswer: 'BLACKPINK',
+              explanation: 'BLACKPINK의 대표곡 "뚜두뚜두"입니다.',
+              duration: 20,
+            },
+            audioUrl: null,
+            imageUrl: null,
+            videoUrl: null,
+          },
+          {
+            order: 10,
+            content: '"DALLA DALLA" - 이 데뷔곡을 부른 그룹은?',
+            data: {
+              type: 'multiple-choice',
+              options: ['ITZY', 'aespa', 'NewJeans', 'IVE'],
+              correctAnswer: 'ITZY',
+              explanation: 'ITZY의 2019년 데뷔곡 "달라달라"입니다.',
+              duration: 20,
+            },
+            audioUrl: null,
+            imageUrl: null,
+            videoUrl: null,
+          },
+        ],
+      },
+    },
+  });
+
+  console.log('✅ Created K-POP Song Quiz template:', kpopSongQuiz.title);
+
   console.log('🎉 Seeding completed successfully!');
 }
 

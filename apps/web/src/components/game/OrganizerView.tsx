@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { Timer } from './Timer';
 import { NextQuestionCountdown } from './NextQuestionCountdown';
+import { QuestionMedia } from './QuestionMedia';
 import type { Question, Player, LeaderboardEntry } from '@/lib/websocket/types';
 import { usePluginRegistry } from '@/lib/plugins/usePluginRegistry';
 
@@ -89,6 +90,13 @@ export function OrganizerView({
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 text-center mb-4">
               {currentQuestion.content}
             </h2>
+
+            <QuestionMedia
+              imageUrl={currentQuestion.imageUrl}
+              videoUrl={currentQuestion.videoUrl}
+              audioUrl={currentQuestion.audioUrl}
+              autoPlay={true}
+            />
 
             <div className="mt-8">
               {(() => {

@@ -5,6 +5,8 @@ import { useEffect, useState } from 'react';
 import { useGameSocket, useAuth } from '@/lib/hooks';
 import { ParticipantView } from '@/components/game/ParticipantView';
 import { OrganizerView } from '@/components/game/OrganizerView';
+import { STORAGE_KEYS } from '@/lib/constants/storage';
+import { GAME_UI_TIMING, GAME_SETTINGS } from '@/lib/constants/game';
 import type { GamePhase } from '@/types/game.types';
 
 export default function LiveGamePage() {
@@ -14,9 +16,9 @@ export default function LiveGamePage() {
   const { user, isLoading: authLoading } = useAuth();
 
   const storedNickname =
-    typeof window !== 'undefined' ? localStorage.getItem(`room_${pin}_nickname`) : null;
+    typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEYS.ROOM_NICKNAME(pin)) : null;
   const storedParticipantId =
-    typeof window !== 'undefined' ? localStorage.getItem(`room_${pin}_participantId`) : null;
+    typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEYS.ROOM_PARTICIPANT_ID(pin)) : null;
 
   const isOrganizerByAuth = !!user && !storedNickname;
 
@@ -76,7 +78,7 @@ export default function LiveGamePage() {
       setShowQuestionIntro(false);
       setAnswerStartTime(Date.now());
       setGamePhase('ANSWERING');
-    }, 2000);
+    }, GAME_UI_TIMING.QUESTION_INTRO_MS);
 
     return () => clearTimeout(timer);
   }, [currentQuestion]);
@@ -94,10 +96,9 @@ export default function LiveGamePage() {
       setShowResults(true);
       if (!isOrganizer) {
         setGamePhase('ANSWER_REVEAL');
-        // After 3 seconds, show leaderboard
         const timer = setTimeout(() => {
           setGamePhase('LEADERBOARD');
-        }, 3000);
+        }, GAME_UI_TIMING.LEADERBOARD_TRANSITION_MS);
         return () => clearTimeout(timer);
       }
     }
@@ -267,7 +268,7 @@ export default function LiveGamePage() {
   }
 
   const questionData = currentQuestion.data;
-  const duration = questionData.duration || 30;
+  const duration = questionData.duration || GAME_SETTINGS.DEFAULT_QUESTION_DURATION_SEC;
   const questionIndex = roomState.currentQuestionIndex;
   const totalQuestions = game?.questions.length || 0;
 

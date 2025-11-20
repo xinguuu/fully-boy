@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { redis } from '../config/redis';
+import { REDIS_TTL } from '@xingu/shared';
 import type {
   TemplateListItem,
   TemplateDetail,
@@ -9,7 +10,6 @@ import type {
 
 const prisma = new PrismaClient();
 
-const CACHE_TTL = 3600;
 const CACHE_PREFIX = {
   LIST: 'templates:list',
   DETAIL: 'templates:detail',
@@ -77,7 +77,7 @@ export class TemplateService {
       offset,
     };
 
-    await redis.setex(cacheKey, CACHE_TTL, JSON.stringify(result));
+    await redis.setex(cacheKey, REDIS_TTL.TEMPLATE_CACHE, JSON.stringify(result));
 
     return result;
   }
@@ -137,7 +137,7 @@ export class TemplateService {
       questionCount: template._count.questions,
     } as TemplateDetail;
 
-    await redis.setex(cacheKey, CACHE_TTL, JSON.stringify(result));
+    await redis.setex(cacheKey, REDIS_TTL.TEMPLATE_CACHE, JSON.stringify(result));
 
     return result;
   }
