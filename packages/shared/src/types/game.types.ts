@@ -15,6 +15,11 @@ export enum Category {
   MEME = 'MEME',
 }
 
+export enum TemplateCategory {
+  QUIZ = 'QUIZ',
+  PARTY = 'PARTY',
+}
+
 export interface Game {
   id: string;
   title: string;
@@ -22,6 +27,7 @@ export interface Game {
   thumbnail: string | null;
   gameType: GameType;
   category: Category;
+  gameCategory: TemplateCategory;
   isPublic: boolean;
   duration: number;
   minPlayers: number;
@@ -30,6 +36,7 @@ export interface Game {
   playCount: number;
   favoriteCount: number;
   settings: Record<string, unknown>;
+  sessionSettings?: Record<string, unknown>;
   userId: string | null;
   createdAt: Date;
   updatedAt: Date;

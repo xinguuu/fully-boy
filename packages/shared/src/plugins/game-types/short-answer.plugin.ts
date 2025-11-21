@@ -1,5 +1,6 @@
 import { BaseGameTypePlugin } from '../base-plugin';
 import type { QuestionData } from '../../types/plugin.types';
+import { PluginCategory } from '../../types/plugin.types';
 
 /**
  * Short Answer Question Data
@@ -22,6 +23,7 @@ export interface ShortAnswerQuestionData extends QuestionData {
 export class ShortAnswerPlugin extends BaseGameTypePlugin {
   public readonly type = 'short-answer';
   public readonly name = 'Short Answer';
+  public readonly category = PluginCategory.QUIZ;
 
   /**
    * Check if user's answer matches any of the correct answers

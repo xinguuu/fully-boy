@@ -46,6 +46,12 @@ export const REDIS_KEYS = {
    * @example "templates:all"
    */
   TEMPLATES_ALL: () => 'templates:all',
+
+  /**
+   * Party game session state key (used by room-service, ws-service)
+   * @example "party:session:123456"
+   */
+  PARTY_GAME_SESSION: (pin: string) => `party:session:${pin}`,
 } as const;
 
 /**

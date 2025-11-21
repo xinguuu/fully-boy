@@ -12,19 +12,19 @@ datasource db {
 // ========================================
 
 model User {
-  id            String   @id @default(cuid())
-  email         String   @unique
-  passwordHash  String
-  name          String?
-  role          Role     @default(ORGANIZER)
+  id           String  @id @default(cuid())
+  email        String  @unique
+  passwordHash String
+  name         String?
+  role         Role    @default(ORGANIZER)
 
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  games         Game[]
-  rooms         Room[]
-  favorites     Favorite[]
+  games     Game[]
+  rooms     Room[]
+  favorites Favorite[]
 
   @@index([email])
   @@map("users")
@@ -40,45 +40,48 @@ enum Role {
 // ========================================
 
 model Game {
-  id              String      @id @default(cuid())
-  title           String
-  description     String?
-  thumbnail       String?
+  id          String  @id @default(cuid())
+  title       String
+  description String?
+  thumbnail   String?
 
   // Classification
-  gameType        GameType
-  category        Category
-  isPublic        Boolean     @default(false)
+  gameType     GameType
+  category     Category
+  gameCategory TemplateCategory @default(QUIZ)
+  isPublic     Boolean          @default(false)
 
   // Metadata
-  duration        Int
-  minPlayers      Int         @default(5)
-  maxPlayers      Int         @default(100)
-  needsMobile     Boolean
+  duration    Int
+  minPlayers  Int     @default(5)
+  maxPlayers  Int     @default(100)
+  needsMobile Boolean
 
   // Stats
-  playCount       Int         @default(0)
-  favoriteCount   Int         @default(0)
+  playCount     Int @default(0)
+  favoriteCount Int @default(0)
 
   // Settings
   settings        Json
+  sessionSettings Json?
 
   // Content
-  questions       Question[]
+  questions Question[]
 
   // Ownership
-  userId          String?
-  user            User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  rooms           Room[]
-  favorites       Favorite[]
+  rooms     Room[]
+  favorites Favorite[]
 
   @@index([gameType, isPublic])
   @@index([category, isPublic])
+  @@index([gameCategory, isPublic])
   @@index([userId])
   @@map("games")
 }
@@ -100,26 +103,31 @@ enum Category {
   MEME
 }
 
+enum TemplateCategory {
+  QUIZ
+  PARTY
+}
+
 // ========================================
 // Questions
 // ========================================
 
 model Question {
-  id          String   @id @default(cuid())
-  gameId      String
-  game        Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  id     String @id @default(cuid())
+  gameId String
+  game   Game   @relation(fields: [gameId], references: [id], onDelete: Cascade)
 
-  order       Int
-  content     String
-  data        Json
+  order   Int
+  content String
+  data    Json
 
   // Media
-  imageUrl    String?
-  videoUrl    String?
-  audioUrl    String?
+  imageUrl String?
+  videoUrl String?
+  audioUrl String?
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([gameId, order])
   @@map("questions")
@@ -130,11 +138,11 @@ model Question {
 // ========================================
 
 model Favorite {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  gameId    String
-  game      Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  gameId String
+  game   Game   @relation(fields: [gameId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
 
@@ -148,25 +156,25 @@ model Favorite {
 // ========================================
 
 model Room {
-  id            String      @id @default(cuid())
-  pin           String      @unique
+  id  String @id @default(cuid())
+  pin String @unique
 
-  gameId        String
-  game          Game        @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  gameId String
+  game   Game   @relation(fields: [gameId], references: [id], onDelete: Cascade)
 
-  organizerId   String
-  organizer     User        @relation(fields: [organizerId], references: [id], onDelete: Cascade)
+  organizerId String
+  organizer   User   @relation(fields: [organizerId], references: [id], onDelete: Cascade)
 
-  status        RoomStatus  @default(WAITING)
+  status RoomStatus @default(WAITING)
 
   // Timestamps
-  createdAt     DateTime    @default(now())
-  startedAt     DateTime?
-  endedAt       DateTime?
-  expiresAt     DateTime
+  createdAt DateTime  @default(now())
+  startedAt DateTime?
+  endedAt   DateTime?
+  expiresAt DateTime
 
   // Relations
-  result        GameResult?
+  result GameResult?
 
   @@index([pin])
   @@index([organizerId])
@@ -185,9 +193,9 @@ enum RoomStatus {
 // ========================================
 
 model GameResult {
-  id              String   @id @default(cuid())
-  roomId          String   @unique
-  room            Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  id     String @id @default(cuid())
+  roomId String @unique
+  room   Room   @relation(fields: [roomId], references: [id], onDelete: Cascade)
 
   // Statistics
   participantCount Int
@@ -195,12 +203,12 @@ model GameResult {
   averageScore     Float
 
   // Leaderboard (top 10)
-  leaderboard      Json
+  leaderboard Json
 
   // Question stats
-  questionStats    Json
+  questionStats Json
 
-  createdAt        DateTime @default(now())
+  createdAt DateTime @default(now())
 
   @@index([roomId])
   @@map("game_results")

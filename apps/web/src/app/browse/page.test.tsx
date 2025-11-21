@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import BrowsePage from './page';
 import * as hooks from '@/lib/hooks';
-import { GameType, Category, type Game } from '@xingu/shared';
+import { GameType, Category, TemplateCategory, type Game } from '@xingu/shared';
 
 const mockPush = vi.fn();
 
@@ -21,6 +21,7 @@ vi.mock('lucide-react', () => ({
   Star: ({ className }: { className?: string }) => <div data-testid="star-icon" className={className} />,
   Users: () => <div data-testid="users-icon" />,
   Clock: () => <div data-testid="clock-icon" />,
+  Check: () => <div data-testid="check-icon" />,
 }));
 
 const mockUser = {
@@ -36,6 +37,7 @@ const mockTemplates: Game[] = [
     description: '재미있는 밸런스 게임',
     gameType: GameType.BALANCE_GAME,
     category: Category.ICE_BREAKING,
+    gameCategory: TemplateCategory.QUIZ,
     isPublic: true,
     duration: 10,
     minPlayers: 2,
@@ -58,6 +60,7 @@ const mockMyGames: Game[] = [
     description: '내가 만든 게임',
     gameType: GameType.BALANCE_GAME,
     category: Category.ICE_BREAKING,
+    gameCategory: TemplateCategory.QUIZ,
     isPublic: false,
     duration: 15,
     minPlayers: 3,
@@ -78,11 +81,10 @@ describe('BrowsePage', () => {
     vi.clearAllMocks();
     localStorage.clear();
 
-    vi.mocked(hooks.useCurrentUser).mockReturnValue({
-      data: mockUser,
+    vi.mocked(hooks.useAuth).mockReturnValue({
+      user: mockUser,
       isLoading: false,
-      error: null,
-      refetch: vi.fn(),
+      isAuthenticated: true,
     } as any);
 
     vi.mocked(hooks.useTemplates).mockReturnValue({
@@ -99,12 +101,24 @@ describe('BrowsePage', () => {
       refetch: vi.fn(),
     } as any);
 
-    vi.mocked(hooks.useCreateGame).mockReturnValue({
+    vi.mocked(hooks.useDeleteGame).mockReturnValue({
       mutateAsync: vi.fn(),
       isPending: false,
     } as any);
 
-    vi.mocked(hooks.useDeleteGame).mockReturnValue({
+    vi.mocked(hooks.useFavoriteIds).mockReturnValue({
+      data: [],
+      isLoading: false,
+      error: null,
+      refetch: vi.fn(),
+    } as any);
+
+    vi.mocked(hooks.useAddFavorite).mockReturnValue({
+      mutateAsync: vi.fn(),
+      isPending: false,
+    } as any);
+
+    vi.mocked(hooks.useRemoveFavorite).mockReturnValue({
       mutateAsync: vi.fn(),
       isPending: false,
     } as any);
@@ -185,39 +199,60 @@ describe('BrowsePage', () => {
     expect(browseTab.closest('button')).toHaveClass('text-primary-500');
   });
 
-  it('renders filter buttons', () => {
+  it('renders game category buttons', () => {
     render(<BrowsePage />);
 
-    expect(screen.getByText(/📱 전체/)).toBeInTheDocument();
-    expect(screen.getByText(/🎉 아이스브레이킹/)).toBeInTheDocument();
+    const categorySection = screen.getByText('게임 유형:').parentElement;
+    expect(categorySection).toBeInTheDocument();
+
+    const allButton = within(categorySection!).getByRole('button', { name: '전체' });
+    const quizButton = within(categorySection!).getByRole('button', { name: /📝 퀴즈 게임/ });
+    const partyButton = within(categorySection!).getByRole('button', { name: /🎉 파티 게임/ });
+
+    expect(allButton).toBeInTheDocument();
+    expect(quizButton).toBeInTheDocument();
+    expect(partyButton).toBeInTheDocument();
   });
 
-  it('changes active filter when filter button clicked', () => {
+  it('changes active game category when category button clicked', () => {
     render(<BrowsePage />);
 
-    const allFilter = screen.getByText(/📱 전체/);
-    const icebreakingFilter = screen.getByText(/아이스브레이킹/);
+    const categorySection = screen.getByText('게임 유형:').parentElement;
 
-    expect(allFilter.closest('button')).toHaveClass('bg-primary-500');
+    const allButton = within(categorySection!).getByRole('button', { name: '전체' });
+    const quizButton = within(categorySection!).getByRole('button', { name: /📝 퀴즈 게임/ });
+    const partyButton = within(categorySection!).getByRole('button', { name: /🎉 파티 게임/ });
 
-    fireEvent.click(icebreakingFilter);
-    expect(icebreakingFilter.closest('button')).toHaveClass('bg-primary-500');
+    expect(allButton).toHaveClass('bg-primary-500');
+
+    fireEvent.click(quizButton);
+    expect(quizButton).toHaveClass('bg-primary-500');
+
+    fireEvent.click(partyButton);
+    expect(partyButton).toHaveClass('bg-primary-500');
   });
 
   it('renders sort dropdown', () => {
     render(<BrowsePage />);
 
-    const sortSelect = screen.getByDisplayValue('인기순');
-    expect(sortSelect).toBeInTheDocument();
+    const sortSection = screen.getByText('정렬:').parentElement;
+    expect(sortSection).toBeInTheDocument();
+
+    const sortButton = within(sortSection!).getByText('인기순');
+    expect(sortButton).toBeInTheDocument();
   });
 
   it('changes sort option', () => {
     render(<BrowsePage />);
 
-    const sortSelect = screen.getByDisplayValue('인기순') as HTMLSelectElement;
-    fireEvent.change(sortSelect, { target: { value: 'newest' } });
+    const sortSection = screen.getByText('정렬:').parentElement;
+    const sortButton = within(sortSection!).getByText('인기순');
+    fireEvent.click(sortButton);
 
-    expect(sortSelect.value).toBe('newest');
+    const newestOption = screen.getByText('최신순');
+    fireEvent.click(newestOption);
+
+    expect(within(sortSection!).getByText('최신순')).toBeInTheDocument();
   });
 
   it('renders template cards in browse tab', () => {
@@ -248,11 +283,41 @@ describe('BrowsePage', () => {
   });
 
   it('shows empty state in myGames tab when no games', () => {
+    vi.clearAllMocks();
+    vi.mocked(hooks.useAuth).mockReturnValue({
+      user: mockUser,
+      isLoading: false,
+      isAuthenticated: true,
+    } as any);
+    vi.mocked(hooks.useTemplates).mockReturnValue({
+      data: { templates: mockTemplates },
+      isLoading: false,
+      error: null,
+      refetch: vi.fn(),
+    } as any);
     vi.mocked(hooks.useGames).mockReturnValue({
       data: [],
       isLoading: false,
       error: null,
       refetch: vi.fn(),
+    } as any);
+    vi.mocked(hooks.useDeleteGame).mockReturnValue({
+      mutateAsync: vi.fn(),
+      isPending: false,
+    } as any);
+    vi.mocked(hooks.useFavoriteIds).mockReturnValue({
+      data: [],
+      isLoading: false,
+      error: null,
+      refetch: vi.fn(),
+    } as any);
+    vi.mocked(hooks.useAddFavorite).mockReturnValue({
+      mutateAsync: vi.fn(),
+      isPending: false,
+    } as any);
+    vi.mocked(hooks.useRemoveFavorite).mockReturnValue({
+      mutateAsync: vi.fn(),
+      isPending: false,
     } as any);
 
     render(<BrowsePage />);
@@ -265,11 +330,41 @@ describe('BrowsePage', () => {
   });
 
   it('switches to browse tab when "게임 둘러보기" clicked in empty state', () => {
+    vi.clearAllMocks();
+    vi.mocked(hooks.useAuth).mockReturnValue({
+      user: mockUser,
+      isLoading: false,
+      isAuthenticated: true,
+    } as any);
+    vi.mocked(hooks.useTemplates).mockReturnValue({
+      data: { templates: mockTemplates },
+      isLoading: false,
+      error: null,
+      refetch: vi.fn(),
+    } as any);
     vi.mocked(hooks.useGames).mockReturnValue({
       data: [],
       isLoading: false,
       error: null,
       refetch: vi.fn(),
+    } as any);
+    vi.mocked(hooks.useDeleteGame).mockReturnValue({
+      mutateAsync: vi.fn(),
+      isPending: false,
+    } as any);
+    vi.mocked(hooks.useFavoriteIds).mockReturnValue({
+      data: [],
+      isLoading: false,
+      error: null,
+      refetch: vi.fn(),
+    } as any);
+    vi.mocked(hooks.useAddFavorite).mockReturnValue({
+      mutateAsync: vi.fn(),
+      isPending: false,
+    } as any);
+    vi.mocked(hooks.useRemoveFavorite).mockReturnValue({
+      mutateAsync: vi.fn(),
+      isPending: false,
     } as any);
 
     render(<BrowsePage />);
@@ -305,11 +400,10 @@ describe('BrowsePage', () => {
   });
 
   it('displays user email when name is not available', () => {
-    vi.mocked(hooks.useCurrentUser).mockReturnValue({
-      data: { id: 'user-1', email: 'test@example.com', name: null },
+    vi.mocked(hooks.useAuth).mockReturnValue({
+      user: { id: 'user-1', email: 'test@example.com', name: null },
       isLoading: false,
-      error: null,
-      refetch: vi.fn(),
+      isAuthenticated: true,
     } as any);
 
     render(<BrowsePage />);

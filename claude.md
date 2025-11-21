@@ -194,6 +194,12 @@ async getOrCreateTags(tagNames: string[]): Promise<Tag[]>
 
 ## 💡 Claude Assistant Behavior
 
+### ⚠️ Important: Running Services
+**DO NOT start backend services in terminal!**
+- The user is already running all 6 backend services in separate terminals
+- Only start frontend (`pnpm --filter=@xingu/web dev`) if needed
+- Never run `pnpm dev` commands for backend services (auth, template, game, room, ws, result)
+
 ### At Start of Work
 1. Create TODO list (3-10 items)
 2. Set first TODO to 'in_progress'

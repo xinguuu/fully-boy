@@ -2,13 +2,14 @@ import type { Request, Response } from 'express';
 import { templateService } from '../services/template.service';
 import { NotFoundError, ValidationError } from '../middleware/error.middleware';
 import type { TemplateListQuery } from '../types/template.types';
-import { GameType, Category } from '@prisma/client';
+import { GameType, Category, TemplateCategory } from '@prisma/client';
 
 export class TemplateController {
   async getTemplates(req: Request, res: Response): Promise<void> {
     const {
       gameType,
       category,
+      gameCategory,
       limit,
       offset,
       sortBy,
@@ -23,6 +24,10 @@ export class TemplateController {
       throw new ValidationError('Invalid category parameter');
     }
 
+    if (gameCategory && !Object.values(TemplateCategory).includes(gameCategory as TemplateCategory)) {
+      throw new ValidationError('Invalid gameCategory parameter');
+    }
+
     if (limit && (isNaN(Number(limit)) || Number(limit) < 1 || Number(limit) > 100)) {
       throw new ValidationError('Limit must be between 1 and 100');
     }
@@ -34,6 +39,7 @@ export class TemplateController {
     const query: TemplateListQuery = {
       ...(gameType && { gameType: gameType as GameType }),
       ...(category && { category: category as Category }),
+      ...(gameCategory && { gameCategory: gameCategory as TemplateCategory }),
       ...(limit && { limit: Number(limit) }),
       ...(offset && { offset: Number(offset) }),
       ...(sortBy && { sortBy: sortBy as 'playCount' | 'favoriteCount' | 'createdAt' }),

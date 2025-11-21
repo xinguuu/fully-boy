@@ -30,6 +30,13 @@ export class ScoreCalculatorService {
       );
     }
 
+    if (!plugin.calculateScore) {
+      throw new Error(
+        `Plugin for question type "${questionType}" does not support score calculation. ` +
+          `This might be a party game plugin.`
+      );
+    }
+
     return plugin.calculateScore(options);
   }
 
@@ -58,6 +65,14 @@ export class ScoreCalculatorService {
       console.warn(
         `No plugin registered for question type: "${questionType}". ` +
           `Available types: ${gameTypeRegistry.getAllTypes().join(', ')}`
+      );
+      return false;
+    }
+
+    if (!plugin.checkAnswer) {
+      console.warn(
+        `Plugin for question type "${questionType}" does not support answer checking. ` +
+          `This might be a party game plugin.`
       );
       return false;
     }

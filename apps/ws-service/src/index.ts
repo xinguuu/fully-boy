@@ -8,6 +8,7 @@ import { connectDatabase, disconnectDatabase } from './config/database';
 import { redisPub, redisSub, disconnectRedis } from './config/redis';
 import { setupRoomHandlers } from './handlers/room.handler';
 import { setupGameHandlers } from './handlers/game.handler';
+import { setupPartyGameHandlers } from './handlers/party-game.handler';
 import { wsAuthMiddleware } from './middleware/ws-auth.middleware';
 import { initSentry } from './config/sentry.config';
 
@@ -105,6 +106,7 @@ io.on(WS_EVENTS.CONNECTION, (socket) => {
 
   setupRoomHandlers(io, socket);
   setupGameHandlers(io, socket);
+  setupPartyGameHandlers(io, socket);
 });
 
 const port = process.env.PORT || 3005;

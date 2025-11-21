@@ -84,7 +84,12 @@
       "Bash(node:*)",
       "Bash(npx eslint:*)",
       "Bash(kill:*)",
-      "Bash(git checkout:*)"
+      "Bash(git checkout:*)",
+      "Bash(npx prisma:*)",
+      "Bash(npx tsx:*)",
+      "Bash(xargs kill:*)",
+      "Bash(for:*)",
+      "Bash(do lsof -ti:$port)"
     ],
     "deny": [],
     "ask": []

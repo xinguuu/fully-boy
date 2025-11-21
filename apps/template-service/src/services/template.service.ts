@@ -20,6 +20,7 @@ export class TemplateService {
     const {
       gameType,
       category,
+      gameCategory,
       limit = 20,
       offset = 0,
       sortBy = 'createdAt',
@@ -37,6 +38,7 @@ export class TemplateService {
       isPublic: true,
       ...(gameType && { gameType }),
       ...(category && { category }),
+      ...(gameCategory && { gameCategory }),
     };
 
     const [templates, total] = await Promise.all([
@@ -49,6 +51,7 @@ export class TemplateService {
           thumbnail: true,
           gameType: true,
           category: true,
+          gameCategory: true,
           duration: true,
           minPlayers: true,
           maxPlayers: true,
@@ -102,6 +105,7 @@ export class TemplateService {
         thumbnail: true,
         gameType: true,
         category: true,
+        gameCategory: true,
         duration: true,
         minPlayers: true,
         maxPlayers: true,
@@ -109,6 +113,7 @@ export class TemplateService {
         playCount: true,
         favoriteCount: true,
         settings: true,
+        sessionSettings: true,
         createdAt: true,
         questions: {
           select: {

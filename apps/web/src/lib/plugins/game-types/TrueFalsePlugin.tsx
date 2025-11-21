@@ -1,5 +1,6 @@
 import type { FrontendGameTypePlugin, ParticipantViewProps, OrganizerViewProps } from '../types';
 import type { TrueFalseQuestionData } from '@xingu/shared';
+import { PluginCategory } from '@xingu/shared';
 import { AnswerButton } from '@/components/game/AnswerButton';
 
 /**
@@ -8,6 +9,7 @@ import { AnswerButton } from '@/components/game/AnswerButton';
 export class TrueFalseFrontendPlugin implements FrontendGameTypePlugin {
   public readonly type = 'true-false';
   public readonly name = 'True/False (O/X)';
+  public readonly category = PluginCategory.QUIZ;
 
   renderParticipantView(props: ParticipantViewProps) {
     const { questionData, selectedAnswer, hasAnswered, lastAnswer, questionEnded, onAnswerSelect } = props;
@@ -62,20 +64,20 @@ export class TrueFalseFrontendPlugin implements FrontendGameTypePlugin {
                 key={option}
                 className={`p-8 rounded-2xl border-4 transition-all ${
                   isCorrect
-                    ? 'bg-green-50 border-green-500 shadow-xl shadow-green-200'
-                    : 'bg-white border-gray-200'
+                    ? 'bg-green-500 border-green-600 shadow-xl shadow-green-300'
+                    : 'bg-gray-50 border-gray-300'
                 }`}
               >
                 <div className="flex items-center justify-between mb-4">
                   <div
                     className={`w-16 h-16 rounded-full flex items-center justify-center text-3xl font-bold ${
-                      isCorrect ? 'bg-green-500 text-white' : 'bg-gray-100 text-gray-600'
+                      isCorrect ? 'bg-white text-green-600' : 'bg-gray-200 text-gray-800'
                     }`}
                   >
                     {option}
                   </div>
                   {isCorrect && (
-                    <div className="flex items-center gap-2 bg-green-500 text-white px-4 py-2 rounded-full">
+                    <div className="flex items-center gap-2 bg-white text-green-600 px-4 py-2 rounded-full">
                       <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                       </svg>
@@ -85,17 +87,17 @@ export class TrueFalseFrontendPlugin implements FrontendGameTypePlugin {
                 </div>
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span className={isCorrect ? 'text-green-600 font-semibold' : 'text-gray-600'}>
+                    <span className={isCorrect ? 'text-white font-semibold' : 'text-gray-600'}>
                       {count}명 응답
                     </span>
-                    <span className={isCorrect ? 'text-green-600 font-semibold' : 'text-gray-500'}>
+                    <span className={isCorrect ? 'text-white font-semibold' : 'text-gray-500'}>
                       {percentage.toFixed(0)}%
                     </span>
                   </div>
-                  <div className={`w-full rounded-full h-3 ${isCorrect ? 'bg-green-200' : 'bg-gray-200'}`}>
+                  <div className={`w-full rounded-full h-3 ${isCorrect ? 'bg-green-700' : 'bg-gray-200'}`}>
                     <div
                       className={`h-3 rounded-full transition-all duration-500 ${
-                        isCorrect ? 'bg-green-500' : option === 'O' ? 'bg-blue-500' : 'bg-gray-400'
+                        isCorrect ? 'bg-white' : option === 'O' ? 'bg-blue-500' : 'bg-gray-400'
                       }`}
                       style={{ width: `${percentage}%` }}
                     />

@@ -17,6 +17,10 @@ export const WS_EVENTS = {
   SUBMIT_ANSWER: 'submit-answer',
   SYNC_STATE: 'sync-state',
 
+  // Party game actions (participant → server)
+  GAME_ACTION: 'game-action', // Generic action for party games
+  NEXT_PHASE: 'next-phase', // Organizer advances to next phase
+
   // Server → client broadcasts
   JOINED_ROOM: 'joined-room', // To joiner
   PARTICIPANT_JOINED: 'participant-joined', // To others
@@ -29,6 +33,7 @@ export const WS_EVENTS = {
   QUESTION_ENDED: 'question-ended', // Results + leaderboard
   GAME_ENDED: 'game-ended',
   STATE_SYNCED: 'state-synced',
+  SESSION_UPDATED: 'session-updated', // Party game session state update
   ERROR: 'error',
 } as const;
 

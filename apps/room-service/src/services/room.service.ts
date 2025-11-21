@@ -46,6 +46,11 @@ export class RoomService {
 
     const game = await prisma.game.findUnique({
       where: { id: gameId },
+      select: {
+        id: true,
+        gameCategory: true,
+        sessionSettings: true,
+      },
     });
 
     if (!game) {
@@ -66,6 +71,22 @@ export class RoomService {
         expiresAt,
       },
     });
+
+    // For party games, initialize session state in Redis
+    if (game.gameCategory === 'PARTY' && game.sessionSettings) {
+      const sessionStateKey = REDIS_KEYS.PARTY_GAME_SESSION(pin);
+      const initialSessionState = {
+        round: 0,
+        phase: 'waiting',
+        players: [],
+        data: game.sessionSettings,
+      };
+      await redis.setex(
+        sessionStateKey,
+        REDIS_TTL.ROOM_STATE,
+        JSON.stringify(initialSessionState)
+      );
+    }
 
     return {
       id: room.id,

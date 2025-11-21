@@ -38,7 +38,7 @@ export class GameService {
   }
 
   async createGame(userId: string, dto: CreateGameDto) {
-    const { questions, sourceGameId, ...gameData } = dto;
+    const { questions, sourceGameId, sessionSettings, ...gameData } = dto;
 
     if (sourceGameId) {
       const sourceGame = await prisma.game.findUnique({
@@ -63,6 +63,7 @@ export class GameService {
       data: {
         ...gameData,
         settings: gameData.settings as Prisma.InputJsonValue,
+        ...(sessionSettings && { sessionSettings: sessionSettings as Prisma.InputJsonValue }),
         userId,
         questions: {
           create: questionsData,
@@ -89,11 +90,12 @@ export class GameService {
       throw new ForbiddenError('You do not have permission to update this game');
     }
 
-    const { questions, settings, ...gameData } = dto;
+    const { questions, settings, sessionSettings, ...gameData } = dto;
 
     const updateData: Prisma.GameUpdateInput = {
       ...gameData,
       ...(settings && { settings: settings as Prisma.InputJsonValue }),
+      ...(sessionSettings && { sessionSettings: sessionSettings as Prisma.InputJsonValue }),
     };
 
     if (questions) {

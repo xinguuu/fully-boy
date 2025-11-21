@@ -1,4 +1,4 @@
-import { PrismaClient, GameType, Category } from '@prisma/client';
+import { PrismaClient, GameType, Category, TemplateCategory } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
@@ -28,6 +28,7 @@ async function main() {
       thumbnail: null,
       gameType: GameType.OX_QUIZ,
       category: Category.QUIZ,
+      gameCategory: TemplateCategory.QUIZ,
       isPublic: true,
       duration: 10,
       minPlayers: 5,
@@ -111,6 +112,7 @@ async function main() {
       thumbnail: null,
       gameType: GameType.OX_QUIZ,
       category: Category.ICE_BREAKING,
+      gameCategory: TemplateCategory.QUIZ,
       isPublic: true,
       duration: 10,
       minPlayers: 5,
@@ -171,6 +173,7 @@ async function main() {
       thumbnail: null,
       gameType: GameType.OX_QUIZ,
       category: Category.ICE_BREAKING,
+      gameCategory: TemplateCategory.QUIZ,
       isPublic: true,
       duration: 10,
       minPlayers: 10,
@@ -231,6 +234,7 @@ async function main() {
       thumbnail: null,
       gameType: GameType.FOUR_CHOICE_QUIZ,
       category: Category.MUSIC,
+      gameCategory: TemplateCategory.QUIZ,
       isPublic: true,
       duration: 15,
       minPlayers: 5,
@@ -390,6 +394,71 @@ async function main() {
   });
 
   console.log('✅ Created K-POP Song Quiz template:', kpopSongQuiz.title);
+
+  // Party Game: Liar Game
+  const liarGame = await prisma.game.create({
+    data: {
+      title: '라이어 게임 - 기본 템플릿',
+      description: '주제에 맞지 않는 답변을 한 라이어를 찾아내세요!',
+      thumbnail: null,
+      gameType: GameType.FOUR_CHOICE_QUIZ,
+      category: Category.ENTERTAINMENT,
+      gameCategory: TemplateCategory.PARTY,
+      isPublic: true,
+      duration: 20,
+      minPlayers: 4,
+      maxPlayers: 10,
+      needsMobile: true,
+      settings: {
+        timeLimit: 60,
+        pointsPerCorrect: 100,
+        timeBonusEnabled: false,
+        soundEnabled: true,
+      },
+      sessionSettings: {
+        liarCount: 1,
+        roundCount: 3,
+        discussionTime: 60,
+        votingTime: 30,
+      },
+      questions: {
+        create: [
+          {
+            order: 1,
+            content: '주제: 여름 휴가지',
+            data: {
+              type: 'liar-game',
+              topic: '여름 휴가지',
+              keywords: ['바다', '수영', '선탠', '서핑', '스노클링', '비치발리볼', '파라솔', '물놀이'],
+              duration: 60,
+            },
+          },
+          {
+            order: 2,
+            content: '주제: 한국 음식',
+            data: {
+              type: 'liar-game',
+              topic: '한국 음식',
+              keywords: ['김치', '비빔밥', '불고기', '삼겹살', '떡볶이', '김밥', '된장찌개', '냉면'],
+              duration: 60,
+            },
+          },
+          {
+            order: 3,
+            content: '주제: 영화관',
+            data: {
+              type: 'liar-game',
+              topic: '영화관',
+              keywords: ['스크린', '팝콘', '음료수', '티켓', '좌석', '예고편', '3D 안경', '매점'],
+              duration: 60,
+            },
+          },
+        ],
+      },
+    },
+  });
+
+  console.log('✅ Created Liar Game party template:', liarGame.title);
 
   console.log('🎉 Seeding completed successfully!');
 }

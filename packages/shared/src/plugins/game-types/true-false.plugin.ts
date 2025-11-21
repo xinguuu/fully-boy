@@ -1,5 +1,6 @@
 import { BaseGameTypePlugin } from '../base-plugin';
 import type { QuestionData } from '../../types/plugin.types';
+import { PluginCategory } from '../../types/plugin.types';
 
 /**
  * True/False Question Data
@@ -21,6 +22,7 @@ export interface TrueFalseQuestionData extends QuestionData {
 export class TrueFalsePlugin extends BaseGameTypePlugin {
   public readonly type = 'true-false';
   public readonly name = 'True/False (O/X)';
+  public readonly category = PluginCategory.QUIZ;
 
   /**
    * Check if user's answer matches the correct answer

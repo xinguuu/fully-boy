@@ -42,8 +42,8 @@ export function parseQuestionData(data: unknown): QuestionData | null {
     return null;
   }
 
-  // Validate with plugin
-  if (!plugin.validateQuestionData(data)) {
+  // Validate with plugin (if plugin has validateQuestionData method)
+  if (plugin.validateQuestionData && !plugin.validateQuestionData(data)) {
     console.warn(`Invalid question data for type "${parsed.type}":`, data);
     return null;
   }

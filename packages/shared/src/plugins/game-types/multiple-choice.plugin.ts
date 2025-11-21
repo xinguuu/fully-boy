@@ -1,5 +1,6 @@
 import { BaseGameTypePlugin } from '../base-plugin';
 import type { QuestionData } from '../../types/plugin.types';
+import { PluginCategory } from '../../types/plugin.types';
 
 /**
  * Multiple Choice Question Data
@@ -22,6 +23,7 @@ export interface MultipleChoiceQuestionData extends QuestionData {
 export class MultipleChoicePlugin extends BaseGameTypePlugin {
   public readonly type = 'multiple-choice';
   public readonly name = 'Multiple Choice';
+  public readonly category = PluginCategory.QUIZ;
 
   /**
    * Check if user's answer matches the correct answer

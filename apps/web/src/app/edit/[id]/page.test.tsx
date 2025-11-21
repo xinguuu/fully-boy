@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import EditPage from './page';
-import type { Game, GameType, Category } from '@xingu/shared';
+import type { Game, GameType, Category, TemplateCategory } from '@xingu/shared';
 import * as hooks from '@/lib/hooks';
 
 const mockPush = vi.fn();
@@ -34,6 +34,7 @@ const mockGame: Game = {
   thumbnail: null,
   gameType: 'BALANCE_GAME' as GameType,
   category: 'ICE_BREAKING' as Category,
+  gameCategory: 'QUIZ' as TemplateCategory,
   isPublic: false,
   duration: 10,
   minPlayers: 2,

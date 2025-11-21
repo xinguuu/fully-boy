@@ -26,8 +26,8 @@ export default function BrowsePage() {
   const { mutateAsync: removeFavorite } = useRemoveFavorite();
 
   const [activeTab, setActiveTab] = useState<'browse' | 'myGames'>('browse');
+  const [gameCategory, setGameCategory] = useState<'all' | 'QUIZ' | 'PARTY'>('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [filter, setFilter] = useState('all');
   const [sortBy, setSortBy] = useState('popular');
   const [mounted, setMounted] = useState(false);
 
@@ -74,8 +74,35 @@ export default function BrowsePage() {
     });
   };
 
-  const filteredTemplates = filterBySearch(templates);
-  const filteredMyGames = filterBySearch(myGames);
+  const filterByCategory = (games: Game[]) => {
+    if (gameCategory === 'all') return games;
+    return games.filter((game) => game.gameCategory === gameCategory);
+  };
+
+  const sortGames = (games: Game[]) => {
+    const sorted = [...games];
+
+    switch (sortBy) {
+      case 'popular':
+        // Sort by playCount (descending), then by favoriteCount
+        return sorted.sort((a, b) => {
+          const playCountDiff = (b.playCount || 0) - (a.playCount || 0);
+          if (playCountDiff !== 0) return playCountDiff;
+          return (b.favoriteCount || 0) - (a.favoriteCount || 0);
+        });
+      case 'newest':
+        // Sort by createdAt (descending)
+        return sorted.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      case 'name':
+        // Sort by title (ascending)
+        return sorted.sort((a, b) => a.title.localeCompare(b.title, 'ko'));
+      default:
+        return sorted;
+    }
+  };
+
+  const filteredTemplates = sortGames(filterByCategory(filterBySearch(templates)));
+  const filteredMyGames = sortGames(filterByCategory(filterBySearch(myGames)));
 
   const handleCreateRoom = (gameId: string) => {
     if (activeTab === 'myGames') {
@@ -178,8 +205,8 @@ export default function BrowsePage() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Tabs */}
-        <div className="border-b border-gray-200 mb-8">
+        {/* Main Tabs */}
+        <div className="border-b border-gray-200 mb-6">
           <nav className="flex gap-6">
             <button
               onClick={() => setActiveTab('browse')}
@@ -204,53 +231,55 @@ export default function BrowsePage() {
           </nav>
         </div>
 
-        {/* Filters & Sort */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-4">
-            <span className="text-sm font-medium text-gray-700">필터:</span>
-            <button
-              onClick={() => setFilter('all')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all cursor-pointer ${
-                filter === 'all'
-                  ? 'bg-primary-500 text-white'
-                  : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              📱 전체
-            </button>
-            <button
-              onClick={() => setFilter('icebreaking')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all cursor-pointer ${
-                filter === 'icebreaking'
-                  ? 'bg-primary-500 text-white'
-                  : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              🎉 아이스브레이킹
-            </button>
-            <button
-              onClick={() => setFilter('time')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all cursor-pointer ${
-                filter === 'time'
-                  ? 'bg-primary-500 text-white'
-                  : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              ⏱️ 전체
-            </button>
-          </div>
+        {/* Game Category & Sort */}
+        <div className="mb-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-medium text-gray-700">게임 유형:</span>
+              <button
+                onClick={() => setGameCategory('all')}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all cursor-pointer ${
+                  gameCategory === 'all'
+                    ? 'bg-primary-500 text-white shadow-md'
+                    : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                전체
+              </button>
+              <button
+                onClick={() => setGameCategory('QUIZ')}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all cursor-pointer ${
+                  gameCategory === 'QUIZ'
+                    ? 'bg-primary-500 text-white shadow-md'
+                    : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                📝 퀴즈 게임
+              </button>
+              <button
+                onClick={() => setGameCategory('PARTY')}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all cursor-pointer ${
+                  gameCategory === 'PARTY'
+                    ? 'bg-primary-500 text-white shadow-md'
+                    : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                🎉 파티 게임
+              </button>
+            </div>
 
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-gray-700">정렬:</span>
-            <Select
-              value={sortBy}
-              onChange={setSortBy}
-              options={[
-                { value: 'popular', label: '인기순' },
-                { value: 'newest', label: '최신순' },
-                { value: 'name', label: '이름순' },
-              ]}
-            />
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-gray-700">정렬:</span>
+              <Select
+                value={sortBy}
+                onChange={setSortBy}
+                options={[
+                  { value: 'popular', label: '인기순' },
+                  { value: 'newest', label: '최신순' },
+                  { value: 'name', label: '이름순' },
+                ]}
+              />
+            </div>
           </div>
         </div>
 
@@ -262,21 +291,15 @@ export default function BrowsePage() {
               {searchQuery && templates.length !== filteredTemplates.length && ` / ${templates.length}`})
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredTemplates
-                .sort((a, b) => {
-                  const aFav = favorites.has(a.id) ? 1 : 0;
-                  const bFav = favorites.has(b.id) ? 1 : 0;
-                  return bFav - aFav;
-                })
-                .map((template) => (
-                  <GameCard
-                    key={template.id}
-                    game={template}
-                    isFavorite={favorites.has(template.id)}
-                    onCreateRoom={handleCreateRoom}
-                    onToggleFavorite={toggleFavorite}
-                  />
-                ))}
+              {filteredTemplates.map((template) => (
+                <GameCard
+                  key={template.id}
+                  game={template}
+                  isFavorite={favorites.has(template.id)}
+                  onCreateRoom={handleCreateRoom}
+                  onToggleFavorite={toggleFavorite}
+                />
+              ))}
             </div>
             {filteredTemplates.length === 0 && searchQuery && (
               <div className="text-center py-16">
@@ -306,24 +329,18 @@ export default function BrowsePage() {
                   {searchQuery && myGames.length !== filteredMyGames.length && ` / ${myGames.length}`})
                 </h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {filteredMyGames
-                    .sort((a, b) => {
-                      const aFav = favorites.has(a.id) ? 1 : 0;
-                      const bFav = favorites.has(b.id) ? 1 : 0;
-                      return bFav - aFav;
-                    })
-                    .map((game) => (
-                      <GameCard
-                        key={game.id}
-                        game={game}
-                        isFavorite={favorites.has(game.id)}
-                        isMyGame={true}
-                        onCreateRoom={handleCreateRoom}
-                        onToggleFavorite={toggleFavorite}
-                        onDelete={handleDelete}
-                        isDeleting={isDeleting}
-                      />
-                    ))}
+                  {filteredMyGames.map((game) => (
+                    <GameCard
+                      key={game.id}
+                      game={game}
+                      isFavorite={favorites.has(game.id)}
+                      isMyGame={true}
+                      onCreateRoom={handleCreateRoom}
+                      onToggleFavorite={toggleFavorite}
+                      onDelete={handleDelete}
+                      isDeleting={isDeleting}
+                    />
+                  ))}
                 </div>
                 {filteredMyGames.length === 0 && searchQuery && (
                   <div className="text-center py-16">
@@ -355,9 +372,20 @@ function GameCard({ game, isFavorite, isMyGame, onCreateRoom, onToggleFavorite, 
       {/* Card Header */}
       <div className="p-6 flex flex-col flex-1">
         <div className="flex items-start justify-between mb-3">
-          <h3 className="text-xl font-semibold text-gray-900 group-hover:text-primary-500 transition-colors">
-            🎮 {game.title}
-          </h3>
+          <div className="flex-1">
+            <h3 className="text-xl font-semibold text-gray-900 group-hover:text-primary-500 transition-colors mb-2">
+              🎮 {game.title}
+            </h3>
+            <span
+              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                game.gameCategory === 'PARTY'
+                  ? 'bg-secondary-100 text-secondary-800'
+                  : 'bg-primary-100 text-primary-800'
+              }`}
+            >
+              {game.gameCategory === 'PARTY' ? '🎉 파티 게임' : '📝 퀴즈 게임'}
+            </span>
+          </div>
           <button
             onClick={() => onToggleFavorite(game.id)}
             className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors cursor-pointer"
@@ -388,10 +416,9 @@ function GameCard({ game, isFavorite, isMyGame, onCreateRoom, onToggleFavorite, 
           </span>
         </div>
 
-        <div className="flex items-center gap-1 text-sm text-gray-500 mb-4">
-          <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-          <span className="font-medium">4.5</span>
-          <span>({game.favoriteCount || 0})</span>
+        {/* Play Count Badge */}
+        <div className="flex items-center gap-1 text-sm text-gray-600 mb-4">
+          <span className="font-medium">🎮 {game.playCount || 0}회 플레이</span>
         </div>
 
         {/* Main Action Button */}

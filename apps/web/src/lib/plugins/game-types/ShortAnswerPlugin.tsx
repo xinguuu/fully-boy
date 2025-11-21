@@ -1,5 +1,6 @@
 import type { FrontendGameTypePlugin, ParticipantViewProps, OrganizerViewProps } from '../types';
 import type { ShortAnswerQuestionData } from '@xingu/shared';
+import { PluginCategory } from '@xingu/shared';
 
 /**
  * ShortAnswer Frontend Plugin
@@ -7,6 +8,7 @@ import type { ShortAnswerQuestionData } from '@xingu/shared';
 export class ShortAnswerFrontendPlugin implements FrontendGameTypePlugin {
   public readonly type = 'short-answer';
   public readonly name = 'Short Answer';
+  public readonly category = PluginCategory.QUIZ;
 
   renderParticipantView(props: ParticipantViewProps) {
     const { shortAnswerInput, hasAnswered, onShortAnswerChange, onShortAnswerSubmit } = props;

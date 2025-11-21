@@ -190,6 +190,14 @@ export function ParticipantView({
                 );
               }
 
+              if (!plugin.renderParticipantView) {
+                return (
+                  <div className="text-center text-red-600">
+                    <p>이 게임 유형은 참가자 뷰를 지원하지 않습니다.</p>
+                  </div>
+                );
+              }
+
               return plugin.renderParticipantView({
                 questionData,
                 questionIndex,

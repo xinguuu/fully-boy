@@ -3,6 +3,7 @@ import type {
   QuestionData,
   ScoreCalculationOptions,
   ScoreResult,
+  PluginCategory,
 } from '../types/plugin.types';
 
 /**
@@ -10,10 +11,14 @@ import type {
  *
  * Abstract base class that provides common score calculation logic.
  * Subclasses only need to implement answer checking and validation.
+ *
+ * This base class is for QUIZ games (question-based).
+ * PARTY games should implement GameTypePlugin directly.
  */
 export abstract class BaseGameTypePlugin implements GameTypePlugin {
   public abstract readonly type: string;
   public abstract readonly name: string;
+  public abstract readonly category: PluginCategory;
 
   // Default scoring constants (can be overridden)
   protected readonly DEFAULT_BASE_POINTS = 1000;

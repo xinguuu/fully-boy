@@ -1,4 +1,4 @@
-import type { GameType, Category } from '@prisma/client';
+import type { GameType, Category, TemplateCategory } from '@prisma/client';
 
 export interface TemplateListItem {
   id: string;
@@ -7,6 +7,7 @@ export interface TemplateListItem {
   thumbnail: string | null;
   gameType: GameType;
   category: Category;
+  gameCategory: TemplateCategory;
   duration: number;
   minPlayers: number;
   maxPlayers: number;
@@ -19,6 +20,7 @@ export interface TemplateListItem {
 
 export interface TemplateDetail extends TemplateListItem {
   settings: unknown;
+  sessionSettings?: unknown;
   questions: TemplateQuestion[];
 }
 
@@ -35,6 +37,7 @@ export interface TemplateQuestion {
 export interface TemplateListQuery {
   gameType?: GameType;
   category?: Category;
+  gameCategory?: TemplateCategory;
   limit?: number;
   offset?: number;
   sortBy?: 'playCount' | 'favoriteCount' | 'createdAt';
