@@ -89,7 +89,8 @@
       "Bash(npx tsx:*)",
       "Bash(xargs kill:*)",
       "Bash(for:*)",
-      "Bash(do lsof -ti:$port)"
+      "Bash(do lsof -ti:$port)",
+      "Bash(do echo 'Killing port $port...')"
     ],
     "deny": [],
     "ask": []

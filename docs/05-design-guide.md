@@ -1864,7 +1864,393 @@ Before launching any new feature:
 
 ---
 
+## 📄 Page-Specific Patterns
+
+### Browse Page
+
+#### Hero Section (Banner)
+
+**Purpose:** Create visual impact, communicate value proposition, drive action
+
+**Design:**
+```tsx
+<section className="relative overflow-hidden bg-gradient-to-r from-primary-600 via-primary-500 to-secondary-500 text-white">
+  {/* Grid Pattern Background */}
+  <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10"></div>
+
+  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 relative">
+    <div className="text-center max-w-3xl mx-auto">
+      {/* Badge */}
+      <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full text-sm font-medium mb-6 border border-white/20">
+        <Sparkles className="w-4 h-4" />
+        한국 최고의 파티 게임 플랫폼
+      </div>
+
+      {/* Headline */}
+      <h1 className="text-5xl font-extrabold mb-4 drop-shadow-lg">
+        모두가 함께 즐기는
+        <br />
+        <span className="bg-gradient-to-r from-yellow-300 to-orange-300 bg-clip-text text-transparent">
+          실시간 퀴즈 & 파티 게임
+        </span>
+      </h1>
+
+      {/* Subheadline */}
+      <p className="text-xl text-primary-50 mb-8">
+        5분이면 만드는 게임, 친구들과 함께 즐기는 짜릿한 순간
+      </p>
+
+      {/* CTAs */}
+      <div className="flex items-center justify-center gap-4">
+        <button className="px-8 py-4 bg-white text-primary-600 font-bold rounded-lg shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-200 cursor-pointer">
+          🎮 게임 둘러보기
+        </button>
+        <button className="px-8 py-4 bg-white/10 backdrop-blur-sm text-white font-bold rounded-lg border-2 border-white/30 hover:bg-white/20 transition-all duration-200 cursor-pointer">
+          ✨ 내 게임 만들기
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
+```
+
+**Key Features:**
+- **Gradient Background:** Primary to secondary color transition
+- **Pattern Overlay:** Subtle grid.svg texture (10% opacity)
+- **Glassmorphism Badge:** White/10 background with backdrop-blur
+- **Gradient Text:** Yellow to orange for emphasis
+- **Dual CTA:** Primary (solid) + Secondary (outline)
+- **Responsive Padding:** py-16 (desktop), adjust for mobile
+
+---
+
+#### Featured Game Card (Large)
+
+**Purpose:** Highlight top 3 popular games with maximum visual impact
+
+**Design:**
+```tsx
+function FeaturedGameCard({ game, rank, isFavorite, onCreateRoom, onToggleFavorite }) {
+  // Category-based gradient
+  const gradientClass =
+    game.gameCategory === 'PARTY'
+      ? 'from-blue-500 via-secondary-500 to-purple-500'
+      : 'from-orange-500 via-primary-500 to-red-500';
+
+  return (
+    <div className="group relative overflow-hidden rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] cursor-pointer">
+      {/* Gradient Background */}
+      <div className={`absolute inset-0 bg-gradient-to-br ${gradientClass}`}></div>
+
+      {/* Rank Badge */}
+      <div className="absolute top-4 left-4 z-10">
+        <div className="w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg">
+          <span className="text-2xl font-extrabold bg-gradient-to-r from-primary-500 to-secondary-500 bg-clip-text text-transparent">
+            {rank}
+          </span>
+        </div>
+      </div>
+
+      {/* Favorite Button */}
+      <button className="absolute top-4 right-4 z-10 w-10 h-10 flex items-center justify-center bg-white/90 backdrop-blur-sm rounded-full hover:bg-white transition-all cursor-pointer shadow-lg">
+        <Star className={`w-5 h-5 ${isFavorite ? 'fill-yellow-400 text-yellow-400' : 'text-gray-400'}`} />
+      </button>
+
+      {/* Content */}
+      <div className="relative p-8 h-64 flex flex-col justify-end">
+        {/* Dark Gradient Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
+
+        <div className="relative z-10">
+          {/* Category Badge */}
+          <span className="inline-block px-3 py-1 bg-white/90 backdrop-blur-sm text-xs font-bold text-gray-900 rounded-full mb-3">
+            {game.gameCategory === 'PARTY' ? '🎉 파티 게임' : '📝 퀴즈 게임'}
+          </span>
+
+          <h3 className="text-2xl font-extrabold text-white mb-2 group-hover:scale-105 transition-transform">
+            {game.title}
+          </h3>
+
+          <p className="text-sm text-white/90 mb-4 line-clamp-2">
+            {game.description}
+          </p>
+
+          {/* Stats */}
+          <div className="flex items-center gap-4 text-sm text-white/90 mb-4">
+            <span className="flex items-center gap-1">
+              <Users className="w-4 h-4" />
+              {game.maxPlayers}명
+            </span>
+            <span className="flex items-center gap-1">
+              <Clock className="w-4 h-4" />
+              {game.duration}분
+            </span>
+            <span className="flex items-center gap-1 font-semibold">
+              🎮 {game.playCount}회
+            </span>
+          </div>
+
+          {/* CTA */}
+          <button className="w-full bg-white hover:bg-gray-50 text-gray-900 font-bold py-3 rounded-lg transition-all duration-200 hover:scale-105 shadow-lg cursor-pointer">
+            지금 시작하기 →
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+```
+
+**Key Features:**
+- **Category Gradients:**
+  - QUIZ: `orange-500 → primary-500 → red-500`
+  - PARTY: `blue-500 → secondary-500 → purple-500`
+- **Rank Badge:** White/90 glassmorphism with gradient text
+- **Dark Overlay:** Black gradient from bottom (80%) to top (transparent)
+- **Height:** Fixed 264px (h-64)
+- **Hover:** Scale 1.02, shadow increase
+- **Z-Index Layers:** Background (0) → Overlay (auto) → Badges (10) → Content (10)
+
+---
+
+#### Standard Game Card (Thumbnail + Content)
+
+**Purpose:** Compact, scannable game cards for grid layout
+
+**Design:**
+```tsx
+function GameCard({ game, isFavorite, isMyGame, onCreateRoom, onToggleFavorite, onDelete, isDeleting }) {
+  // Category-based gradient
+  const gradientClass =
+    game.gameCategory === 'PARTY'
+      ? 'from-blue-400 via-secondary-400 to-purple-400'
+      : 'from-orange-400 via-primary-400 to-red-400';
+
+  return (
+    <div className="group bg-white rounded-xl overflow-hidden shadow-md hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 h-full flex flex-col border border-gray-200 hover:border-primary-300">
+      {/* Thumbnail with Gradient */}
+      <div className="relative h-40 overflow-hidden">
+        <div className={`absolute inset-0 bg-gradient-to-br ${gradientClass}`}></div>
+        <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-20"></div>
+
+        {/* Category Badge */}
+        <div className="absolute top-3 left-3">
+          <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold shadow-lg ${
+            game.gameCategory === 'PARTY'
+              ? 'bg-white/90 backdrop-blur-sm text-secondary-600'
+              : 'bg-white/90 backdrop-blur-sm text-primary-600'
+          }`}>
+            {game.gameCategory === 'PARTY' ? '🎉 파티' : '📝 퀴즈'}
+          </span>
+        </div>
+
+        {/* Favorite Button */}
+        <button className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center bg-white/90 backdrop-blur-sm rounded-full hover:bg-white transition-all cursor-pointer shadow-lg">
+          <Star className={`w-4 h-4 ${isFavorite ? 'fill-yellow-400 text-yellow-400' : 'text-gray-400'}`} />
+        </button>
+
+        {/* Game Icon - Centered */}
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="text-6xl opacity-90 group-hover:scale-110 transition-transform">
+            {game.gameCategory === 'PARTY' ? '🎉' : '🎮'}
+          </div>
+        </div>
+      </div>
+
+      {/* Card Content */}
+      <div className="p-5 flex flex-col flex-1">
+        <h3 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-primary-500 transition-colors line-clamp-1">
+          {game.title}
+        </h3>
+
+        <p className="text-sm text-gray-600 mb-4 line-clamp-2 flex-1">
+          {game.description}
+        </p>
+
+        {/* Meta Info */}
+        <div className="flex items-center gap-3 text-xs text-gray-500 mb-3 pb-3 border-b border-gray-100">
+          <span className="flex items-center gap-1">
+            <Users className="w-3.5 h-3.5" />
+            {game.maxPlayers}
+          </span>
+          <span className="flex items-center gap-1">
+            <Clock className="w-3.5 h-3.5" />
+            {game.duration}분
+          </span>
+          <span className="flex items-center gap-1 font-semibold text-primary-600">
+            🎮 {game.playCount}회
+          </span>
+        </div>
+
+        {/* CTA Button */}
+        <button className={`w-full font-semibold py-2.5 rounded-lg transition-all duration-200 hover:scale-105 hover:shadow-lg cursor-pointer ${
+          game.gameCategory === 'PARTY'
+            ? 'bg-gradient-to-r from-secondary-500 to-blue-600 hover:from-secondary-600 hover:to-blue-700 text-white'
+            : 'bg-gradient-to-r from-primary-500 to-orange-600 hover:from-primary-600 hover:to-orange-700 text-white'
+        }`}>
+          {isMyGame ? '게임 편집' : '방 생성하기'}
+        </button>
+
+        {/* Delete Button (My Games Only) */}
+        {isMyGame && onDelete && (
+          <button className="w-full flex items-center justify-center gap-1 mt-2 text-sm text-error hover:text-error-dark font-medium py-2 rounded-lg hover:bg-error-light border border-error/20 transition-colors cursor-pointer">
+            🗑️ 삭제
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+```
+
+**Key Features:**
+- **Thumbnail Height:** 160px (h-40)
+- **Gradient + Pattern:** Category gradient + grid.svg overlay (20% opacity)
+- **Emoji Icon:** 6xl size, scales to 110% on hover
+- **Content Padding:** 20px (p-5)
+- **Meta Divider:** Border-bottom on stats section
+- **Category Buttons:**
+  - QUIZ: `primary-500 → orange-600`
+  - PARTY: `secondary-500 → blue-600`
+- **Hover Effects:**
+  - Scale: 1.02
+  - Translate: -4px (lift)
+  - Shadow: md → 2xl
+  - Border: gray-200 → primary-300
+
+---
+
+#### Category Color System
+
+**QUIZ Games (Orange/Red):**
+```tsx
+// Featured Card
+gradientClass = 'from-orange-500 via-primary-500 to-red-500'
+
+// Standard Card Thumbnail
+gradientClass = 'from-orange-400 via-primary-400 to-red-400'
+
+// Button
+className = 'bg-gradient-to-r from-primary-500 to-orange-600'
+
+// Badge
+className = 'bg-white/90 text-primary-600'
+```
+
+**PARTY Games (Blue/Purple):**
+```tsx
+// Featured Card
+gradientClass = 'from-blue-500 via-secondary-500 to-purple-500'
+
+// Standard Card Thumbnail
+gradientClass = 'from-blue-400 via-secondary-400 to-purple-400'
+
+// Button
+className = 'bg-gradient-to-r from-secondary-500 to-blue-600'
+
+// Badge
+className = 'bg-white/90 text-secondary-600'
+```
+
+**Category Filter Buttons:**
+```tsx
+// All (Active)
+className = 'bg-gradient-to-r from-primary-500 to-secondary-500 text-white shadow-lg shadow-primary-500/30'
+
+// QUIZ (Active)
+className = 'bg-gradient-to-r from-primary-500 to-orange-500 text-white shadow-lg shadow-primary-500/30'
+
+// PARTY (Active)
+className = 'bg-gradient-to-r from-secondary-500 to-blue-600 text-white shadow-lg shadow-secondary-500/30'
+
+// Inactive (All categories)
+className = 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+```
+
+---
+
+#### Empty States (Enhanced)
+
+**No Games Created:**
+```tsx
+<div className="text-center py-16">
+  <div className="text-6xl mb-4">🎮</div>
+  <p className="text-gray-500 text-lg mb-4">아직 만든 게임이 없습니다</p>
+  <p className="text-gray-400 mb-6">템플릿을 선택해서 나만의 게임을 만들어보세요!</p>
+  <button className="px-6 py-3 bg-gradient-to-r from-primary-500 to-secondary-500 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all hover:scale-105 cursor-pointer">
+    게임 둘러보기
+  </button>
+</div>
+```
+
+**No Search Results:**
+```tsx
+<div className="text-center py-16">
+  <p className="text-gray-500 text-lg">🔍 검색 결과가 없습니다</p>
+</div>
+```
+
+**Key Features:**
+- **Large Emoji:** 6xl size for visual impact
+- **Hierarchy:**
+  - Primary message: gray-500, text-lg
+  - Secondary message: gray-400
+- **CTA Button:** Gradient background with shadow-lg
+- **Generous Padding:** py-16 for breathing room
+
+---
+
+#### Glassmorphism Header
+
+**Purpose:** Modern, translucent header that doesn't block content
+
+```tsx
+<header className="bg-white/80 backdrop-blur-md border-b border-gray-200/50 sticky top-0 z-50 shadow-sm">
+  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+    {/* Logo with Gradient Text */}
+    <button className="text-2xl font-bold bg-gradient-to-r from-primary-500 to-secondary-500 bg-clip-text text-transparent hover:opacity-80 transition-opacity cursor-pointer">
+      🎮 Xingu
+    </button>
+
+    {/* Search */}
+    {/* ... */}
+
+    {/* Profile */}
+    {/* ... */}
+  </div>
+</header>
+```
+
+**Key Features:**
+- **Transparency:** white/80 (80% opacity)
+- **Blur:** backdrop-blur-md (8px)
+- **Border:** gray-200/50 (50% opacity)
+- **Sticky:** Top positioning, z-50
+- **Gradient Logo:** Primary to secondary color
+
+---
+
 ## 🔄 Recent Changes
+
+### 2025-11-22: Browse Page Design Overhaul (v3)
+- **Status**: ✅ Complete
+- **Changes**:
+  1. ✅ Added Hero Section with gradient background and dual CTAs
+  2. ✅ Created Featured Game Card pattern (large, gradient background, rank badge)
+  3. ✅ Redesigned Standard Game Card with gradient thumbnails
+  4. ✅ Implemented category-based color system (QUIZ: Orange/Red, PARTY: Blue/Purple)
+  5. ✅ Enhanced Empty States with larger emojis and gradient CTA buttons
+  6. ✅ Added Glassmorphism Header (backdrop-blur, transparent)
+  7. ✅ Created Category Filter Button styles with gradients
+  8. ✅ Improved visual hierarchy with gradient overlays and shadows
+
+- **Key Improvements**:
+  - **Visual Impact**: Hero section creates immediate engagement
+  - **Category Differentiation**: Color-coded gradients for QUIZ vs PARTY games
+  - **Depth & Polish**: Glassmorphism, gradient overlays, layered shadows
+  - **Professional Feel**: No longer "AI-generated" look - distinctive brand identity
+  - **Thumbnail System**: Gradient backgrounds replace missing images
+  - **Scalability**: Pattern documented for other game categories/pages
 
 ### 2025-11-11: Enhanced Design System (v2)
 - **Status**: ✅ Complete

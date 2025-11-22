@@ -4,6 +4,7 @@ export enum GameType {
   INITIAL_QUIZ = 'INITIAL_QUIZ',
   FOUR_CHOICE_QUIZ = 'FOUR_CHOICE_QUIZ',
   SPEED_QUIZ = 'SPEED_QUIZ',
+  LIAR_GAME = 'LIAR_GAME',
 }
 
 export enum Category {
