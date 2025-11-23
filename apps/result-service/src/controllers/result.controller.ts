@@ -39,7 +39,10 @@ export class ResultController {
     }
 
     const results = await resultService.getResultsByGameId(gameId, limit);
-    res.status(200).json(results);
+    res.status(200).json({
+      results,
+      total: results.length,
+    });
   }
 }
 

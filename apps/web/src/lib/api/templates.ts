@@ -1,4 +1,4 @@
-import { apiClient } from './client';
+import { templateApiClient } from './client';
 import type { Game } from '@xingu/shared';
 
 export interface TemplateListResponse {
@@ -8,10 +8,10 @@ export interface TemplateListResponse {
 
 export const templatesApi = {
   getTemplates: async (): Promise<TemplateListResponse> => {
-    return apiClient.get<TemplateListResponse>('/api/templates');
+    return templateApiClient.get<TemplateListResponse>('/api/templates');
   },
 
   getTemplate: async (id: string): Promise<Game> => {
-    return apiClient.get<Game>(`/api/templates/${id}`);
+    return templateApiClient.get<Game>(`/api/templates/${id}`);
   },
 };

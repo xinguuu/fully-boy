@@ -14,6 +14,10 @@ vi.mock('../config/database', () => ({
       findUnique: vi.fn(),
       findMany: vi.fn(),
     },
+    game: {
+      update: vi.fn(),
+    },
+    $transaction: vi.fn(),
   },
   connectDatabase: vi.fn(),
   disconnectDatabase: vi.fn(),
@@ -28,7 +32,7 @@ describe('ResultService', () => {
   });
 
   describe('createResult', () => {
-    it('should create a game result', async () => {
+    it('should create a game result and increment playCount', async () => {
       const createDto = {
         roomId: 'room-123',
         participantCount: 10,
@@ -62,17 +66,90 @@ describe('ResultService', () => {
       };
 
       vi.mocked(prisma.room.findUnique).mockResolvedValue(mockRoom as any);
-      vi.mocked(prisma.gameResult.create).mockResolvedValue(mockResult as any);
+
+      // Mock $transaction to execute the callback with mock prisma client
+      vi.mocked(prisma.$transaction).mockImplementation(async (callback: any) => {
+        const mockTx = {
+          gameResult: {
+            create: vi.fn().mockResolvedValue(mockResult),
+          },
+          game: {
+            findUnique: vi
+              .fn()
+              .mockResolvedValue({ id: 'game-123', sourceGameId: null, isPublic: false }),
+            update: vi.fn().mockResolvedValue({ id: 'game-123', playCount: 1 }),
+          },
+        };
+        return callback(mockTx);
+      });
 
       const result = await resultService.createResult(createDto);
 
       expect(prisma.room.findUnique).toHaveBeenCalledWith({
         where: { id: 'room-123' },
       });
-      expect(prisma.gameResult.create).toHaveBeenCalled();
+      expect(prisma.$transaction).toHaveBeenCalled();
       expect(result.id).toBe('result-123');
       expect(result.participantCount).toBe(10);
       expect(result.averageScore).toBe(7500);
+    });
+
+    it('should increment source template playCount when game is copied from public template', async () => {
+      const createDto = {
+        roomId: 'room-123',
+        participantCount: 10,
+        duration: 600,
+        averageScore: 7500,
+        leaderboard: [],
+        questionStats: [],
+      };
+
+      const mockRoom = {
+        id: 'room-123',
+        pin: '123456',
+        gameId: 'game-123',
+      };
+
+      const mockResult = {
+        id: 'result-123',
+        roomId: 'room-123',
+        participantCount: 10,
+        duration: 600,
+        averageScore: 7500,
+        leaderboard: [],
+        questionStats: [],
+        createdAt: new Date(),
+      };
+
+      vi.mocked(prisma.room.findUnique).mockResolvedValue(mockRoom as any);
+
+      const mockGameUpdate = vi.fn();
+
+      // Mock $transaction
+      vi.mocked(prisma.$transaction).mockImplementation(async (callback: any) => {
+        const mockTx = {
+          gameResult: {
+            create: vi.fn().mockResolvedValue(mockResult),
+          },
+          game: {
+            findUnique: vi
+              .fn()
+              .mockResolvedValueOnce({
+                id: 'game-123',
+                sourceGameId: 'template-123',
+                isPublic: false,
+              })
+              .mockResolvedValueOnce({ id: 'template-123', isPublic: true }),
+            update: mockGameUpdate.mockResolvedValue({ id: 'game-123', playCount: 1 }),
+          },
+        };
+        return callback(mockTx);
+      });
+
+      await resultService.createResult(createDto);
+
+      // Should update both the played game and the source template
+      expect(mockGameUpdate).toHaveBeenCalledTimes(2);
     });
 
     it('should throw NotFoundError if room does not exist', async () => {

@@ -4,9 +4,9 @@ import { authMiddleware } from '../middleware/auth.middleware';
 import { validateBody } from '../middleware/validation.middleware';
 import { asyncHandler } from '../middleware/error.middleware';
 import {
-  CreateGameDtoSchema,
-  UpdateGameDtoSchema,
-} from '../dto/game.dto';
+  createGameSchema as CreateGameDtoSchema,
+  updateGameSchema as UpdateGameDtoSchema,
+} from '@xingu/shared';
 
 const router = Router();
 

@@ -1,5 +1,5 @@
 import { prisma } from '../config/database';
-import { CreateGameDto, UpdateGameDto } from '../dto/game.dto';
+import type { CreateGameDto, UpdateGameDto } from '@xingu/shared';
 import { Prisma } from '@prisma/client';
 import { NotFoundError, ForbiddenError } from '../middleware/error.middleware';
 
@@ -77,9 +77,10 @@ export class GameService {
 
     return prisma.game.create({
       data: {
-        ...gameData,
+        ...(gameData as any), // Type assertion for Prisma enum compatibility
         settings: gameData.settings as Prisma.InputJsonValue,
         ...(sessionSettings && { sessionSettings: sessionSettings as Prisma.InputJsonValue }),
+        ...(sourceGameId && { sourceGameId }), // Save sourceGameId for template tracking
         userId,
         questions: {
           create: questionsData,
@@ -170,7 +171,7 @@ export class GameService {
         return tx.game.update({
           where: { id: gameId },
           data: {
-            ...gameData,
+            ...(gameData as any), // Type assertion for Prisma enum compatibility
             ...(settings && { settings: settings as Prisma.InputJsonValue }),
             ...(sessionSettings && { sessionSettings: sessionSettings as Prisma.InputJsonValue }),
           },
@@ -185,7 +186,7 @@ export class GameService {
     return prisma.game.update({
       where: { id: gameId },
       data: {
-        ...gameData,
+        ...(gameData as any), // Type assertion for Prisma enum compatibility
         ...(settings && { settings: settings as Prisma.InputJsonValue }),
         ...(sessionSettings && { sessionSettings: sessionSettings as Prisma.InputJsonValue }),
       },

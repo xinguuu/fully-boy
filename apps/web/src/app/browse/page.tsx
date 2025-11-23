@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search, User, Star, Users, Clock, Sparkles, TrendingUp, Crown, Smartphone, Zap } from 'lucide-react';
+import { Search, User, Star, Users, Clock, Sparkles, TrendingUp, Crown, Smartphone, Zap, History, BarChart3, Settings, LogOut } from 'lucide-react';
 import {
   useTemplates,
   useGames,
@@ -218,18 +218,28 @@ export default function BrowsePage() {
             items={[
               {
                 label: '내 정보',
+                icon: <User className="w-4 h-4" />,
                 onClick: () => {
                   logger.debug('Profile clicked');
                 },
               },
               {
+                label: '플레이 기록',
+                icon: <History className="w-4 h-4" />,
+                onClick: () => {
+                  router.push('/history');
+                },
+              },
+              {
                 label: '설정',
+                icon: <Settings className="w-4 h-4" />,
                 onClick: () => {
                   logger.debug('Settings clicked');
                 },
               },
               {
                 label: '로그아웃',
+                icon: <LogOut className="w-4 h-4" />,
                 onClick: () => {
                   localStorage.removeItem('access_token');
                   localStorage.removeItem('refresh_token');
@@ -467,6 +477,7 @@ export default function BrowsePage() {
                       onCreateRoom={handleCreateRoom}
                       onToggleFavorite={toggleFavorite}
                       onDelete={handleDelete}
+                      onViewHistory={() => router.push(`/games/${game.id}/history`)}
                       isDeleting={isDeleting}
                     />
                   ))}
@@ -496,10 +507,11 @@ interface GameCardProps {
   onCreateRoom: (id: string) => void;
   onToggleFavorite: (id: string, isFavorite: boolean) => void;
   onDelete?: (id: string) => void;
+  onViewHistory?: () => void;
   isDeleting?: boolean;
 }
 
-function GameCard({ game, isFavorite, isMyGame, rank, onCreateRoom, onToggleFavorite, onDelete, isDeleting }: GameCardProps) {
+function GameCard({ game, isFavorite, isMyGame, rank, onCreateRoom, onToggleFavorite, onDelete, onViewHistory, isDeleting }: GameCardProps) {
   // Category-based gradient
   const gradientClass =
     game.gameCategory === 'PARTY'
@@ -618,15 +630,36 @@ function GameCard({ game, isFavorite, isMyGame, rank, onCreateRoom, onToggleFavo
           {isMyGame ? '게임 편집' : '지금 시작하기 →'}
         </button>
 
-        {/* Delete Action - My Games Only */}
-        {isMyGame && onDelete && (
-          <button
-            onClick={() => onDelete(game.id)}
-            disabled={isDeleting}
-            className="w-full flex items-center justify-center gap-1 mt-2 text-sm text-error hover:text-error-dark font-medium py-2 rounded-lg hover:bg-error-light border border-error/20 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isDeleting ? '삭제 중...' : '🗑️ 삭제'}
-          </button>
+        {/* My Games Only Actions */}
+        {isMyGame && (
+          <div className="flex gap-2 mt-2">
+            {/* View History Button */}
+            {onViewHistory && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onViewHistory();
+                }}
+                className="flex-1 flex items-center justify-center gap-1 text-sm text-primary-600 hover:text-primary-700 font-medium py-2 rounded-lg hover:bg-primary-50 border border-primary-200 transition-colors cursor-pointer"
+              >
+                <BarChart3 className="w-4 h-4" />
+                기록
+              </button>
+            )}
+            {/* Delete Button */}
+            {onDelete && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(game.id);
+                }}
+                disabled={isDeleting}
+                className="flex-1 flex items-center justify-center gap-1 text-sm text-error hover:text-error-dark font-medium py-2 rounded-lg hover:bg-error-light border border-error/20 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isDeleting ? '삭제 중...' : '🗑️ 삭제'}
+              </button>
+            )}
+          </div>
         )}
       </div>
     </div>

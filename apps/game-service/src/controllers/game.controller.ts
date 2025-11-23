@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { gameService } from '../services/game.service';
-import { CreateGameDto, UpdateGameDto } from '../dto/game.dto';
+import type { CreateGameDto, UpdateGameDto } from '@xingu/shared';
 import { UnauthorizedError } from '../middleware/error.middleware';
 
 export class GameController {

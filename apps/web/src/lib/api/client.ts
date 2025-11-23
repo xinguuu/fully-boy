@@ -2,7 +2,12 @@ import axios, { type AxiosInstance, type AxiosRequestConfig, type AxiosError, ty
 import { tokenManager } from '../auth/token-manager';
 import { logger } from '../logger';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+// Service-specific URLs for MSA architecture
+const AUTH_SERVICE_URL = process.env.NEXT_PUBLIC_API_AUTH_URL || 'http://localhost:3001';
+const TEMPLATE_SERVICE_URL = process.env.NEXT_PUBLIC_API_TEMPLATE_URL || 'http://localhost:3002';
+const GAME_SERVICE_URL = process.env.NEXT_PUBLIC_API_GAME_URL || 'http://localhost:3003';
+const ROOM_SERVICE_URL = process.env.NEXT_PUBLIC_API_ROOM_URL || 'http://localhost:3004';
+const RESULT_SERVICE_URL = process.env.NEXT_PUBLIC_API_RESULT_URL || 'http://localhost:3006';
 
 export class ApiClient {
   private client: AxiosInstance;
@@ -156,4 +161,12 @@ export class ApiClient {
   }
 }
 
-export const apiClient = new ApiClient(API_BASE_URL);
+// Export service-specific API clients for MSA architecture
+export const authApiClient = new ApiClient(AUTH_SERVICE_URL);
+export const templateApiClient = new ApiClient(TEMPLATE_SERVICE_URL);
+export const gameApiClient = new ApiClient(GAME_SERVICE_URL);
+export const roomApiClient = new ApiClient(ROOM_SERVICE_URL);
+export const resultApiClient = new ApiClient(RESULT_SERVICE_URL);
+
+// Legacy export for backwards compatibility (uses auth service)
+export const apiClient = authApiClient;

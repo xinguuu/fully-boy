@@ -72,6 +72,9 @@ model Game {
   userId String?
   user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  // Template tracking (for copied games)
+  sourceGameId String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -83,6 +86,7 @@ model Game {
   @@index([category, isPublic])
   @@index([gameCategory, isPublic])
   @@index([userId])
+  @@index([sourceGameId])
   @@map("games")
 }
 

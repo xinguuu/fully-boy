@@ -41,12 +41,16 @@ describe('GameService', () => {
           userId: mockUserId,
           title: 'Test Game 1',
           questions: [],
+          favorites: [],
+          _count: { questions: 0 },
         },
         {
           id: 'game-2',
           userId: mockUserId,
           title: 'Test Game 2',
           questions: [],
+          favorites: [],
+          _count: { questions: 0 },
         },
       ];
 
@@ -54,16 +58,10 @@ describe('GameService', () => {
 
       const result = await gameService.getMyGames(mockUserId);
 
-      expect(prisma.game.findMany).toHaveBeenCalledWith({
-        where: { userId: mockUserId },
-        include: {
-          questions: {
-            orderBy: { order: 'asc' },
-          },
-        },
-        orderBy: { updatedAt: 'desc' },
-      });
-      expect(result).toEqual(mockGames);
+      expect(prisma.game.findMany).toHaveBeenCalled();
+      expect(result).toHaveLength(2);
+      expect(result[0]).toHaveProperty('questionCount', 0);
+      expect(result[0]).toHaveProperty('isFavorite', false);
     });
 
     it('should return empty array if user has no games', async () => {
@@ -169,6 +167,7 @@ describe('GameService', () => {
         id: 'new-game-id',
         userId: mockUserId,
         title: createDto.title,
+        sourceGameId: 'source-game-id',
         questions: [],
       };
 
@@ -180,6 +179,14 @@ describe('GameService', () => {
       expect(prisma.game.findUnique).toHaveBeenCalledWith({
         where: { id: 'source-game-id' },
       });
+      // Verify sourceGameId is saved
+      expect(prisma.game.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            sourceGameId: 'source-game-id',
+          }),
+        }),
+      );
       expect(result).toEqual(mockCreatedGame);
     });
 

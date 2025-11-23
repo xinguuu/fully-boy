@@ -57,3 +57,85 @@ export interface Question {
   createdAt: Date;
   updatedAt: Date;
 }
+
+// ==========================================
+// Question Data Types (Plugin-specific)
+// ==========================================
+
+/**
+ * Re-export plugin-specific question data types for convenience
+ */
+export type {
+  MultipleChoiceQuestionData,
+} from '../plugins/game-types/multiple-choice.plugin';
+export type { TrueFalseQuestionData } from '../plugins/game-types/true-false.plugin';
+export type { ShortAnswerQuestionData } from '../plugins/game-types/short-answer.plugin';
+export type {
+  LiarGameSessionData,
+  LiarGamePhase,
+  LiarGameActionType,
+} from '../plugins/game-types/liar-game.plugin';
+
+/**
+ * Union type of all question data types
+ */
+export type AnyQuestionData =
+  | import('../plugins/game-types/multiple-choice.plugin').MultipleChoiceQuestionData
+  | import('../plugins/game-types/true-false.plugin').TrueFalseQuestionData
+  | import('../plugins/game-types/short-answer.plugin').ShortAnswerQuestionData;
+
+// ==========================================
+// DTO Types (from Zod schemas)
+// ==========================================
+
+/**
+ * Re-export DTO types inferred from Zod schemas
+ * These are used for API requests/responses
+ */
+export type {
+  CreateGameDto,
+  UpdateGameDto,
+  GetTemplatesQuery,
+} from '../schemas/game.schemas';
+
+// ==========================================
+// API Request/Response Types
+// ==========================================
+
+/**
+ * Question input for create/update operations
+ */
+export interface QuestionInput {
+  id?: string;
+  order: number;
+  content: string;
+  data: AnyQuestionData;
+  imageUrl?: string;
+  videoUrl?: string;
+  audioUrl?: string;
+}
+
+/**
+ * Game with questions (full details)
+ */
+export interface GameWithQuestions extends Game {
+  questions: Question[];
+}
+
+/**
+ * Template list response
+ */
+export interface TemplateListResponse {
+  templates: Game[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+/**
+ * Game list response (my games)
+ */
+export interface GameListResponse {
+  games: Game[];
+  total: number;
+}

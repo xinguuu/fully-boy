@@ -15,15 +15,61 @@ export class ResultService {
       throw new NotFoundError('Room not found');
     }
 
-    const result = await prisma.gameResult.create({
-      data: {
-        roomId,
-        participantCount,
-        duration,
-        averageScore,
-        leaderboard: leaderboard as unknown as Prisma.InputJsonValue,
-        questionStats: questionStats as unknown as Prisma.InputJsonValue,
-      },
+    // Use transaction to atomically create result and increment playCount
+    const result = await prisma.$transaction(async (tx) => {
+      // 1. Create game result
+      const gameResult = await tx.gameResult.create({
+        data: {
+          roomId,
+          participantCount,
+          duration,
+          averageScore,
+          leaderboard: leaderboard as unknown as Prisma.InputJsonValue,
+          questionStats: questionStats as unknown as Prisma.InputJsonValue,
+        },
+      });
+
+      // 2. Get game details to check for sourceGameId
+      const game = await tx.game.findUnique({
+        where: { id: room.gameId },
+        select: { id: true, sourceGameId: true, isPublic: true },
+      });
+
+      if (!game) {
+        throw new NotFoundError('Game not found');
+      }
+
+      // 3. Increment playCount for the played game
+      await tx.game.update({
+        where: { id: room.gameId },
+        data: {
+          playCount: {
+            increment: 1,
+          },
+        },
+      });
+
+      // 4. If this game was copied from a template, increment source template's playCount too
+      if (game.sourceGameId) {
+        const sourceGame = await tx.game.findUnique({
+          where: { id: game.sourceGameId },
+          select: { id: true, isPublic: true },
+        });
+
+        // Only increment if source is a public template
+        if (sourceGame?.isPublic) {
+          await tx.game.update({
+            where: { id: game.sourceGameId },
+            data: {
+              playCount: {
+                increment: 1,
+              },
+            },
+          });
+        }
+      }
+
+      return gameResult;
     });
 
     return {

@@ -1,7 +1,5 @@
-import { apiClient } from './client';
+import { resultApiClient } from './client';
 import type { GameResult, GameResultsResponse } from '@/types/result.types';
-
-const RESULT_API_URL = process.env.NEXT_PUBLIC_API_RESULT_URL || 'http://localhost:3006/api/results';
 
 export const resultsApi = {
   /**
@@ -11,17 +9,7 @@ export const resultsApi = {
    * @returns List of game results
    */
   async getGameResults(gameId: string, limit = 10): Promise<GameResultsResponse> {
-    const response = await fetch(`${RESULT_API_URL}/game/${gameId}?limit=${limit}`, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('access_token')}`,
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to fetch game results');
-    }
-
-    return response.json();
+    return resultApiClient.get<GameResultsResponse>(`/api/results/game/${gameId}?limit=${limit}`);
   },
 
   /**
@@ -30,13 +18,7 @@ export const resultsApi = {
    * @returns Game result
    */
   async getResultByRoom(roomId: string): Promise<GameResult> {
-    const response = await fetch(`${RESULT_API_URL}/room/${roomId}`);
-
-    if (!response.ok) {
-      throw new Error('Failed to fetch result');
-    }
-
-    return response.json();
+    return resultApiClient.get<GameResult>(`/api/results/room/${roomId}`);
   },
 
   /**
@@ -45,6 +27,6 @@ export const resultsApi = {
    * @returns Created result
    */
   async createResult(data: Partial<GameResult>): Promise<GameResult> {
-    return apiClient.post<GameResult>(`${RESULT_API_URL}`, data);
+    return resultApiClient.post<GameResult>('/api/results', data);
   },
 };

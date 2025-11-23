@@ -200,7 +200,10 @@ describe('ResultController', () => {
 
       expect(resultService.getResultsByGameId).toHaveBeenCalledWith('game-123', 10);
       expect(statusMock).toHaveBeenCalledWith(200);
-      expect(jsonMock).toHaveBeenCalledWith(mockResults);
+      expect(jsonMock).toHaveBeenCalledWith({
+        results: mockResults,
+        total: mockResults.length,
+      });
     });
 
     it('should return results for a game with custom limit', async () => {
@@ -231,7 +234,10 @@ describe('ResultController', () => {
 
       expect(resultService.getResultsByGameId).toHaveBeenCalledWith('game-123', 5);
       expect(statusMock).toHaveBeenCalledWith(200);
-      expect(jsonMock).toHaveBeenCalledWith(mockResults);
+      expect(jsonMock).toHaveBeenCalledWith({
+        results: mockResults,
+        total: mockResults.length,
+      });
     });
 
     it('should throw ValidationError if gameId is missing', async () => {

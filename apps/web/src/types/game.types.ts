@@ -1,7 +1,37 @@
 /**
- * Game flow state types for Kahoot-style gameplay
+ * Frontend-specific game types
+ *
+ * This file contains UI/UX-specific types for the game flow.
+ * Backend and shared types are imported from @xingu/shared.
  */
 
+// ==========================================
+// Re-export shared types for convenience
+// ==========================================
+
+export type {
+  Game,
+  Question,
+  GameType,
+  Category,
+  TemplateCategory,
+  CreateGameDto,
+  UpdateGameDto,
+  GameWithQuestions,
+  QuestionInput,
+  MultipleChoiceQuestionData,
+  TrueFalseQuestionData,
+  ShortAnswerQuestionData,
+  AnyQuestionData,
+} from '@xingu/shared';
+
+// ==========================================
+// Frontend-specific types (UI/Game Flow)
+// ==========================================
+
+/**
+ * Game flow state types for Kahoot-style gameplay
+ */
 export type GamePhase =
   | 'QUESTION_INTRO' // Show "Question 1/10" for 2 seconds
   | 'ANSWERING' // Participants selecting answers

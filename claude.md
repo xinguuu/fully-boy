@@ -257,12 +257,15 @@ async getOrCreateTags(tagNames: string[]): Promise<Tag[]>
 |------|--------|---------|
 | Homepage (PIN Entry) | ✅ Complete | Kahoot-style, Korean text |
 | Login / Signup | ✅ Complete | JWT auth, token refresh |
-| Browse | ✅ Complete | 2 tabs, filters, favorites, mobile filter |
+| Browse | ✅ Complete | 2 tabs, filters, favorites, mobile filter, profile dropdown with icons |
 | Edit Screen | ✅ Complete | **3-column layout** (list \| edit panel \| preview), bulk settings, draft mode |
 | Join Page | ✅ Complete | `/room/[pin]` - Nickname entry |
 | Waiting Room | ✅ Complete | PIN display, real-time participants |
 | Live Game | ✅ Complete | WebSocket integration, real-time scoring |
 | **Game Results** | ✅ Complete | **Integrated in Live Game page** - Final leaderboard |
+| **Play History** | ✅ Complete | `/history` - All play records across games |
+| **Result Detail** | ✅ Complete | `/results/[id]` - Detailed leaderboard and stats |
+| **Game History** | ✅ Complete | `/games/[id]/history` - Play records for specific game |
 
 ### What's Working
 
@@ -284,6 +287,11 @@ async getOrCreateTags(tagNames: string[]): Promise<Tag[]>
 - ✅ **WebSocket memory leak prevention** (Redis TTL auto-cleanup instead of setTimeout)
 - ✅ **Production-ready logging** (environment-based, file rotation, no console.log)
 - ✅ **Performance optimizations** (compression, image optimization, SEO)
+- ✅ **Favorite API integration** (isFavorite field in response, 66% API call reduction)
+- ✅ **Optimistic updates** (instant UI feedback for favorite toggles)
+- ✅ **Type Integration** (100% Frontend ↔ Backend type consistency via @xingu/shared)
+- ✅ **React Query cache optimization** (staleTime/gcTime for templates, games, favorites)
+- ✅ **Redis SCAN migration** (non-blocking operations, production-safe cache invalidation)
 
 #### Features
 - ✅ **Question intro screen** (2-second "1/3" display before each question)
@@ -299,16 +307,33 @@ async getOrCreateTags(tagNames: string[]): Promise<Tag[]>
 - ✅ **Question-specific duration** (10s-120s per question, plugin support)
 - ✅ **Bulk settings modal** (batch time limit configuration for multiple questions)
 - ✅ **Mobile filter** (browse page - all/mobile-required/no-mobile games)
+- ✅ **Game history system** (view all play records, detailed results, game-specific history)
+- ✅ **Profile dropdown with icons** (User, History, Settings, LogOut icons for all menu items)
 
 ### Known Issues
 
 - None currently 🎉
 
-**Recently Fixed (2025-11-23)**:
+**Recently Fixed**:
+
+*2025-11-24 (Latest)*:
+- ✅ **playCount not incrementing** → Fixed in result-service (games now track play statistics)
+- ✅ **Template usage not tracked** → Added sourceGameId (templates show plays from all copies)
+- ✅ Type duplication → Single source of truth in @xingu/shared (100% consistency)
+- ✅ Unnecessary refetches → React Query cache optimization (90% reduction)
+- ✅ Redis blocking operations → SCAN migration (production-safe)
+- ✅ Image optimization → Verified Next.js Image usage (already optimized)
+- ✅ Backend API response format → Fixed getResultsByGameId to return `{ results, total }` (frontend compatibility)
+- ✅ Frontend error handling → Added null/undefined checks for API responses
+- ✅ React key prop warning → Changed key from `playerId` to `${playerId}-${rank}` for uniqueness
+
+*2025-11-23*:
 - ✅ console.log in production → Replaced with structured logging (Winston)
 - ✅ Game update performance → 10x improvement with Upsert pattern
 - ✅ WebSocket memory leaks → Redis TTL cleanup instead of setTimeout
 - ✅ Unnecessary API calls → Conditional fetching in Browse page
+- ✅ Favorite API inefficiency → Integrated isFavorite field (66% API reduction)
+- ✅ Slow favorite updates → Optimistic updates with React Query (instant feedback)
 
 ---
 

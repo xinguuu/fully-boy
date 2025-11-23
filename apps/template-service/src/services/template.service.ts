@@ -166,10 +166,23 @@ export class TemplateService {
       await redis.del(`${CACHE_PREFIX.DETAIL}:${id}`);
     }
 
-    const listKeys = await redis.keys(`${CACHE_PREFIX.LIST}:*`);
-    if (listKeys.length > 0) {
-      await redis.del(...listKeys);
-    }
+    // Use SCAN instead of KEYS (non-blocking operation)
+    let cursor = '0';
+    do {
+      const [nextCursor, keys] = await redis.scan(
+        cursor,
+        'MATCH',
+        `${CACHE_PREFIX.LIST}:*`,
+        'COUNT',
+        100
+      );
+
+      if (keys.length > 0) {
+        await redis.del(...keys);
+      }
+
+      cursor = nextCursor;
+    } while (cursor !== '0');
   }
 }
 

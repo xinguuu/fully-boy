@@ -1,4 +1,4 @@
-import { apiClient } from './client';
+import { gameApiClient } from './client';
 import type { Game, GameType, Category } from '@xingu/shared';
 
 export interface CreateGameRequest {
@@ -48,38 +48,38 @@ export interface UpdateGameRequest {
 
 export const gamesApi = {
   getMyGames: async (): Promise<Game[]> => {
-    return apiClient.get<Game[]>('/api/games/my-games');
+    return gameApiClient.get<Game[]>('/api/games/my-games');
   },
 
   getGame: async (id: string): Promise<Game> => {
-    return apiClient.get<Game>(`/api/games/${id}`);
+    return gameApiClient.get<Game>(`/api/games/${id}`);
   },
 
   createGame: async (data: CreateGameRequest): Promise<Game> => {
-    return apiClient.post<Game>('/api/games', data);
+    return gameApiClient.post<Game>('/api/games', data);
   },
 
   updateGame: async (id: string, data: UpdateGameRequest): Promise<Game> => {
-    return apiClient.put<Game>(`/api/games/${id}`, data);
+    return gameApiClient.put<Game>(`/api/games/${id}`, data);
   },
 
   deleteGame: async (id: string): Promise<void> => {
-    return apiClient.delete<void>(`/api/games/${id}`);
+    return gameApiClient.delete<void>(`/api/games/${id}`);
   },
 
   getFavorites: async (): Promise<Game[]> => {
-    return apiClient.get<Game[]>('/api/games/favorites');
+    return gameApiClient.get<Game[]>('/api/games/favorites');
   },
 
   getFavoriteIds: async (): Promise<string[]> => {
-    return apiClient.get<string[]>('/api/games/favorites/ids');
+    return gameApiClient.get<string[]>('/api/games/favorites/ids');
   },
 
   addFavorite: async (gameId: string): Promise<void> => {
-    return apiClient.post<void>(`/api/games/${gameId}/favorite`, {});
+    return gameApiClient.post<void>(`/api/games/${gameId}/favorite`, {});
   },
 
   removeFavorite: async (gameId: string): Promise<void> => {
-    return apiClient.delete<void>(`/api/games/${gameId}/favorite`);
+    return gameApiClient.delete<void>(`/api/games/${gameId}/favorite`);
   },
 };

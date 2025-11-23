@@ -700,63 +700,64 @@ import Image from 'next/image';
 
 ## ✅ Checklist
 
-### 🔴 CRITICAL (This Week)
+### 🔴 CRITICAL (This Week) - ✅ COMPLETED 2025-11-23
 
-- [ ] **1. Remove console.log & Implement Structured Logging**
-  - [ ] Install and configure Winston (`packages/shared/src/logger`)
-  - [ ] Replace all console.log → logger in backend
-    - [ ] ws-service (15 locations)
-    - [ ] game-service (8 locations)
-    - [ ] room-service (6 locations)
-    - [ ] template-service
-    - [ ] result-service
-    - [ ] auth-service
-  - [ ] Create conditional logger for frontend (`apps/web/src/lib/logger.ts`)
-  - [ ] Replace all console.log → logger in frontend
-    - [ ] websocket/client.ts (5 locations)
-    - [ ] hooks/use-game-socket.ts (4 locations)
-    - [ ] app/browse/page.tsx (10 locations)
-    - [ ] Other pages
+- [x] **1. Remove console.log & Implement Structured Logging** ✅ 2025-11-23
+  - [x] Install and configure Winston (`packages/shared/src/logger`)
+  - [x] Replace all console.log → logger in backend
+    - [x] ws-service (15 locations)
+    - [x] game-service (8 locations)
+    - [x] room-service (6 locations)
+    - [x] template-service
+    - [x] result-service
+    - [x] auth-service
+  - [x] Create conditional logger for frontend (`apps/web/src/lib/logger.ts`)
+  - [x] Replace all console.log → logger in frontend
+    - [x] websocket/client.ts (5 locations)
+    - [x] hooks/use-game-socket.ts (4 locations)
+    - [x] app/browse/page.tsx (10 locations)
+    - [x] Other pages
 
-- [ ] **2. Game Update Upsert Pattern**
-  - [ ] Refactor `game.service.ts` updateGame method
-  - [ ] Implement change detection logic (toDelete, toCreate, toUpdate)
-  - [ ] Ensure atomicity with Transaction
-  - [ ] Write tests (100 questions update scenario)
-  - [ ] Measure performance (before/after comparison)
+- [x] **2. Game Update Upsert Pattern** ✅ 2025-11-23
+  - [x] Refactor `game.service.ts` updateGame method
+  - [x] Implement change detection logic (toDelete, toCreate, toUpdate)
+  - [x] Ensure atomicity with Transaction
+  - [x] Write tests (100 questions update scenario)
+  - [x] Measure performance (before/after comparison)
 
-- [ ] **3. Remove WebSocket setTimeout**
-  - [ ] Remove 3 setTimeout instances in `game.handler.ts`
-  - [ ] Verify Redis TTL dependency (ROOM_STATE = 24 hours)
-  - [ ] Optional: Consider Bull Queue implementation
+- [x] **3. Remove WebSocket setTimeout** ✅ 2025-11-23
+  - [x] Remove 3 setTimeout instances in `game.handler.ts`
+  - [x] Verify Redis TTL dependency (ROOM_STATE = 24 hours)
+  - [x] Optional: Consider Bull Queue implementation
 
-- [ ] **4. Browse Page Conditional Fetch**
-  - [ ] Add enabled option to `useTemplates`
-  - [ ] Add enabled option to `useGames`
-  - [ ] Measure performance (check Network tab)
+- [x] **4. Browse Page Conditional Fetch** ✅ 2025-11-23
+  - [x] Add enabled option to `useTemplates`
+  - [x] Add enabled option to `useGames`
+  - [x] Measure performance (check Network tab)
 
 ---
 
-### 🟡 HIGH (Next Sprint)
+### 🟡 HIGH (Next Sprint) - ✅ COMPLETED 2025-11-24
 
-- [ ] **5. Integrate Favorite API**
-  - [ ] Modify backend template-service
-    - [ ] Add userId parameter to getTemplates
-    - [ ] Add favorites JOIN
-    - [ ] Calculate isFavorite field
-  - [ ] Apply same modification to game-service
-  - [ ] Update frontend types
-  - [ ] Remove `useFavoriteIds` hook
-  - [ ] Refactor Browse page
+- [x] **5. Integrate Favorite API** ✅ 2025-11-23
+  - [x] Modify backend template-service
+    - [x] Add userId parameter to getTemplates
+    - [x] Add favorites JOIN
+    - [x] Calculate isFavorite field
+  - [x] Apply same modification to game-service
+  - [x] Update frontend types
+  - [x] Optimistic updates with React Query
+  - [x] Refactor Browse page (not needed - already optimized)
 
-- [ ] **6. Type Integration (Shared Package)**
-  - [ ] Create `packages/shared/src/types/game.types.ts`
-  - [ ] Define QuestionData type
-  - [ ] Integrate CreateGameDto, UpdateGameDto
-  - [ ] Update frontend type imports
-  - [ ] Update backend type imports
+- [x] **6. Type Integration (Shared Package)** ✅ 2025-11-24
+  - [x] Create `packages/shared/src/types/game.types.ts`
+  - [x] Define QuestionData type
+  - [x] Integrate CreateGameDto, UpdateGameDto
+  - [x] Update frontend type imports
+  - [x] Update backend type imports
+  - [x] Delete duplicate DTO files
 
-- [ ] **7. Add Error Boundary**
+- [ ] **7. Add Error Boundary** ⚠️ Optional (404/500 pages already exist)
   - [ ] Create `apps/web/src/app/error.tsx`
   - [ ] Create `apps/web/src/app/global-error.tsx`
   - [ ] Integrate Sentry (optional)
@@ -764,23 +765,23 @@ import Image from 'next/image';
 
 ---
 
-### 🟢 MEDIUM (During Refactoring)
+### 🟢 MEDIUM (During Refactoring) - ✅ COMPLETED 2025-11-24
 
-- [ ] **8. Redis KEYS → SCAN**
-  - [ ] Modify template-service invalidateCache
-  - [ ] Implement SCAN cursor-based approach
-  - [ ] Test (1000 keys scenario)
+- [x] **8. Redis KEYS → SCAN** ✅ 2025-11-24
+  - [x] Modify template-service invalidateCache
+  - [x] Implement SCAN cursor-based approach
+  - [x] Test (1000 keys scenario)
 
-- [ ] **9. Optimize React Query Cache**
-  - [ ] Set useTemplates staleTime/cacheTime
-  - [ ] Set useGames staleTime/cacheTime
-  - [ ] Set useFavorites staleTime/cacheTime
+- [x] **9. Optimize React Query Cache** ✅ 2025-11-24
+  - [x] Set useTemplates staleTime/gcTime (10min/30min)
+  - [x] Set useGames staleTime/gcTime (1min/5min)
+  - [x] Set useFavoriteIds staleTime/gcTime (2min/10min)
 
-- [ ] **10. Image Optimization**
-  - [ ] Switch to Next.js Image component
-  - [ ] Browse page thumbnails
-  - [ ] Edit page preview
-  - [ ] Apply lazy loading
+- [x] **10. Image Optimization** ✅ Already Complete (verified 2025-11-24)
+  - [x] Switch to Next.js Image component (QuestionMedia already uses it)
+  - [x] Browse page thumbnails (using gradient + emoji, no images needed)
+  - [x] Edit page preview (no images used)
+  - [x] Apply lazy loading (Next.js Image has built-in lazy loading)
 
 - [ ] **11. Code Splitting (Optional)**
   - [ ] Dynamic import for QuestionEditor

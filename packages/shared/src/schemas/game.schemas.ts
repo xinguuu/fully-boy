@@ -17,6 +17,7 @@ export const createGameSchema = z.object({
     timeBonusEnabled: z.boolean().optional(),
     soundEnabled: z.boolean().optional(),
   }),
+  sessionSettings: z.record(z.unknown()).optional(),
   questions: z
     .array(
       z.object({
@@ -30,9 +31,27 @@ export const createGameSchema = z.object({
     )
     .min(1)
     .max(100),
+  sourceGameId: z.string().cuid().optional(),
 });
 
-export const updateGameSchema = createGameSchema.partial().omit({ templateId: true });
+export const updateGameSchema = createGameSchema
+  .partial()
+  .omit({ templateId: true })
+  .extend({
+    questions: z
+      .array(
+        z.object({
+          id: z.string().cuid().optional(), // Allow id for existing questions
+          order: z.number().int().min(1),
+          content: z.string().min(1).max(500),
+          imageUrl: z.string().url().optional(),
+          videoUrl: z.string().url().optional(),
+          audioUrl: z.string().url().optional(),
+          data: z.record(z.any()),
+        })
+      )
+      .optional(),
+  });
 
 export const getTemplatesQuerySchema = z.object({
   needsMobile: z.enum(['true', 'false', 'all']).optional().default('all'),

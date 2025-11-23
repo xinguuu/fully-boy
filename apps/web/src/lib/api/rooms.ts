@@ -1,4 +1,4 @@
-import { apiClient } from './client';
+import { roomApiClient } from './client';
 
 export interface CreateRoomRequest {
   gameId: string;
@@ -56,7 +56,7 @@ export interface RoomResponse {
 
 export const roomsApi = {
   createRoom: async (data: CreateRoomRequest): Promise<RoomResponse> => {
-    return apiClient.post<RoomResponse>('/api/rooms', data);
+    return roomApiClient.post<RoomResponse>('/api/rooms', data);
   },
 
   /**
@@ -64,7 +64,7 @@ export const roomsApi = {
    * Kept for potential admin/debugging purposes
    */
   getRoomByPIN: async (pin: string): Promise<RoomResponse> => {
-    return apiClient.get<RoomResponse>(`/api/rooms/${pin}`);
+    return roomApiClient.get<RoomResponse>(`/api/rooms/${pin}`);
   },
 
   /**
@@ -72,7 +72,7 @@ export const roomsApi = {
    * Replaced by: WS_EVENTS.JOIN_ROOM
    */
   // joinRoom: async (pin: string, data: JoinRoomRequest): Promise<JoinRoomResponse> => {
-  //   return apiClient.post<JoinRoomResponse>(`/api/rooms/${pin}/join`, data);
+  //   return roomApiClient.post<JoinRoomResponse>(`/api/rooms/${pin}/join`, data);
   // },
 
   /**
@@ -80,7 +80,7 @@ export const roomsApi = {
    * Replaced by: useGameSocket hook (players state)
    */
   // getParticipants: async (pin: string): Promise<Participant[]> => {
-  //   return apiClient.get<Participant[]>(`/api/rooms/${pin}/participants`);
+  //   return roomApiClient.get<Participant[]>(`/api/rooms/${pin}/participants`);
   // },
 
   /**
@@ -88,10 +88,10 @@ export const roomsApi = {
    * Replaced by: participantId-based session restoration
    */
   // validateSession: async (sessionId: string): Promise<ValidateSessionResponse> => {
-  //   return apiClient.get<ValidateSessionResponse>(`/api/rooms/session/${sessionId}`);
+  //   return roomApiClient.get<ValidateSessionResponse>(`/api/rooms/session/${sessionId}`);
   // },
 
   deleteRoom: async (pin: string): Promise<void> => {
-    return apiClient.delete<void>(`/api/rooms/${pin}`);
+    return roomApiClient.delete<void>(`/api/rooms/${pin}`);
   },
 };
