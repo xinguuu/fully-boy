@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search, User, Star, Users, Clock, Sparkles, TrendingUp, Crown } from 'lucide-react';
+import { Search, User, Star, Users, Clock, Sparkles, TrendingUp, Crown, Smartphone, Zap } from 'lucide-react';
 import {
   useTemplates,
   useGames,
@@ -15,6 +15,7 @@ import {
 import type { Game } from '@xingu/shared';
 import { GameType } from '@xingu/shared';
 import { Select, DropdownMenu } from '@/components/ui';
+import { Footer } from '@/components/layout/Footer';
 
 // GameType 한글 매핑
 const getGameTypeLabel = (gameType: GameType): string => {
@@ -41,6 +42,7 @@ export default function BrowsePage() {
 
   const [activeTab, setActiveTab] = useState<'browse' | 'myGames'>('browse');
   const [gameCategory, setGameCategory] = useState<'all' | 'QUIZ' | 'PARTY'>('all');
+  const [mobileFilter, setMobileFilter] = useState<'all' | 'mobile' | 'no-mobile'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('popular');
   const [mounted, setMounted] = useState(false);
@@ -93,6 +95,13 @@ export default function BrowsePage() {
     return games.filter((game) => game.gameCategory === gameCategory);
   };
 
+  const filterByMobile = (games: Game[]) => {
+    if (mobileFilter === 'all') return games;
+    if (mobileFilter === 'mobile') return games.filter((game) => game.needsMobile === true);
+    if (mobileFilter === 'no-mobile') return games.filter((game) => game.needsMobile === false);
+    return games;
+  };
+
   const sortGames = (games: Game[]) => {
     const sorted = [...games];
 
@@ -115,11 +124,8 @@ export default function BrowsePage() {
     }
   };
 
-  const filteredTemplates = sortGames(filterByCategory(filterBySearch(templates)));
-  const filteredMyGames = sortGames(filterByCategory(filterBySearch(myGames)));
-
-  // Get featured games (top 3 by playCount)
-  const featuredGames = activeTab === 'browse' ? templates.slice(0, 3).sort((a, b) => (b.playCount || 0) - (a.playCount || 0)) : [];
+  const filteredTemplates = sortGames(filterByMobile(filterByCategory(filterBySearch(templates))));
+  const filteredMyGames = sortGames(filterByMobile(filterByCategory(filterBySearch(myGames))));
 
   const handleCreateRoom = (gameId: string) => {
     if (activeTab === 'myGames') {
@@ -262,7 +268,9 @@ export default function BrowsePage() {
                 </span>
               </h1>
               <p className="text-xl text-primary-50 mb-8">
-                5분이면 만드는 게임, 친구들과 함께 즐기는 짜릿한 순간
+                OX 퀴즈, 밸런스 게임, 초성 퀴즈 등 6가지 게임 타입 지원 ✨
+                <br />
+                질문만 바꾸면 5분 만에 완성!
               </p>
               <button
                 onClick={scrollToGames}
@@ -306,31 +314,9 @@ export default function BrowsePage() {
           </nav>
         </div>
 
-        {/* Featured Games - Only on Browse Tab */}
-        {activeTab === 'browse' && !searchQuery && featuredGames.length > 0 && (
-          <section className="mb-12">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                <Crown className="w-6 h-6 text-primary-500" />
-                인기 게임
-              </h2>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {featuredGames.map((game) => (
-                <FeaturedGameCard
-                  key={game.id}
-                  game={game}
-                  isFavorite={favorites.has(game.id)}
-                  onCreateRoom={handleCreateRoom}
-                  onToggleFavorite={toggleFavorite}
-                />
-              ))}
-            </div>
-          </section>
-        )}
-
         {/* Game Category & Sort */}
-        <div id="games-section" className="mb-6">
+        <div id="games-section" className="mb-6 space-y-4">
+          {/* Category & Sort Row */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <span className="text-sm font-semibold text-gray-700">게임 유형:</span>
@@ -376,21 +362,64 @@ export default function BrowsePage() {
               />
             </div>
           </div>
+
+          {/* Mobile Filter Row */}
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-semibold text-gray-700">참여 방식:</span>
+            <button
+              onClick={() => setMobileFilter('all')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                mobileFilter === 'all'
+                  ? 'bg-gray-800 text-white'
+                  : 'bg-white border border-gray-300 text-gray-600 hover:bg-gray-50'
+              }`}
+            >
+              전체
+            </button>
+            <button
+              onClick={() => setMobileFilter('mobile')}
+              className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                mobileFilter === 'mobile'
+                  ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md'
+                  : 'bg-white border border-gray-300 text-gray-600 hover:bg-gray-50'
+              }`}
+            >
+              <Smartphone className="w-3 h-3" />
+              핸드폰 필요
+            </button>
+            <button
+              onClick={() => setMobileFilter('no-mobile')}
+              className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                mobileFilter === 'no-mobile'
+                  ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-md'
+                  : 'bg-white border border-gray-300 text-gray-600 hover:bg-gray-50'
+              }`}
+            >
+              <Zap className="w-3 h-3" />
+              화면만 필요
+            </button>
+          </div>
         </div>
 
         {/* Browse Tab Content */}
         {activeTab === 'browse' && (
           <div>
-            <h2 className="text-xl font-bold text-gray-900 mb-4">
-              전체 게임 ({filteredTemplates.length}
-              {searchQuery && templates.length !== filteredTemplates.length && ` / ${templates.length}`})
-            </h2>
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                💡 템플릿으로 빠르게 시작하기
+              </h2>
+              <p className="text-gray-600">
+                인기 템플릿을 선택하고 질문만 수정하면 완성! ({filteredTemplates.length}개
+                {searchQuery && templates.length !== filteredTemplates.length && ` / ${templates.length}개`})
+              </p>
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredTemplates.map((template) => (
+              {filteredTemplates.map((template, index) => (
                 <GameCard
                   key={template.id}
                   game={template}
                   isFavorite={favorites.has(template.id)}
+                  rank={sortBy === 'popular' && !searchQuery ? index + 1 : undefined}
                   onCreateRoom={handleCreateRoom}
                   onToggleFavorite={toggleFavorite}
                 />
@@ -449,100 +478,9 @@ export default function BrowsePage() {
           </div>
         )}
       </main>
-    </div>
-  );
-}
 
-interface FeaturedGameCardProps {
-  game: Game;
-  isFavorite: boolean;
-  onCreateRoom: (id: string) => void;
-  onToggleFavorite: (id: string) => void;
-}
-
-function FeaturedGameCard({ game, isFavorite, onCreateRoom, onToggleFavorite }: FeaturedGameCardProps) {
-  // Category-based gradient
-  const gradientClass =
-    game.gameCategory === 'PARTY'
-      ? 'from-blue-500 via-secondary-500 to-purple-500'
-      : 'from-orange-500 via-primary-500 to-red-500';
-
-  return (
-    <div className="group relative overflow-hidden rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] cursor-pointer">
-      {/* Gradient Background */}
-      <div className={`absolute inset-0 bg-gradient-to-br ${gradientClass}`}></div>
-
-      {/* Favorite Button */}
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          onToggleFavorite(game.id);
-        }}
-        className="absolute top-4 right-4 z-20 w-10 h-10 flex items-center justify-center bg-white/90 backdrop-blur-sm rounded-full hover:bg-white transition-all cursor-pointer shadow-lg"
-        aria-label={isFavorite ? '즐겨찾기 해제' : '즐겨찾기 추가'}
-      >
-        <Star
-          className={`w-5 h-5 transition-colors ${isFavorite ? 'fill-yellow-400 text-yellow-400' : 'text-gray-400 hover:text-yellow-400'
-            }`}
-        />
-      </button>
-
-      {/* Content */}
-      <div className="relative p-8 h-64 flex flex-col justify-end">
-        {/* Gradient Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
-
-        <div className="relative z-10">
-          {/* Split Badge */}
-          <div className="inline-flex items-center overflow-hidden rounded-full shadow-lg mb-3">
-            {/* Left: Category (colored) */}
-            <span
-              className={`px-3 py-1 text-xs font-bold ${
-                game.gameCategory === 'PARTY'
-                  ? 'bg-secondary-500 text-white'
-                  : 'bg-primary-500 text-white'
-              }`}
-            >
-              {game.gameCategory === 'PARTY' ? '🎉 파티' : '📝 퀴즈'}
-            </span>
-            {/* Divider */}
-            <div className="w-px h-full bg-white/30"></div>
-            {/* Right: Game Type (white) */}
-            <span className="px-3 py-1 bg-white/90 backdrop-blur-sm text-xs font-bold text-gray-900">
-              {getGameTypeLabel(game.gameType)}
-            </span>
-          </div>
-
-          <h3 className="text-2xl font-extrabold text-white mb-2 group-hover:scale-105 transition-transform">
-            {game.title}
-          </h3>
-
-          <p className="text-sm text-white/90 mb-4 line-clamp-2">{game.description || '게임 설명이 없습니다'}</p>
-
-          {/* Stats */}
-          <div className="flex items-center gap-4 text-sm text-white/90 mb-4">
-            <span className="flex items-center gap-1">
-              <Users className="w-4 h-4" />
-              {game.maxPlayers || 30}명
-            </span>
-            <span className="flex items-center gap-1">
-              <Clock className="w-4 h-4" />
-              {game.duration || 10}분
-            </span>
-            <span className="flex items-center gap-1 font-semibold">
-              🎮 {game.playCount || 0}회
-            </span>
-          </div>
-
-          {/* Action Button */}
-          <button
-            onClick={() => onCreateRoom(game.id)}
-            className="w-full bg-white hover:bg-gray-50 text-gray-900 font-bold py-3 rounded-lg transition-all duration-200 hover:scale-105 shadow-lg cursor-pointer"
-          >
-            지금 시작하기 →
-          </button>
-        </div>
-      </div>
+      {/* Footer */}
+      <Footer />
     </div>
   );
 }
@@ -551,13 +489,14 @@ interface GameCardProps {
   game: Game;
   isFavorite: boolean;
   isMyGame?: boolean;
+  rank?: number; // 1, 2, 3 for top games
   onCreateRoom: (id: string) => void;
   onToggleFavorite: (id: string) => void;
   onDelete?: (id: string) => void;
   isDeleting?: boolean;
 }
 
-function GameCard({ game, isFavorite, isMyGame, onCreateRoom, onToggleFavorite, onDelete, isDeleting }: GameCardProps) {
+function GameCard({ game, isFavorite, isMyGame, rank, onCreateRoom, onToggleFavorite, onDelete, isDeleting }: GameCardProps) {
   // Category-based gradient
   const gradientClass =
     game.gameCategory === 'PARTY'
@@ -593,6 +532,17 @@ function GameCard({ game, isFavorite, isMyGame, onCreateRoom, onToggleFavorite, 
           </div>
         </div>
 
+        {/* Rank Badge - Top 3 */}
+        {rank && rank <= 3 && (
+          <div className="absolute top-3 right-14 z-20">
+            <span className="inline-flex items-center px-3 py-1 bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-xs font-bold rounded-full shadow-lg">
+              {rank === 1 && '👑 1위'}
+              {rank === 2 && '🔥 2위'}
+              {rank === 3 && '⭐ 3위'}
+            </span>
+          </div>
+        )}
+
         {/* Favorite Button */}
         <button
           onClick={(e) => {
@@ -622,7 +572,22 @@ function GameCard({ game, isFavorite, isMyGame, onCreateRoom, onToggleFavorite, 
           {game.title}
         </h3>
 
-        <p className="text-sm text-gray-600 mb-4 line-clamp-2 flex-1">{game.description || '게임 설명이 없습니다'}</p>
+        <p className="text-sm text-gray-600 mb-3 line-clamp-2 flex-1">{game.description || '게임 설명이 없습니다'}</p>
+
+        {/* needsMobile Badge */}
+        <div className="mb-3">
+          {game.needsMobile ? (
+            <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-700 text-xs font-semibold rounded-md border border-blue-200">
+              <Smartphone className="w-3 h-3" />
+              핸드폰 필요
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1 px-2 py-1 bg-amber-50 text-amber-700 text-xs font-semibold rounded-md border border-amber-200">
+              <Zap className="w-3 h-3" />
+              화면만 필요
+            </span>
+          )}
+        </div>
 
         {/* Meta Info */}
         <div className="flex items-center gap-3 text-xs text-gray-500 mb-3 pb-3 border-b border-gray-100">

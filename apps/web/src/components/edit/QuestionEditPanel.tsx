@@ -1,8 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Plus, Trash2, Check } from 'lucide-react';
+import { Plus, Trash2, Check, Eye, EyeOff } from 'lucide-react';
 import { ParticipantView } from '@/components/game/ParticipantView';
 import { OrganizerView } from '@/components/game/OrganizerView';
 import type { Question, Player, LeaderboardEntry } from '@/lib/websocket/types';
@@ -15,25 +14,26 @@ interface QuestionFormData {
     type: 'multiple-choice' | 'true-false' | 'short-answer';
     options?: string[];
     correctAnswer?: string;
-    duration?: number; // Question-specific duration in seconds
+    duration?: number;
   };
   imageUrl?: string;
 }
 
-interface QuestionModalProps {
-  isOpen: boolean;
-  onClose: () => void;
+interface QuestionEditPanelProps {
   question: QuestionFormData | null;
   questionNumber: number;
   onSave: (question: QuestionFormData) => void;
+  onDelete?: () => void;
+  onCancel?: () => void;
 }
 
-export function QuestionModal({ isOpen, onClose, question, questionNumber, onSave }: QuestionModalProps) {
+export function QuestionEditPanel({ question, questionNumber, onSave, onDelete, onCancel }: QuestionEditPanelProps) {
   const [content, setContent] = useState('');
   const [type, setType] = useState<'multiple-choice' | 'true-false' | 'short-answer'>('multiple-choice');
   const [options, setOptions] = useState<string[]>(['', '', '', '']);
   const [correctAnswer, setCorrectAnswer] = useState('');
   const [duration, setDuration] = useState<number>(30);
+  const [showPreview, setShowPreview] = useState(false);
   const [previewMode, setPreviewMode] = useState<'participant' | 'organizer'>('participant');
 
   useEffect(() => {
@@ -44,13 +44,14 @@ export function QuestionModal({ isOpen, onClose, question, questionNumber, onSav
       setCorrectAnswer(question.data.correctAnswer || '');
       setDuration(question.data.duration || 30);
     } else {
+      // Reset for new question
       setContent('');
       setType('multiple-choice');
       setOptions(['', '', '', '']);
       setCorrectAnswer('');
       setDuration(30);
     }
-  }, [question, isOpen]);
+  }, [question]);
 
   const handleSave = () => {
     const newQuestion: QuestionFormData = {
@@ -66,7 +67,6 @@ export function QuestionModal({ isOpen, onClose, question, questionNumber, onSav
       imageUrl: question?.imageUrl,
     };
     onSave(newQuestion);
-    onClose();
   };
 
   const handleAddOption = () => {
@@ -114,13 +114,11 @@ export function QuestionModal({ isOpen, onClose, question, questionNumber, onSav
       const validOptions = options.filter(o => o.trim());
       if (validOptions.length === 0) return [];
 
-      // Create 11 dummy participants with distributed answers
       const totalParticipants = 11;
       const players: Player[] = [];
 
       for (let i = 0; i < totalParticipants; i++) {
-        // Distribute answers: more answers on correct answer, some on others
-        const isCorrectAnswer = i < 6; // First 6 answer correctly
+        const isCorrectAnswer = i < 6;
         const answerIndex = isCorrectAnswer
           ? validOptions.indexOf(correctAnswer) >= 0 ? validOptions.indexOf(correctAnswer) : 0
           : i % validOptions.length;
@@ -148,7 +146,6 @@ export function QuestionModal({ isOpen, onClose, question, questionNumber, onSav
 
       return players;
     } else if (type === 'true-false') {
-      // Create dummy answers for O/X
       return Array.from({ length: 11 }, (_, i) => ({
         id: `dummy-${i}`,
         socketId: `socket-dummy-${i}`,
@@ -178,18 +175,31 @@ export function QuestionModal({ isOpen, onClose, question, questionNumber, onSav
       .map((entry, idx) => ({ ...entry, rank: idx + 1 }));
   }, [dummyPlayers]);
 
-  return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden">
-        <DialogHeader>
-          <DialogTitle>
-            {question ? `질문 ${questionNumber} 편집` : `질문 ${questionNumber} 추가`}
-          </DialogTitle>
-        </DialogHeader>
+  if (!question && !onCancel) {
+    // Placeholder when no question is selected
+    return (
+      <div className="h-full flex items-center justify-center bg-gray-50 rounded-xl border-2 border-dashed border-gray-300">
+        <div className="text-center">
+          <div className="text-6xl mb-4">📝</div>
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">질문을 선택하세요</h3>
+          <p className="text-sm text-gray-500">왼쪽에서 질문을 클릭하거나<br />새 질문을 추가해보세요</p>
+        </div>
+      </div>
+    );
+  }
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 py-4 max-h-[calc(90vh-180px)] overflow-hidden">
-          {/* Left: Edit Form */}
-          <div className="space-y-6 overflow-y-auto pr-2">
+  return (
+    <div className="h-full flex flex-col bg-white rounded-xl border border-gray-200 overflow-hidden">
+      {/* Header */}
+      <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
+        <h3 className="text-lg font-bold text-gray-900">
+          {question ? `질문 ${questionNumber} 편집` : `질문 ${questionNumber} 추가`}
+        </h3>
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto p-6">
+        <div className="max-w-2xl mx-auto space-y-6">
           {/* Question Content */}
           <div>
             <label htmlFor="question-content" className="block text-sm font-medium text-gray-700 mb-2">
@@ -288,11 +298,10 @@ export function QuestionModal({ isOpen, onClose, question, questionNumber, onSav
                     <button
                       type="button"
                       onClick={() => setCorrectAnswer(String.fromCharCode(65 + index))}
-                      className={`flex-shrink-0 w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all duration-200 cursor-pointer ${
-                        correctAnswer === String.fromCharCode(65 + index)
-                          ? 'bg-primary-500 border-primary-500 text-white'
-                          : 'border-gray-300 text-gray-400 hover:border-primary-300'
-                      }`}
+                      className={`flex-shrink-0 w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all duration-200 cursor-pointer ${correctAnswer === String.fromCharCode(65 + index)
+                        ? 'bg-primary-500 border-primary-500 text-white'
+                        : 'border-gray-300 text-gray-400 hover:border-primary-300'
+                        }`}
                       aria-label={`${String.fromCharCode(65 + index)}를 정답으로 선택`}
                     >
                       {correctAnswer === String.fromCharCode(65 + index) && <Check className="w-4 h-4" />}
@@ -336,22 +345,20 @@ export function QuestionModal({ isOpen, onClose, question, questionNumber, onSav
                 <button
                   type="button"
                   onClick={() => setCorrectAnswer('O')}
-                  className={`flex-1 py-4 rounded-lg border-2 font-semibold text-lg transition-all duration-200 cursor-pointer ${
-                    correctAnswer === 'O'
-                      ? 'bg-primary-500 border-primary-500 text-white shadow-md'
-                      : 'border-gray-300 text-gray-700 hover:border-primary-300 hover:bg-primary-50'
-                  }`}
+                  className={`flex-1 py-4 rounded-lg border-2 font-semibold text-lg transition-all duration-200 cursor-pointer ${correctAnswer === 'O'
+                    ? 'bg-primary-500 border-primary-500 text-white shadow-md'
+                    : 'border-gray-300 text-gray-700 hover:border-primary-300 hover:bg-primary-50'
+                    }`}
                 >
                   ⭕ O (맞다)
                 </button>
                 <button
                   type="button"
                   onClick={() => setCorrectAnswer('X')}
-                  className={`flex-1 py-4 rounded-lg border-2 font-semibold text-lg transition-all duration-200 cursor-pointer ${
-                    correctAnswer === 'X'
-                      ? 'bg-error border-error text-white shadow-md'
-                      : 'border-gray-300 text-gray-700 hover:border-error/30 hover:bg-error-light'
-                  }`}
+                  className={`flex-1 py-4 rounded-lg border-2 font-semibold text-lg transition-all duration-200 cursor-pointer ${correctAnswer === 'X'
+                    ? 'bg-error border-error text-white shadow-md'
+                    : 'border-gray-300 text-gray-700 hover:border-error/30 hover:bg-error-light'
+                    }`}
                 >
                   ❌ X (틀리다)
                 </button>
@@ -374,102 +381,127 @@ export function QuestionModal({ isOpen, onClose, question, questionNumber, onSav
               />
             </div>
           )}
-          </div>
 
-          {/* Right: Preview */}
-          <div className="hidden lg:block border-l border-gray-200 pl-6">
-            <div className="sticky top-0">
+          {/* Preview Toggle Button */}
+          {content.trim() && (
+            <button
+              type="button"
+              onClick={() => setShowPreview(!showPreview)}
+              className="w-full py-3 px-4 bg-gradient-to-r from-primary-50 to-secondary-50 border-2 border-primary-200 hover:border-primary-300 rounded-lg transition-all duration-200 cursor-pointer flex items-center justify-center gap-2 font-medium text-primary-700 hover:shadow-md"
+            >
+              {showPreview ? (
+                <>
+                  <EyeOff className="w-5 h-5" />
+                  미리보기 숨기기
+                </>
+              ) : (
+                <>
+                  <Eye className="w-5 h-5" />
+                  미리보기 켜기
+                </>
+              )}
+            </button>
+          )}
+
+          {/* Preview */}
+          {showPreview && content.trim() && (
+            <div className="border-t border-gray-200 pt-6">
               <div className="mb-4">
-                <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
                   <span className="text-lg">📱</span>
                   미리보기
-                </h3>
+                </h4>
 
                 {/* Tab Selector */}
                 <div className="flex gap-2">
                   <button
                     type="button"
                     onClick={() => setPreviewMode('participant')}
-                    className={`flex-1 px-4 py-2 rounded-lg font-semibold text-sm transition-all cursor-pointer ${
-                      previewMode === 'participant'
-                        ? 'bg-primary-500 text-white shadow-md'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                    }`}
+                    className={`flex-1 px-4 py-2 rounded-lg font-semibold text-sm transition-all cursor-pointer ${previewMode === 'participant'
+                      ? 'bg-primary-500 text-white shadow-md'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      }`}
                   >
                     👤 참가자
                   </button>
                   <button
                     type="button"
                     onClick={() => setPreviewMode('organizer')}
-                    className={`flex-1 px-4 py-2 rounded-lg font-semibold text-sm transition-all cursor-pointer ${
-                      previewMode === 'organizer'
-                        ? 'bg-primary-500 text-white shadow-md'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                    }`}
+                    className={`flex-1 px-4 py-2 rounded-lg font-semibold text-sm transition-all cursor-pointer ${previewMode === 'organizer'
+                      ? 'bg-primary-500 text-white shadow-md'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      }`}
                   >
                     🎮 주최자
                   </button>
                 </div>
               </div>
 
-              {content.trim() ? (
-                <div className="border-2 border-gray-200 rounded-xl overflow-hidden">
-                  {/* Scale down preview to fit */}
-                  <div className="transform scale-[0.4] origin-top-left" style={{ width: '250%', height: '600px' }}>
-                    {previewMode === 'participant' ? (
-                      <ParticipantView
-                        currentQuestion={previewQuestion}
-                        questionIndex={questionNumber - 1}
-                        totalQuestions={questionNumber}
-                        duration={duration}
-                        currentQuestionStartedAt={new Date()}
-                        selectedAnswer={null}
-                        shortAnswerInput=""
-                        hasAnswered={false}
-                        questionEnded={false}
-                        currentScore={0}
-                        currentRank={undefined}
-                        phase="ANSWERING"
-                        onAnswerSelect={() => {}}
-                        onShortAnswerChange={() => {}}
-                        onShortAnswerSubmit={(e) => { e.preventDefault(); }}
-                      />
-                    ) : (
-                      <OrganizerView
-                        pin="1234"
-                        currentQuestion={previewQuestion}
-                        questionIndex={questionNumber - 1}
-                        totalQuestions={questionNumber}
-                        duration={duration}
-                        currentQuestionStartedAt={new Date()}
-                        players={dummyPlayers}
-                        leaderboard={dummyLeaderboard}
-                        showResults={true}
-                        onEndQuestion={() => {}}
-                      />
-                    )}
-                  </div>
+              <div className="border-2 border-gray-200 rounded-xl overflow-hidden bg-gray-50" style={{ maxHeight: '400px' }}>
+                {/* Scale down preview to fit */}
+                <div className="transform scale-[0.5] origin-top-left" style={{ width: '200%' }}>
+                  {previewMode === 'participant' ? (
+                    <ParticipantView
+                      currentQuestion={previewQuestion}
+                      questionIndex={questionNumber - 1}
+                      totalQuestions={questionNumber}
+                      duration={duration}
+                      currentQuestionStartedAt={new Date()}
+                      selectedAnswer={null}
+                      shortAnswerInput=""
+                      hasAnswered={false}
+                      questionEnded={false}
+                      currentScore={0}
+                      currentRank={undefined}
+                      phase="ANSWERING"
+                      onAnswerSelect={() => { }}
+                      onShortAnswerChange={() => { }}
+                      onShortAnswerSubmit={(e) => { e.preventDefault(); }}
+                    />
+                  ) : (
+                    <OrganizerView
+                      pin="1234"
+                      currentQuestion={previewQuestion}
+                      questionIndex={questionNumber - 1}
+                      totalQuestions={questionNumber}
+                      duration={duration}
+                      currentQuestionStartedAt={new Date()}
+                      players={dummyPlayers}
+                      leaderboard={dummyLeaderboard}
+                      showResults={true}
+                      onEndQuestion={() => { }}
+                    />
+                  )}
                 </div>
-              ) : (
-                <div className="bg-gray-50 rounded-xl p-6 border-2 border-dashed border-gray-300 min-h-[400px] flex items-center justify-center">
-                  <div className="text-center text-gray-400">
-                    <p className="text-4xl mb-2">✏️</p>
-                    <p className="text-sm">질문을 입력하면<br />미리보기가 표시됩니다</p>
-                  </div>
-                </div>
-              )}
+              </div>
             </div>
-          </div>
+          )}
         </div>
+      </div>
 
-        <DialogFooter>
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-6 py-2.5 border-2 border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-all duration-200 cursor-pointer"
-          >
-            취소
-          </button>
+      {/* Footer */}
+      <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200 bg-gray-50">
+        <div>
+          {question && onDelete && (
+            <button
+              type="button"
+              onClick={onDelete}
+              className="px-4 py-2 text-error hover:bg-error-light rounded-lg transition-colors cursor-pointer font-medium"
+            >
+              삭제
+            </button>
+          )}
+        </div>
+        <div className="flex items-center gap-3">
+          {onCancel && (
+            <button
+              type="button"
+              onClick={onCancel}
+              className="px-6 py-2.5 border-2 border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-all duration-200 cursor-pointer"
+            >
+              취소
+            </button>
+          )}
           <button
             type="button"
             onClick={handleSave}
@@ -478,8 +510,8 @@ export function QuestionModal({ isOpen, onClose, question, questionNumber, onSav
           >
             저장
           </button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </div>
+      </div>
+    </div>
   );
 }

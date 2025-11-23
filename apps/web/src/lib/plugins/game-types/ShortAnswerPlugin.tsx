@@ -49,9 +49,9 @@ export class ShortAnswerFrontendPlugin implements FrontendGameTypePlugin {
     return (
       <div className="space-y-6">
         {/* Correct Answer Display */}
-        <div className="bg-green-50 border-l-4 border-green-500 rounded-lg p-6">
-          <h3 className="text-xl font-bold text-green-900 mb-2">💡 정답</h3>
-          <div className="text-lg text-green-700">
+        <div className="bg-accent-50 border-l-4 border-accent-500 rounded-lg p-6">
+          <h3 className="text-xl font-bold text-accent-900 mb-2">💡 정답</h3>
+          <div className="text-lg text-accent-700">
             {correctAnswers.map((ans: string, idx: number) => (
               <span key={idx}>
                 <strong>{ans}</strong>
@@ -69,7 +69,7 @@ export class ShortAnswerFrontendPlugin implements FrontendGameTypePlugin {
           <div className="flex items-center gap-4">
             <div className="flex-1">
               <div className="text-sm text-gray-500 mb-1">정답률</div>
-              <div className="text-2xl font-bold text-green-600">
+              <div className="text-2xl font-bold text-accent-600">
                 {correctCount}/{totalResponses} (
                 {totalResponses > 0 ? ((correctCount / totalResponses) * 100).toFixed(0) : 0}%)
               </div>
@@ -91,7 +91,7 @@ export class ShortAnswerFrontendPlugin implements FrontendGameTypePlugin {
                 className={`p-4 rounded-lg border-2 ${
                   participant.hasAnswered
                     ? participant.isCorrect
-                      ? 'border-green-500 bg-green-50'
+                      ? 'border-accent-500 bg-accent-50'
                       : 'border-red-500 bg-red-50'
                     : 'border-gray-200 bg-gray-50'
                 }`}
@@ -110,7 +110,7 @@ export class ShortAnswerFrontendPlugin implements FrontendGameTypePlugin {
                   {participant.hasAnswered && (
                     <div className="ml-2 flex-shrink-0">
                       {participant.isCorrect ? (
-                        <span className="text-2xl text-green-600">✓</span>
+                        <span className="text-2xl text-accent-600">✓</span>
                       ) : (
                         <span className="text-2xl text-red-600">✗</span>
                       )}

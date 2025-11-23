@@ -257,8 +257,8 @@ async getOrCreateTags(tagNames: string[]): Promise<Tag[]>
 |------|--------|---------|
 | Homepage (PIN Entry) | ✅ Complete | Kahoot-style, Korean text |
 | Login / Signup | ✅ Complete | JWT auth, token refresh |
-| Browse | ✅ Complete | 2 tabs, filters, favorites |
-| Edit Screen | ✅ Complete | Modal-based UX, draft mode |
+| Browse | ✅ Complete | 2 tabs, filters, favorites, mobile filter |
+| Edit Screen | ✅ Complete | **3-column layout** (list \| edit panel \| preview), bulk settings, draft mode |
 | Join Page | ✅ Complete | `/room/[pin]` - Nickname entry |
 | Waiting Room | ✅ Complete | PIN display, real-time participants |
 | Live Game | ✅ Complete | WebSocket integration, real-time scoring |
@@ -284,6 +284,10 @@ async getOrCreateTags(tagNames: string[]): Promise<Tag[]>
 - ✅ **Question media support** (image, audio, video with QuestionMedia component)
 - ✅ **Room status protection** (prevents joins after game started/finished)
 - ✅ **Centralized constants** (game timing, Redis keys in shared constants)
+- ✅ **3-column edit layout** (list | edit panel | preview - no modal interruptions)
+- ✅ **Question-specific duration** (10s-120s per question, plugin support)
+- ✅ **Bulk settings modal** (batch time limit configuration for multiple questions)
+- ✅ **Mobile filter** (browse page - all/mobile-required/no-mobile games)
 
 ### Known Issues
 

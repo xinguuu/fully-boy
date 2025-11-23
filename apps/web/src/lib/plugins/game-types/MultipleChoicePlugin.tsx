@@ -61,10 +61,10 @@ export class MultipleChoiceFrontendPlugin implements FrontendGameTypePlugin {
 
             return (
               <div
-                key={option}
+                key={idx}
                 className={`p-6 rounded-2xl border-4 transition-all ${
                   isCorrect
-                    ? 'bg-green-500 border-green-600 shadow-xl shadow-green-300'
+                    ? 'bg-accent-500 border-accent-600 shadow-xl shadow-accent-300'
                     : 'bg-gray-50 border-gray-300'
                 }`}
               >
@@ -72,7 +72,7 @@ export class MultipleChoiceFrontendPlugin implements FrontendGameTypePlugin {
                   <div className="flex items-center gap-3">
                     <span
                       className={`w-10 h-10 rounded-lg flex items-center justify-center text-xl font-bold ${
-                        isCorrect ? 'bg-white text-green-600' : 'bg-gray-200 text-gray-800'
+                        isCorrect ? 'bg-white text-accent-600' : 'bg-gray-200 text-gray-800'
                       }`}
                     >
                       {String.fromCharCode(65 + idx)}
@@ -82,7 +82,7 @@ export class MultipleChoiceFrontendPlugin implements FrontendGameTypePlugin {
                     </span>
                   </div>
                   {isCorrect && (
-                    <div className="flex items-center gap-2 bg-white text-green-600 px-4 py-2 rounded-full">
+                    <div className="flex items-center gap-2 bg-white text-accent-600 px-4 py-2 rounded-full">
                       <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                       </svg>
@@ -99,7 +99,7 @@ export class MultipleChoiceFrontendPlugin implements FrontendGameTypePlugin {
                       {percentage.toFixed(0)}%
                     </span>
                   </div>
-                  <div className={`w-full rounded-full h-3 ${isCorrect ? 'bg-green-700' : 'bg-gray-200'}`}>
+                  <div className={`w-full rounded-full h-3 ${isCorrect ? 'bg-white/30' : 'bg-gray-200'}`}>
                     <div
                       className={`h-3 rounded-full transition-all duration-500 ${
                         isCorrect ? 'bg-white' : 'bg-primary-500'
