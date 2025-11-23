@@ -8,7 +8,6 @@ import {
   useGames,
   useAuth,
   useDeleteGame,
-  useFavoriteIds,
   useAddFavorite,
   useRemoveFavorite,
 } from '@/lib/hooks';
@@ -16,6 +15,7 @@ import type { Game } from '@xingu/shared';
 import { GameType } from '@xingu/shared';
 import { Select, DropdownMenu } from '@/components/ui';
 import { Footer } from '@/components/layout/Footer';
+import { logger } from '@/lib/logger';
 
 // GameType 한글 매핑
 const getGameTypeLabel = (gameType: GameType): string => {
@@ -33,19 +33,25 @@ const getGameTypeLabel = (gameType: GameType): string => {
 export default function BrowsePage() {
   const router = useRouter();
   const { user, isLoading, isAuthenticated } = useAuth();
-  const { data: templatesResponse } = useTemplates();
-  const { data: myGames = [] } = useGames();
-  const { mutateAsync: deleteGame, isPending: isDeleting } = useDeleteGame();
-  const { data: favoriteIds = [] } = useFavoriteIds();
-  const { mutateAsync: addFavorite } = useAddFavorite();
-  const { mutateAsync: removeFavorite } = useRemoveFavorite();
 
+  // State declarations - must come before using them in other hooks
   const [activeTab, setActiveTab] = useState<'browse' | 'myGames'>('browse');
   const [gameCategory, setGameCategory] = useState<'all' | 'QUIZ' | 'PARTY'>('all');
   const [mobileFilter, setMobileFilter] = useState<'all' | 'mobile' | 'no-mobile'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('popular');
   const [mounted, setMounted] = useState(false);
+
+  // Data fetching hooks - conditional based on activeTab
+  const { data: templatesResponse } = useTemplates({
+    enabled: activeTab === 'browse',
+  });
+  const { data: myGames = [] } = useGames({
+    enabled: activeTab === 'myGames',
+  });
+  const { mutateAsync: deleteGame, isPending: isDeleting } = useDeleteGame();
+  const { mutateAsync: addFavorite } = useAddFavorite();
+  const { mutateAsync: removeFavorite } = useRemoveFavorite();
 
   // Set mounted state after component mounts (client-side only)
   useEffect(() => {
@@ -60,7 +66,6 @@ export default function BrowsePage() {
   }, [isLoading, isAuthenticated, router]);
 
   const templates = templatesResponse?.templates || [];
-  const favorites = new Set(favoriteIds);
 
   // Show loading state only after mounted to avoid hydration mismatch
   if (!mounted || isLoading) {
@@ -135,23 +140,21 @@ export default function BrowsePage() {
     }
   };
 
-  const toggleFavorite = async (gameId: string) => {
-    console.log('[DEBUG] toggleFavorite called with gameId:', gameId);
-    console.log('[DEBUG] Current favoriteIds:', favoriteIds);
-    console.log('[DEBUG] Is already favorite?', favorites.has(gameId));
+  const toggleFavorite = async (gameId: string, isFavorite: boolean) => {
+    logger.debug('toggleFavorite called', { gameId, isFavorite });
 
     try {
-      if (favorites.has(gameId)) {
-        console.log('[DEBUG] Removing favorite...');
+      if (isFavorite) {
+        logger.debug('Removing favorite...');
         await removeFavorite(gameId);
-        console.log('[DEBUG] Remove favorite SUCCESS');
+        logger.debug('Remove favorite SUCCESS');
       } else {
-        console.log('[DEBUG] Adding favorite...');
+        logger.debug('Adding favorite...');
         await addFavorite(gameId);
-        console.log('[DEBUG] Add favorite SUCCESS');
+        logger.debug('Add favorite SUCCESS');
       }
     } catch (error) {
-      console.error('[ERROR] Failed to toggle favorite:', error);
+      logger.error('Failed to toggle favorite:', error);
       alert('즐겨찾기 변경에 실패했습니다. 다시 시도해주세요.');
     }
   };
@@ -162,7 +165,7 @@ export default function BrowsePage() {
         await deleteGame(gameId);
         // Query will be automatically invalidated by useDeleteGame hook
       } catch (error) {
-        console.error('Failed to delete game:', error);
+        logger.error('Failed to delete game:', error);
         alert('게임 삭제에 실패했습니다. 다시 시도해주세요.');
       }
     }
@@ -216,13 +219,13 @@ export default function BrowsePage() {
               {
                 label: '내 정보',
                 onClick: () => {
-                  console.log('Profile clicked');
+                  logger.debug('Profile clicked');
                 },
               },
               {
                 label: '설정',
                 onClick: () => {
-                  console.log('Settings clicked');
+                  logger.debug('Settings clicked');
                 },
               },
               {
@@ -418,7 +421,7 @@ export default function BrowsePage() {
                 <GameCard
                   key={template.id}
                   game={template}
-                  isFavorite={favorites.has(template.id)}
+                  isFavorite={template.isFavorite || false}
                   rank={sortBy === 'popular' && !searchQuery ? index + 1 : undefined}
                   onCreateRoom={handleCreateRoom}
                   onToggleFavorite={toggleFavorite}
@@ -459,7 +462,7 @@ export default function BrowsePage() {
                     <GameCard
                       key={game.id}
                       game={game}
-                      isFavorite={favorites.has(game.id)}
+                      isFavorite={game.isFavorite || false}
                       isMyGame={true}
                       onCreateRoom={handleCreateRoom}
                       onToggleFavorite={toggleFavorite}
@@ -491,7 +494,7 @@ interface GameCardProps {
   isMyGame?: boolean;
   rank?: number; // 1, 2, 3 for top games
   onCreateRoom: (id: string) => void;
-  onToggleFavorite: (id: string) => void;
+  onToggleFavorite: (id: string, isFavorite: boolean) => void;
   onDelete?: (id: string) => void;
   isDeleting?: boolean;
 }
@@ -547,7 +550,7 @@ function GameCard({ game, isFavorite, isMyGame, rank, onCreateRoom, onToggleFavo
         <button
           onClick={(e) => {
             e.stopPropagation();
-            onToggleFavorite(game.id);
+            onToggleFavorite(game.id, isFavorite);
           }}
           className="absolute top-3 right-3 z-20 w-8 h-8 flex items-center justify-center bg-white/90 backdrop-blur-sm rounded-full hover:bg-white transition-all cursor-pointer shadow-lg"
           aria-label={isFavorite ? '즐겨찾기 해제' : '즐겨찾기 추가'}

@@ -1,5 +1,6 @@
 import axios, { type AxiosInstance, type AxiosRequestConfig, type AxiosError, type InternalAxiosRequestConfig } from 'axios';
 import { tokenManager } from '../auth/token-manager';
+import { logger } from '../logger';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
@@ -44,16 +45,16 @@ export class ApiClient {
         if (process.env.NODE_ENV === 'development') {
           if (error.response) {
             // API responded with error status
-            console.error('API Error:', originalRequest?.method?.toUpperCase(), originalRequest?.url);
-            console.error('Status:', error.response.status, error.response.statusText);
-            console.error('Response:', error.response.data);
+            logger.error('API Error:', originalRequest?.method?.toUpperCase(), originalRequest?.url);
+            logger.error('Status:', error.response.status, error.response.statusText);
+            logger.error('Response:', error.response.data);
           } else if (error.request) {
             // Request was made but no response received
-            console.error('Network Error:', originalRequest?.method?.toUpperCase(), originalRequest?.url);
-            console.error('Message:', error.message);
+            logger.error('Network Error:', originalRequest?.method?.toUpperCase(), originalRequest?.url);
+            logger.error('Message:', error.message);
           } else {
             // Error in request setup
-            console.error('Request Setup Error:', error.message);
+            logger.error('Request Setup Error:', error.message);
           }
         }
 

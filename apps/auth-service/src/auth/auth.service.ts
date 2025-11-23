@@ -10,6 +10,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { RedisService } from '../redis/redis.service';
 import { SignupDto, LoginDto, AuthResponse, UserResponse } from './dto/auth.dto';
 import { REDIS_KEYS, REDIS_TTL, TOKEN_CONFIG } from '@xingu/shared';
+import { logger } from '@xingu/shared/logger';
 
 @Injectable()
 export class AuthService {
@@ -30,7 +31,9 @@ export class AuthService {
 
     // Warn if using fallback in development
     if (!process.env.JWT_REFRESH_SECRET && process.env.NODE_ENV !== 'production') {
-      console.warn('⚠️  WARNING: Using default JWT_REFRESH_SECRET. Set JWT_REFRESH_SECRET in .env for production!');
+      logger.warn('Using default JWT_REFRESH_SECRET', {
+        message: 'Set JWT_REFRESH_SECRET in .env for production'
+      });
     }
   }
 

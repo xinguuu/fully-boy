@@ -1,5 +1,6 @@
 import { Server, Socket } from 'socket.io';
 import { WS_EVENTS } from '@xingu/shared';
+import { logger } from '@xingu/shared/logger';
 import { prisma } from '../config/database';
 import { roomStateService } from '../services/room-state.service';
 import { participantSessionService } from '../services/participant-session.service';
@@ -85,11 +86,11 @@ export function setupRoomHandlers(io: Server, socket: Socket) {
                 question: currentQuestion,
                 startedAt: state.currentQuestionStartedAt,
               });
-              console.log(`Sent current question ${state.currentQuestionIndex} to organizer (reconnection)`);
+              logger.info('Sent current question to organizer (reconnection)', { pin, questionIndex: state.currentQuestionIndex });
             }
           }
 
-          console.log(`Organizer (User ID: ${authSocket.user!.id}) joined room ${pin}`);
+          logger.info('Organizer joined room', { pin, userId: authSocket.user!.id });
           return;
         }
 
@@ -123,9 +124,12 @@ export function setupRoomHandlers(io: Server, socket: Socket) {
             sessionRestored = true;
             finalParticipantId = participantId;
 
-            console.log(
-              `Session restored for ${nickname} (ID: ${participantId}) - Score: ${session.score}, QuestionIndex: ${session.currentQuestionIndex}`
-            );
+            logger.info('Session restored for participant', {
+              nickname,
+              participantId,
+              score: session.score,
+              currentQuestionIndex: session.currentQuestionIndex,
+            });
           } else {
             // Session invalid or expired - generate new one
             finalParticipantId = generateParticipantId();
@@ -204,7 +208,7 @@ export function setupRoomHandlers(io: Server, socket: Socket) {
               question: currentQuestion,
               startedAt: state.currentQuestionStartedAt,
             });
-            console.log(`Sent current question ${state.currentQuestionIndex} to participant ${nickname} (reconnection)`);
+            logger.info('Sent current question to participant (reconnection)', { pin, questionIndex: state.currentQuestionIndex, nickname });
           }
         }
 
@@ -214,11 +218,14 @@ export function setupRoomHandlers(io: Server, socket: Socket) {
           playerCount: Object.keys(state.players).length,
         });
 
-        console.log(
-          `Participant ${nickname} (ID: ${finalParticipantId}) joined room ${pin} ${sessionRestored ? '[SESSION RESTORED]' : '[NEW]'}`
-        );
+        logger.info('Participant joined room', {
+          nickname,
+          participantId: finalParticipantId,
+          pin,
+          sessionRestored,
+        });
       } catch (error) {
-        console.error('Error joining room:', error);
+        logger.error('Error joining room', { error });
         socket.emit(WS_EVENTS.ERROR, {
           code: 'INTERNAL_ERROR',
           message: 'Internal server error',
@@ -241,11 +248,11 @@ export function setupRoomHandlers(io: Server, socket: Socket) {
             playerCount: Object.keys(state.players).length,
           });
 
-          console.log(`Player ${socket.id} left room ${pin}`);
+          logger.info('Player left room', { pin, socketId: socket.id });
         }
       }
     } catch (error) {
-      console.error('Error on disconnect:', error);
+      logger.error('Error on disconnect', { error });
     }
   });
 }

@@ -2,6 +2,7 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import { apiRateLimiter } from '@xingu/shared/middleware';
+import { logger } from '@xingu/shared/logger';
 import { disconnectRedis } from './config/redis';
 import { errorMiddleware, notFoundMiddleware } from './middleware/error.middleware';
 import templateRoutes from './routes/template.routes';
@@ -39,23 +40,23 @@ const port = process.env.PORT || 3002;
 
 async function startServer() {
   app.listen(port, () => {
-    console.log(`🚀 Template Service is running on: http://localhost:${port}`);
+    logger.info('Template Service started', { port });
   });
 }
 
 process.on('SIGTERM', async () => {
-  console.log('SIGTERM signal received: closing HTTP server');
+  logger.info('SIGTERM signal received', { message: 'closing HTTP server' });
   await disconnectRedis();
   process.exit(0);
 });
 
 process.on('SIGINT', async () => {
-  console.log('SIGINT signal received: closing HTTP server');
+  logger.info('SIGINT signal received', { message: 'closing HTTP server' });
   await disconnectRedis();
   process.exit(0);
 });
 
 startServer().catch((error) => {
-  console.error('Failed to start server:', error);
+  logger.error('Failed to start server', { error });
   process.exit(1);
 });

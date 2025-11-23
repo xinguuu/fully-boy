@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useSignup } from '@/lib/hooks/use-auth';
 import { Loader2 } from 'lucide-react';
+import { logger } from '@/lib/logger';
 
 const signupSchema = z.object({
   email: z.string().email('올바른 이메일 주소를 입력하세요'),
@@ -33,7 +34,7 @@ export default function SignupPage() {
       await signup.mutateAsync(data);
       router.push('/browse');
     } catch (error) {
-      console.error('Signup failed:', error);
+      logger.error('Signup failed:', error);
     }
   };
 

@@ -1,5 +1,6 @@
 import { Server, Socket } from 'socket.io';
 import { WS_EVENTS, parseQuestionData, getQuestionDuration, getQuestionType } from '@xingu/shared';
+import { logger } from '@xingu/shared/logger';
 import { prisma } from '../config/database';
 import { roomStateService } from '../services/room-state.service';
 import { participantSessionService } from '../services/participant-session.service';
@@ -99,16 +100,16 @@ export function setupGameHandlers(io: Server, socket: Socket) {
               question: firstQuestion,
               startedAt: firstQuestionState.currentQuestionStartedAt,
             });
-            console.log(`Game started in room ${pin} with question ${firstQuestionState.currentQuestionIndex}`);
+            logger.info('Game started in room with question', { pin, questionIndex: firstQuestionState.currentQuestionIndex });
           } else {
-            console.log(`Game started in room ${pin} but question ${firstQuestionState.currentQuestionIndex} not found`);
+            logger.warn('Game started but question not found', { pin, questionIndex: firstQuestionState.currentQuestionIndex });
           }
         }
       } else {
-        console.log(`Game started in room ${pin} (no questions)`);
+        logger.info('Game started in room (no questions)', { pin });
       }
     } catch (error) {
-      console.error('Error starting game:', error);
+      logger.error('Error starting game', { error });
       socket.emit(WS_EVENTS.ERROR, {
         code: 'INTERNAL_ERROR',
         message: 'Internal server error',
@@ -224,12 +225,9 @@ export function setupGameHandlers(io: Server, socket: Socket) {
             room: finalState,
           });
 
-          console.log(`Game ended in room ${pin}`);
+          logger.info('Game ended in room', { pin });
 
-          // Clean up room state after 5 minutes
-          setTimeout(async () => {
-            await roomStateService.deleteRoomState(pin);
-          }, 300000);
+          // Room state will be automatically cleaned up by Redis TTL (24 hours)
         }
         return;
       }
@@ -240,9 +238,9 @@ export function setupGameHandlers(io: Server, socket: Socket) {
         startedAt: updatedState.currentQuestionStartedAt,
       });
 
-      console.log(`Question ${updatedState.currentQuestionIndex} started in room ${pin}`);
+      logger.info('Question started in room', { pin, questionIndex: updatedState.currentQuestionIndex });
     } catch (error) {
-      console.error('Error advancing question:', error);
+      logger.error('Error advancing question', { error });
       socket.emit(WS_EVENTS.ERROR, {
         code: 'INTERNAL_ERROR',
         message: 'Internal server error',
@@ -407,13 +405,19 @@ export function setupGameHandlers(io: Server, socket: Socket) {
             (p) => p.answers[questionIndex] !== undefined,
           ).length;
 
-          console.log(
-            `Player ${player.nickname} answered question ${questionIndex} in room ${pin}: ${isCorrect ? 'CORRECT' : 'WRONG'} (+${scoreResult.points} pts) [${answeredCount}/${allPlayers.length} answered]`,
-          );
+          logger.info('Player answered question', {
+            pin,
+            questionIndex,
+            nickname: player.nickname,
+            isCorrect,
+            points: scoreResult.points,
+            answeredCount,
+            totalPlayers: allPlayers.length,
+          });
 
           // Auto-reveal answers when all participants have answered
           if (answeredCount === allPlayers.length && allPlayers.length > 0) {
-            console.log(`All players answered question ${questionIndex} in room ${pin}. Auto-revealing answers...`);
+            logger.info('All players answered question, auto-revealing answers', { pin, questionIndex });
 
             // Get question details for answer reveal
             const questionRoom = await prisma.room.findUnique({
@@ -435,7 +439,7 @@ export function setupGameHandlers(io: Server, socket: Socket) {
                 // Parse question data for type-safe access
                 const revealQuestionData = parseQuestionData(revealQuestion.data);
                 if (!revealQuestionData) {
-                  console.error(`Invalid question data at index ${questionIndex} in room ${pin}`);
+                  logger.error('Invalid question data', { pin, questionIndex });
                   return;
                 }
 
@@ -482,17 +486,21 @@ export function setupGameHandlers(io: Server, socket: Socket) {
                   },
                 });
 
-                console.log(`Question ${questionIndex} ended in room ${pin}, waiting for organizer to advance`);
+                logger.info('Question ended, waiting for organizer to advance', { pin, questionIndex });
               }
             }
           }
         } else {
-          console.log(
-            `Player ${player.nickname} answered question ${questionIndex} in room ${pin}: ${isCorrect ? 'CORRECT' : 'WRONG'} (+${scoreResult.points} pts)`,
-          );
+          logger.info('Player answered question', {
+            pin,
+            questionIndex,
+            nickname: player.nickname,
+            isCorrect,
+            points: scoreResult.points,
+          });
         }
       } catch (error) {
-        console.error('Error submitting answer:', error);
+        logger.error('Error submitting answer', { error });
         socket.emit(WS_EVENTS.ERROR, {
           code: 'INTERNAL_ERROR',
           message: 'Internal server error',
@@ -618,7 +626,7 @@ export function setupGameHandlers(io: Server, socket: Socket) {
         },
       });
 
-      console.log(`Question ${questionIndex} ended in room ${pin}`);
+      logger.info('Question ended in room', { pin, questionIndex });
 
       // Auto-advance to next question after 5 seconds (Kahoot-style)
       setTimeout(async () => {
@@ -635,7 +643,7 @@ export function setupGameHandlers(io: Server, socket: Socket) {
                 question: nextQuestion,
                 startedAt: nextState.currentQuestionStartedAt,
               });
-              console.log(`Auto-advanced to question ${nextState.currentQuestionIndex} in room ${pin}`);
+              logger.info('Auto-advanced to question', { pin, questionIndex: nextState.currentQuestionIndex });
             }
           }
         } else {
@@ -681,16 +689,14 @@ export function setupGameHandlers(io: Server, socket: Socket) {
               room: finalState,
             });
 
-            console.log(`Game auto-ended in room ${pin}`);
+            logger.info('Game auto-ended in room', { pin });
 
-            setTimeout(async () => {
-              await roomStateService.deleteRoomState(pin);
-            }, 300000);
+            // Room state will be automatically cleaned up by Redis TTL (24 hours)
           }
         }
       }, 5000);
     } catch (error) {
-      console.error('Error ending question:', error);
+      logger.error('Error ending question', { error });
       socket.emit(WS_EVENTS.ERROR, {
         code: 'INTERNAL_ERROR',
         message: 'Internal server error',
@@ -771,13 +777,11 @@ export function setupGameHandlers(io: Server, socket: Socket) {
         room: updatedState,
       });
 
-      console.log(`Game ended in room ${pin}`);
+      logger.info('Game ended in room', { pin });
 
-      setTimeout(async () => {
-        await roomStateService.deleteRoomState(pin);
-      }, 300000);
+      // Room state will be automatically cleaned up by Redis TTL (24 hours)
     } catch (error) {
-      console.error('Error ending game:', error);
+      logger.error('Error ending game', { error });
       socket.emit(WS_EVENTS.ERROR, {
         code: 'INTERNAL_ERROR',
         message: 'Internal server error',

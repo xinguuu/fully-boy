@@ -1,4 +1,5 @@
 import Redis from 'ioredis';
+import { logger } from '@xingu/shared/logger';
 
 export const redis = new Redis({
   host: process.env.REDIS_HOST || 'localhost',
@@ -22,22 +23,22 @@ export const redisSub = new Redis({
 });
 
 redis.on('connect', () => {
-  console.log('✅ Redis connected');
+  logger.info('Redis connected');
 });
 
 redis.on('error', (error) => {
-  console.error('❌ Redis connection error:', error);
+  logger.error('Redis connection error', { error });
 });
 
 redisPub.on('connect', () => {
-  console.log('✅ Redis Pub connected');
+  logger.info('Redis Pub connected');
 });
 
 redisSub.on('connect', () => {
-  console.log('✅ Redis Sub connected');
+  logger.info('Redis Sub connected');
 });
 
 export async function disconnectRedis() {
   await Promise.all([redis.quit(), redisPub.quit(), redisSub.quit()]);
-  console.log('✅ Redis disconnected');
+  logger.info('Redis disconnected');
 }

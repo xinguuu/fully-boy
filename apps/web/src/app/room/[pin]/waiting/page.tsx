@@ -5,6 +5,7 @@ import { useGameSocket, useAuth } from '@/lib/hooks';
 import { useEffect, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { STORAGE_KEYS } from '@/lib/constants/storage';
+import { logger } from '@/lib/logger';
 
 export default function WaitingRoomPage() {
   const params = useParams();
@@ -112,7 +113,7 @@ export default function WaitingRoomPage() {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
-      console.error('Failed to copy PIN:', err);
+      logger.error('Failed to copy PIN:', err);
     }
   };
 

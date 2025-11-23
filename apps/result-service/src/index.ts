@@ -2,6 +2,7 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import { apiRateLimiter } from '@xingu/shared/middleware';
+import { logger } from '@xingu/shared/logger';
 import { connectDatabase, disconnectDatabase } from './config/database';
 import { disconnectRedis } from './config/redis';
 import { errorMiddleware, notFoundMiddleware } from './middleware/error.middleware';
@@ -42,25 +43,25 @@ async function startServer() {
   await connectDatabase();
 
   app.listen(port, () => {
-    console.log(`🚀 Result Service is running on: http://localhost:${port}`);
+    logger.info('Result Service started', { port });
   });
 }
 
 process.on('SIGTERM', async () => {
-  console.log('SIGTERM signal received: closing HTTP server');
+  logger.info('SIGTERM signal received', { message: 'closing HTTP server' });
   await disconnectDatabase();
   await disconnectRedis();
   process.exit(0);
 });
 
 process.on('SIGINT', async () => {
-  console.log('SIGINT signal received: closing HTTP server');
+  logger.info('SIGINT signal received', { message: 'closing HTTP server' });
   await disconnectDatabase();
   await disconnectRedis();
   process.exit(0);
 });
 
 startServer().catch((error) => {
-  console.error('Failed to start server:', error);
+  logger.error('Failed to start server', { error });
   process.exit(1);
 });

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { logger } from '@/lib/logger';
 
 export default function HomePage() {
   const router = useRouter();
@@ -9,7 +10,7 @@ export default function HomePage() {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleCreateGame = () => {
-    console.log('게임 만들기 버튼 클릭');
+    logger.debug('게임 만들기 버튼 클릭');
     const accessToken = localStorage.getItem('access_token');
     if (accessToken) {
       router.push('/browse');
@@ -27,7 +28,7 @@ export default function HomePage() {
     }
 
     setIsLoading(true);
-    console.log('입장하기 클릭, PIN:', pin);
+    logger.debug('입장하기 클릭, PIN:', pin);
 
     setTimeout(() => {
       router.push(`/room/${pin}`);

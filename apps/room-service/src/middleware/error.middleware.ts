@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import { logger } from '@xingu/shared/logger';
 
 export class AppError extends Error {
   constructor(
@@ -60,7 +61,7 @@ export function errorMiddleware(
     return;
   }
 
-  console.error('Unexpected error:', error);
+  logger.error('Unexpected error', { error });
 
   res.status(500).json({
     statusCode: 500,

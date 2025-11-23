@@ -16,7 +16,7 @@ const CACHE_PREFIX = {
 };
 
 export class TemplateService {
-  async getTemplates(query: TemplateListQuery): Promise<TemplateListResponse> {
+  async getTemplates(query: TemplateListQuery, userId?: string): Promise<TemplateListResponse> {
     const {
       gameType,
       category,
@@ -29,7 +29,8 @@ export class TemplateService {
 
     const cacheKey = `${CACHE_PREFIX.LIST}:${JSON.stringify(query)}`;
 
-    const cached = await redis.get(cacheKey);
+    // Skip cache if userId is provided (isFavorite is user-specific)
+    const cached = !userId ? await redis.get(cacheKey) : null;
     if (cached) {
       return JSON.parse(cached);
     }
@@ -62,6 +63,12 @@ export class TemplateService {
           _count: {
             select: { questions: true },
           },
+          favorites: userId
+            ? {
+                where: { userId },
+                select: { id: true },
+              }
+            : false,
         },
         orderBy: { [sortBy]: order },
         skip: offset,
@@ -71,16 +78,23 @@ export class TemplateService {
     ]);
 
     const result: TemplateListResponse = {
-      templates: templates.map((template) => ({
-        ...template,
-        questionCount: template._count.questions,
-      })) as TemplateListItem[],
+      templates: templates.map((template) => {
+        const { favorites, ...rest } = template as typeof template & { favorites?: { id: string }[] };
+        return {
+          ...rest,
+          questionCount: template._count.questions,
+          ...(userId && { isFavorite: favorites && favorites.length > 0 }),
+        };
+      }) as TemplateListItem[],
       total,
       limit,
       offset,
     };
 
-    await redis.setex(cacheKey, REDIS_TTL.TEMPLATE_CACHE, JSON.stringify(result));
+    // Only cache if no userId (generic list)
+    if (!userId) {
+      await redis.setex(cacheKey, REDIS_TTL.TEMPLATE_CACHE, JSON.stringify(result));
+    }
 
     return result;
   }

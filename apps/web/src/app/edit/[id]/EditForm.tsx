@@ -8,6 +8,7 @@ import { ArrowLeft, Trash2, Plus, Settings, Zap } from 'lucide-react';
 import { SettingsModal } from '@/components/edit/SettingsModal';
 import { BulkSettingsModal } from '@/components/edit/BulkSettingsModal';
 import { QuestionEditPanel } from '@/components/edit/QuestionEditPanel';
+import { logger } from '@/lib/logger';
 
 type GameWithQuestions = Game & {
   questions: Question[];
@@ -153,7 +154,7 @@ export default function EditForm() {
       }
       router.push('/browse');
     } catch (error) {
-      console.error('Failed to save game:', error);
+      logger.error('Failed to save game:', error);
       alert('게임 저장에 실패했습니다. 다시 시도해주세요.');
     }
   };
@@ -214,7 +215,7 @@ export default function EditForm() {
 
       router.push(`/room/${room.pin}/waiting`);
     } catch (error) {
-      console.error('Failed to save and create room:', error);
+      logger.error('Failed to save and create room:', error);
       alert('게임 저장 또는 방 생성에 실패했습니다. 다시 시도해주세요.');
     }
   };

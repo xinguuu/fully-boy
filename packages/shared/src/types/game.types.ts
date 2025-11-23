@@ -36,6 +36,8 @@ export interface Game {
   needsMobile: boolean;
   playCount: number;
   favoriteCount: number;
+  questionCount?: number;
+  isFavorite?: boolean;
   settings: Record<string, unknown>;
   sessionSettings?: Record<string, unknown>;
   userId: string | null;

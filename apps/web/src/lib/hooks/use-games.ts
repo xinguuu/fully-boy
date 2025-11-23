@@ -1,10 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { gamesApi, type CreateGameRequest, type UpdateGameRequest } from '../api/games';
 
-export function useGames() {
+interface UseGamesOptions {
+  enabled?: boolean;
+}
+
+export function useGames(options?: UseGamesOptions) {
   return useQuery({
     queryKey: ['games'],
     queryFn: gamesApi.getMyGames,
+    ...options,
   });
 }
 
@@ -65,6 +70,7 @@ export function useAddFavorite() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['favoriteIds'] });
       queryClient.invalidateQueries({ queryKey: ['games'] });
+      queryClient.invalidateQueries({ queryKey: ['templates'] });
     },
   });
 }
@@ -77,6 +83,7 @@ export function useRemoveFavorite() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['favoriteIds'] });
       queryClient.invalidateQueries({ queryKey: ['games'] });
+      queryClient.invalidateQueries({ queryKey: ['templates'] });
     },
   });
 }

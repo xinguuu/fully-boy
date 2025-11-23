@@ -5,14 +5,30 @@ import { NotFoundError, ForbiddenError } from '../middleware/error.middleware';
 
 export class GameService {
   async getMyGames(userId: string) {
-    return prisma.game.findMany({
+    const games = await prisma.game.findMany({
       where: { userId },
       include: {
         questions: {
           orderBy: { order: 'asc' },
         },
+        favorites: {
+          where: { userId },
+          select: { id: true },
+        },
+        _count: {
+          select: { questions: true },
+        },
       },
       orderBy: { updatedAt: 'desc' },
+    });
+
+    return games.map((game) => {
+      const { favorites, ...rest } = game;
+      return {
+        ...rest,
+        questionCount: game._count.questions,
+        isFavorite: favorites.length > 0,
+      };
     });
   }
 
@@ -78,8 +94,10 @@ export class GameService {
   }
 
   async updateGame(gameId: string, userId: string, dto: UpdateGameDto) {
+    // Fetch game with existing questions
     const game = await prisma.game.findUnique({
       where: { id: gameId },
+      include: { questions: true },
     });
 
     if (!game) {
@@ -92,45 +110,87 @@ export class GameService {
 
     const { questions, settings, sessionSettings, ...gameData } = dto;
 
-    const updateData: Prisma.GameUpdateInput = {
-      ...gameData,
-      ...(settings && { settings: settings as Prisma.InputJsonValue }),
-      ...(sessionSettings && { sessionSettings: sessionSettings as Prisma.InputJsonValue }),
-    };
-
+    // If questions are being updated, use upsert pattern
     if (questions) {
-      await prisma.question.deleteMany({
-        where: { gameId },
-      });
+      const existingQuestions = game.questions;
+      const existingIds = new Set(existingQuestions.map((q) => q.id));
+      const incomingIds = new Set(questions.filter((q) => q.id).map((q) => q.id!));
 
-      const questionsData = questions.map((q) => ({
-        ...q,
-        data: q.data as Prisma.InputJsonValue,
-      }));
+      // 1. Questions to delete (exist in DB but not in incoming)
+      const toDelete = existingQuestions
+        .filter((q) => !incomingIds.has(q.id))
+        .map((q) => q.id);
 
-      return prisma.game.update({
-        where: { id: gameId },
-        data: {
-          ...updateData,
-          questions: {
-            create: questionsData,
+      // 2. Questions to create (no ID)
+      const toCreate = questions.filter((q) => !q.id);
+
+      // 3. Questions to update (have ID and exist in DB)
+      const toUpdate = questions.filter((q) => q.id && existingIds.has(q.id));
+
+      // Execute in transaction for atomicity
+      return await prisma.$transaction(async (tx) => {
+        // Delete removed questions
+        if (toDelete.length > 0) {
+          await tx.question.deleteMany({
+            where: { id: { in: toDelete } },
+          });
+        }
+
+        // Create new questions
+        if (toCreate.length > 0) {
+          await tx.question.createMany({
+            data: toCreate.map((q) => ({
+              gameId,
+              order: q.order,
+              content: q.content,
+              data: q.data as Prisma.InputJsonValue,
+              imageUrl: q.imageUrl,
+              videoUrl: q.videoUrl,
+              audioUrl: q.audioUrl,
+            })),
+          });
+        }
+
+        // Update existing questions
+        for (const q of toUpdate) {
+          await tx.question.update({
+            where: { id: q.id },
+            data: {
+              order: q.order,
+              content: q.content,
+              data: q.data as Prisma.InputJsonValue,
+              imageUrl: q.imageUrl,
+              videoUrl: q.videoUrl,
+              audioUrl: q.audioUrl,
+            },
+          });
+        }
+
+        // Update game metadata
+        return tx.game.update({
+          where: { id: gameId },
+          data: {
+            ...gameData,
+            ...(settings && { settings: settings as Prisma.InputJsonValue }),
+            ...(sessionSettings && { sessionSettings: sessionSettings as Prisma.InputJsonValue }),
           },
-        },
-        include: {
-          questions: {
-            orderBy: { order: 'asc' },
+          include: {
+            questions: { orderBy: { order: 'asc' } },
           },
-        },
+        });
       });
     }
 
+    // If no questions update, just update game metadata
     return prisma.game.update({
       where: { id: gameId },
-      data: updateData,
+      data: {
+        ...gameData,
+        ...(settings && { settings: settings as Prisma.InputJsonValue }),
+        ...(sessionSettings && { sessionSettings: sessionSettings as Prisma.InputJsonValue }),
+      },
       include: {
-        questions: {
-          orderBy: { order: 'asc' },
-        },
+        questions: { orderBy: { order: 'asc' } },
       },
     });
   }

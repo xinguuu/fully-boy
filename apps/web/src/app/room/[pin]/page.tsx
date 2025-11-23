@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/hooks';
 import { STORAGE_KEYS } from '@/lib/constants/storage';
 import { roomsApi } from '@/lib/api/rooms';
+import { logger } from '@/lib/logger';
 
 /**
  * Session Recovery & Redirect Page
@@ -29,7 +30,7 @@ export default function RoomEntryPage() {
 
         if (nickname && participantId) {
           // Participant with existing session → go to waiting/game (allow reconnection)
-          console.log(`[Session Recovery] Found participant session: ${nickname} (${participantId})`);
+          logger.debug(`[Session Recovery] Found participant session: ${nickname} (${participantId})`);
           router.push(`/room/${pin}/waiting`);
           return;
         }
@@ -37,7 +38,7 @@ export default function RoomEntryPage() {
         // Check if user is organizer (logged in)
         if (user) {
           // Organizer → go to waiting room (allow always)
-          console.log(`[Session Recovery] User is logged in, checking organizer status`);
+          logger.debug(`[Session Recovery] User is logged in, checking organizer status`);
           router.push(`/room/${pin}/waiting`);
           return;
         }
@@ -49,10 +50,10 @@ export default function RoomEntryPage() {
         }
 
         // No session, room is waiting → redirect to join page for nickname input
-        console.log(`[Session Recovery] No session found, redirecting to join page`);
+        logger.debug(`[Session Recovery] No session found, redirecting to join page`);
         router.push(`/room/${pin}/join`);
       } catch (err) {
-        console.error('[Session Recovery] Error checking room:', err);
+        logger.error('[Session Recovery] Error checking room:', err);
         setError('방을 찾을 수 없습니다. PIN 번호를 확인해주세요.');
       }
     };

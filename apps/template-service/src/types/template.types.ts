@@ -15,6 +15,7 @@ export interface TemplateListItem {
   playCount: number;
   favoriteCount: number;
   questionCount: number;
+  isFavorite?: boolean;
   createdAt: Date;
 }
 

@@ -2,6 +2,7 @@ import { io, Socket } from 'socket.io-client';
 import { WS_EVENTS } from '@xingu/shared';
 import type { EventPayloads, EventResponses } from './types';
 import { tokenManager } from '../auth/token-manager';
+import { logger } from '../logger';
 
 class WebSocketClient {
   private socket: Socket | null = null;
@@ -29,15 +30,15 @@ class WebSocketClient {
     });
 
     this.socket.on('connect', () => {
-      console.log('[WebSocket] Connected:', this.socket?.id);
+      logger.debug('[WebSocket] Connected:', this.socket?.id);
     });
 
     this.socket.on('disconnect', (reason) => {
-      console.log('[WebSocket] Disconnected:', reason);
+      logger.debug('[WebSocket] Disconnected:', reason);
     });
 
     this.socket.on('connect_error', (error) => {
-      console.error('[WebSocket] Connection error:', error);
+      logger.error('[WebSocket] Connection error:', error);
     });
 
     return this.socket;
@@ -47,7 +48,7 @@ class WebSocketClient {
     if (this.socket) {
       this.socket.disconnect();
       this.socket = null;
-      console.log('[WebSocket] Disconnected manually');
+      logger.debug('[WebSocket] Disconnected manually');
     }
   }
 
@@ -56,7 +57,7 @@ class WebSocketClient {
     payload: EventPayloads[E]
   ): void {
     if (!this.socket?.connected) {
-      console.error('[WebSocket] Not connected. Cannot emit event:', event);
+      logger.error('[WebSocket] Not connected. Cannot emit event:', event);
       return;
     }
     this.socket.emit(event, payload);
@@ -67,7 +68,7 @@ class WebSocketClient {
     callback: (data: EventResponses[E]) => void
   ): void {
     if (!this.socket) {
-      console.error('[WebSocket] Socket not initialized');
+      logger.error('[WebSocket] Socket not initialized');
       return;
     }
     this.socket.on(event as string, callback);

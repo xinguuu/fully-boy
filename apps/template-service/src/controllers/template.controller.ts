@@ -46,7 +46,8 @@ export class TemplateController {
       ...(order && { order: order as 'asc' | 'desc' }),
     };
 
-    const result = await templateService.getTemplates(query);
+    const userId = req.user?.id;
+    const result = await templateService.getTemplates(query, userId);
 
     res.status(200).json(result);
   }

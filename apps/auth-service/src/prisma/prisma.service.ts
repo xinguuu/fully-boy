@@ -1,6 +1,7 @@
 import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 import { DB_CONFIG } from '@xingu/shared';
+import { logger } from '@xingu/shared/logger';
 
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
@@ -26,18 +27,22 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
     while (attempts < maxRetries) {
       try {
         await this.$connect();
-        console.log('✅ Prisma connected to database');
+        logger.info('Prisma connected to database');
         return;
       } catch (error) {
         attempts++;
-        console.error(`❌ Database connection failed (attempt ${attempts}/${maxRetries}):`, error instanceof Error ? error.message : error);
-        
+        logger.error('Database connection failed', {
+          attempt: attempts,
+          maxRetries,
+          error: error instanceof Error ? error.message : error
+        });
+
         if (attempts >= maxRetries) {
-          console.error('❌ Max database connection retries reached. Exiting...');
+          logger.error('Max database connection retries reached', { message: 'Exiting' });
           process.exit(1);
         }
-        
-        console.log(`⏳ Retrying in ${retryDelay / 1000} seconds...`);
+
+        logger.info('Retrying database connection', { delaySeconds: retryDelay / 1000 });
         await this.delay(retryDelay);
       }
     }
@@ -45,6 +50,6 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
 
   async onModuleDestroy() {
     await this.$disconnect();
-    console.log('✅ Prisma disconnected from database');
+    logger.info('Prisma disconnected from database');
   }
 }

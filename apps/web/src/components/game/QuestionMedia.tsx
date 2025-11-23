@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import Image from 'next/image';
+import { logger } from '@/lib/logger';
 
 interface QuestionMediaProps {
   imageUrl?: string | null;
@@ -22,7 +23,7 @@ export function QuestionMedia({
   useEffect(() => {
     if (autoPlay && audioRef.current) {
       audioRef.current.play().catch((error) => {
-        console.error('Audio autoplay failed:', error);
+        logger.error('Audio autoplay failed:', error);
       });
     }
   }, [audioUrl, autoPlay]);
@@ -30,7 +31,7 @@ export function QuestionMedia({
   useEffect(() => {
     if (autoPlay && videoRef.current) {
       videoRef.current.play().catch((error) => {
-        console.error('Video autoplay failed:', error);
+        logger.error('Video autoplay failed:', error);
       });
     }
   }, [videoUrl, autoPlay]);

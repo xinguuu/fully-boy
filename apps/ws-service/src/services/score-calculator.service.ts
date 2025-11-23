@@ -4,6 +4,7 @@ import {
   type ScoreCalculationOptions,
   type ScoreResult,
 } from '@xingu/shared';
+import { logger } from '@xingu/shared/logger';
 
 /**
  * Score Calculator Service (Plugin-based)
@@ -54,7 +55,7 @@ export class ScoreCalculatorService {
     const questionData = parseQuestionData(question.data);
 
     if (!questionData) {
-      console.warn('Invalid or missing question data:', question.data);
+      logger.warn('Invalid or missing question data', { data: question.data });
       return false;
     }
 
@@ -62,18 +63,15 @@ export class ScoreCalculatorService {
     const plugin = gameTypeRegistry.get(questionType);
 
     if (!plugin) {
-      console.warn(
-        `No plugin registered for question type: "${questionType}". ` +
-          `Available types: ${gameTypeRegistry.getAllTypes().join(', ')}`
-      );
+      logger.warn('No plugin registered for question type', {
+        questionType,
+        availableTypes: gameTypeRegistry.getAllTypes(),
+      });
       return false;
     }
 
     if (!plugin.checkAnswer) {
-      console.warn(
-        `Plugin for question type "${questionType}" does not support answer checking. ` +
-          `This might be a party game plugin.`
-      );
+      logger.warn('Plugin does not support answer checking', { questionType });
       return false;
     }
 

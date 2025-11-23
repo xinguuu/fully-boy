@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { WS_EVENTS } from '@xingu/shared';
 import { wsClient } from '../websocket/client';
 import { STORAGE_KEYS } from '../constants/storage';
+import { logger } from '../logger';
 import type {
   RoomState,
   Game,
@@ -145,7 +146,7 @@ export function useGameSocket({
         }
       }
 
-      console.log(`[JOINED_ROOM] Role: ${data.role}${data.participantId ? `, ParticipantID: ${data.participantId}` : ''}`);
+      logger.debug(`[JOINED_ROOM] Role: ${data.role}${data.participantId ? `, ParticipantID: ${data.participantId}` : ''}`);
     };
 
     const handleParticipantJoined = (data: { player: Player; playerCount: number }) => {
@@ -173,12 +174,12 @@ export function useGameSocket({
     };
 
     const handleGameStarted = (data: { room: RoomState }) => {
-      console.log('[GAME_STARTED]', data.room.status, 'questionIndex:', data.room.currentQuestionIndex);
+      logger.debug('[GAME_STARTED]', data.room.status, 'questionIndex:', data.room.currentQuestionIndex);
       setRoomState(data.room);
     };
 
     const handleQuestionStarted = (data: { questionIndex: number; question: Question; startedAt?: Date | string }) => {
-      console.log('[QUESTION_STARTED]', 'questionIndex:', data.questionIndex, 'question:', data.question?.content, 'startedAt:', data.startedAt);
+      logger.debug('[QUESTION_STARTED]', 'questionIndex:', data.questionIndex, 'question:', data.question?.content, 'startedAt:', data.startedAt);
       setCurrentQuestion(data.question);
       setCurrentQuestionStartedAt(data.startedAt || null);
       setRoomState((prev) => {
@@ -202,7 +203,7 @@ export function useGameSocket({
       playerNickname: string;
       questionIndex: number;
     }) => {
-      console.log(`${data.playerNickname} submitted answer for Q${data.questionIndex + 1}`);
+      logger.debug(`${data.playerNickname} submitted answer for Q${data.questionIndex + 1}`);
     };
 
     const handleQuestionEnded = (data: {
@@ -266,12 +267,12 @@ export function useGameSocket({
           currentQuestionIndex: data.currentQuestionIndex,
         };
       });
-      console.log('[Session Restored]', data.message, `ParticipantID: ${data.participantId}, Score: ${data.score}, QuestionIndex: ${data.currentQuestionIndex}`);
+      logger.debug('[Session Restored]', data.message, `ParticipantID: ${data.participantId}, Score: ${data.score}, QuestionIndex: ${data.currentQuestionIndex}`);
     };
 
     const handleError = (data: ErrorResponse) => {
       setError(data);
-      console.error('[WebSocket Error]', data.code, data.message);
+      logger.error('[WebSocket Error]', data.code, data.message);
     };
 
     socket.on('connect', handleConnect);

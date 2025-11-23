@@ -1,6 +1,7 @@
 import { Server, Socket } from 'socket.io';
 import { WS_EVENTS, REDIS_KEYS, REDIS_TTL, gameTypeRegistry } from '@xingu/shared';
 import type { SessionState, GameAction } from '@xingu/shared';
+import { logger } from '@xingu/shared/logger';
 import { redis } from '../config/redis';
 import { prisma } from '../config/database';
 import { AuthenticatedSocket } from '../middleware/ws-auth.middleware';
@@ -95,7 +96,7 @@ export function setupPartyGameHandlers(io: Server, socket: Socket) {
           session: updatedSession,
         });
       } catch (error) {
-        console.error('Error processing game action:', error);
+        logger.error('Error processing game action', { error, pin: data.pin });
         socket.emit(WS_EVENTS.ERROR, {
           code: 'ACTION_FAILED',
           message: error instanceof Error ? error.message : 'Failed to process action',
@@ -163,7 +164,7 @@ export function setupPartyGameHandlers(io: Server, socket: Socket) {
         session: updatedSession,
       });
     } catch (error) {
-      console.error('Error advancing phase:', error);
+      logger.error('Error advancing phase', { error, pin: data.pin });
       socket.emit(WS_EVENTS.ERROR, {
         code: 'PHASE_ADVANCE_FAILED',
         message: error instanceof Error ? error.message : 'Failed to advance phase',

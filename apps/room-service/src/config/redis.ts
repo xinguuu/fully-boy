@@ -1,4 +1,5 @@
 import Redis from 'ioredis';
+import { logger } from '@xingu/shared/logger';
 
 export const redis = new Redis({
   host: process.env.REDIS_HOST || 'localhost',
@@ -8,14 +9,14 @@ export const redis = new Redis({
 });
 
 redis.on('connect', () => {
-  console.log('✅ Redis connected');
+  logger.info('Redis connected');
 });
 
 redis.on('error', (error) => {
-  console.error('❌ Redis connection error:', error);
+  logger.error('Redis connection error', { error });
 });
 
 export async function disconnectRedis() {
   await redis.quit();
-  console.log('✅ Redis disconnected');
+  logger.info('Redis disconnected');
 }

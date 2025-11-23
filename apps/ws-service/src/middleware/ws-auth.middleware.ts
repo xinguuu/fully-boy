@@ -1,6 +1,7 @@
 import { Socket } from 'socket.io';
 import jwt from 'jsonwebtoken';
 import type { AuthenticatedUser } from '@xingu/shared';
+import { logger } from '@xingu/shared/logger';
 
 export interface AuthenticatedSocket extends Socket {
   user?: AuthenticatedUser;
@@ -30,7 +31,7 @@ export const wsAuthMiddleware = (socket: AuthenticatedSocket, next: (err?: Error
 
     next();
   } catch (error) {
-    console.error('WebSocket JWT verification failed:', error);
+    logger.error('WebSocket JWT verification failed', { error });
     socket.user = undefined;
     next();
   }

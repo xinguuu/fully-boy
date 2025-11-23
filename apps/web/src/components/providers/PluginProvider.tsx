@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { registerFrontendPlugins } from '@/lib/plugins/game-types';
+import { logger } from '@/lib/logger';
 
 /**
  * Plugin Provider Component
@@ -19,7 +20,7 @@ export function PluginProvider({ children }: { children: React.ReactNode }) {
       registerFrontendPlugins();
       setIsReady(true);
     } catch (error) {
-      console.error('Failed to register frontend plugins:', error);
+      logger.error('Failed to register frontend plugins:', error);
       // Still set ready to prevent infinite loading, but log error
       setIsReady(true);
     }

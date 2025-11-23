@@ -3,6 +3,7 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import { createAdapter } from '@socket.io/redis-adapter';
 import { WS_EVENTS, registerBuiltInPlugins } from '@xingu/shared';
+import { logger } from '@xingu/shared/logger';
 import * as Sentry from '@sentry/node';
 import { connectDatabase, disconnectDatabase } from './config/database';
 import { redisPub, redisSub, disconnectRedis } from './config/redis';
@@ -26,13 +27,13 @@ const missingPlugins: string[] = [];
 requiredPlugins.forEach((type) => {
   if (!gameTypeRegistry.has(type)) {
     missingPlugins.push(type);
-    console.error(`❌ CRITICAL: Required plugin "${type}" is not registered`);
+    logger.error('Required plugin not registered', { type });
   }
 });
 
 if (missingPlugins.length > 0) {
   const errorMsg = `Failed to register required plugins: ${missingPlugins.join(', ')}`;
-  console.error(`❌ ${errorMsg}`);
+  logger.error(errorMsg, { missingPlugins });
   Sentry.captureException(new Error(errorMsg), {
     level: 'fatal',
     tags: { component: 'plugin-initialization' },
@@ -40,7 +41,7 @@ if (missingPlugins.length > 0) {
   process.exit(1);
 }
 
-console.log(`✅ Built-in game type plugins registered: ${requiredPlugins.join(', ')}`);
+logger.info('Built-in game type plugins registered', { plugins: requiredPlugins });
 
 const httpServer = createServer((req, res) => {
   if (req.url === '/health' && req.method === 'GET') {
@@ -62,18 +63,18 @@ io.use(wsAuthMiddleware);
 
 // Capture Socket.io server errors
 io.on('error', (error) => {
-  console.error('Socket.io server error:', error);
+  logger.error('Socket.io server error', { error });
   Sentry.captureException(error, {
     tags: { component: 'socket.io-server' },
   });
 });
 
 io.on(WS_EVENTS.CONNECTION, (socket) => {
-  console.log(`Client connected: ${socket.id}`);
+  logger.info('Client connected', { socketId: socket.id });
 
   // Capture socket connection errors
   socket.on('error', (error) => {
-    console.error(`Socket error [${socket.id}]:`, error);
+    logger.error('Socket error', { socketId: socket.id, error });
     Sentry.captureException(error, {
       tags: {
         component: 'socket-connection',
@@ -115,32 +116,32 @@ async function startServer() {
   await connectDatabase();
 
   httpServer.listen(port, () => {
-    console.log(`🚀 WebSocket Service is running on: http://localhost:${port}`);
+    logger.info('WebSocket Service is running', { port, url: `http://localhost:${port}` });
   });
 }
 
 process.on('SIGTERM', async () => {
-  console.log('SIGTERM signal received: closing server');
+  logger.info('SIGTERM signal received: closing server');
   await disconnectDatabase();
   await disconnectRedis();
   httpServer.close(() => {
-    console.log('Server closed');
+    logger.info('Server closed');
     process.exit(0);
   });
 });
 
 process.on('SIGINT', async () => {
-  console.log('SIGINT signal received: closing server');
+  logger.info('SIGINT signal received: closing server');
   await disconnectDatabase();
   await disconnectRedis();
   httpServer.close(() => {
-    console.log('Server closed');
+    logger.info('Server closed');
     process.exit(0);
   });
 });
 
 startServer().catch((error) => {
-  console.error('Failed to start server:', error);
+  logger.error('Failed to start server', { error });
   Sentry.captureException(error, {
     tags: { component: 'server-startup' },
     level: 'fatal',

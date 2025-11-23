@@ -1,5 +1,6 @@
 import * as Sentry from '@sentry/node';
 import { nodeProfilingIntegration } from '@sentry/profiling-node';
+import { logger } from '@xingu/shared/logger';
 
 export function initSentry(serviceName: string) {
   if (process.env.NODE_ENV === 'production' && process.env.SENTRY_DSN) {
@@ -22,8 +23,8 @@ export function initSentry(serviceName: string) {
     });
 
     Sentry.setTag('service', serviceName);
-    console.log(`✅ Sentry initialized for ${serviceName}`);
+    logger.info('Sentry initialized', { serviceName });
   } else {
-    console.log(`ℹ️  Sentry not initialized (NODE_ENV=${process.env.NODE_ENV})`);
+    logger.info('Sentry not initialized', { nodeEnv: process.env.NODE_ENV });
   }
 }

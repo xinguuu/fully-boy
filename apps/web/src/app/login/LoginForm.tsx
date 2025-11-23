@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useLogin } from '@/lib/hooks/use-auth';
 import { Loader2 } from 'lucide-react';
+import { logger } from '@/lib/logger';
 
 const loginSchema = z.object({
   email: z.string().email('올바른 이메일 주소를 입력하세요'),
@@ -34,7 +35,7 @@ export default function LoginForm() {
       await login.mutateAsync(data);
       router.push(redirectTo);
     } catch (error) {
-      console.error('Login failed:', error);
+      logger.error('Login failed:', error);
     }
   };
 

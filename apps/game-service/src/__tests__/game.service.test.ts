@@ -14,7 +14,10 @@ vi.mock('../config/database', () => ({
     },
     question: {
       deleteMany: vi.fn(),
+      createMany: vi.fn(),
+      update: vi.fn(),
     },
+    $transaction: vi.fn(),
   },
   connectDatabase: vi.fn(),
   disconnectDatabase: vi.fn(),
@@ -286,6 +289,14 @@ describe('GameService', () => {
       const mockGame = {
         id: mockGameId,
         userId: mockUserId,
+        questions: [
+          {
+            id: 'question-1',
+            order: 0,
+            content: 'Old question',
+            data: { choices: ['A', 'B'], correctAnswer: 0 },
+          },
+        ],
       };
 
       const mockUpdatedGame = {
@@ -294,14 +305,19 @@ describe('GameService', () => {
       };
 
       vi.mocked(prisma.game.findUnique).mockResolvedValue(mockGame as any);
+
+      // Mock transaction
+      vi.mocked(prisma.$transaction).mockImplementation(async (callback: any) => {
+        return callback(prisma);
+      });
+
       vi.mocked(prisma.question.deleteMany).mockResolvedValue({ count: 1 } as any);
+      vi.mocked(prisma.question.createMany).mockResolvedValue({ count: 1 } as any);
       vi.mocked(prisma.game.update).mockResolvedValue(mockUpdatedGame as any);
 
       const result = await gameService.updateGame(mockGameId, mockUserId, updateDto);
 
-      expect(prisma.question.deleteMany).toHaveBeenCalledWith({
-        where: { gameId: mockGameId },
-      });
+      expect(prisma.$transaction).toHaveBeenCalled();
       expect(result).toEqual(mockUpdatedGame);
     });
   });

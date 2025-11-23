@@ -2,6 +2,7 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import { apiRateLimiter } from '@xingu/shared/middleware';
+import { logger } from '@xingu/shared/logger';
 import { connectDatabase, disconnectDatabase } from './config/database';
 import { disconnectRedis } from './config/redis';
 import { errorMiddleware, notFoundMiddleware } from './middleware/error.middleware';
@@ -9,8 +10,10 @@ import gameRoutes from './routes/game.routes';
 import { initSentry } from './config/sentry.config';
 import * as Sentry from '@sentry/node';
 
-console.log('🔍 [DEBUG] JWT_SECRET loaded:', process.env.JWT_SECRET ? 'YES ✅' : 'NO ❌');
-console.log('🔍 [DEBUG] DATABASE_URL loaded:', process.env.DATABASE_URL ? 'YES ✅' : 'NO ❌');
+logger.info('Environment variables loaded', {
+  jwtSecretLoaded: !!process.env.JWT_SECRET,
+  databaseUrlLoaded: !!process.env.DATABASE_URL
+});
 
 const app = express();
 
@@ -45,25 +48,25 @@ async function startServer() {
   await connectDatabase();
 
   app.listen(port, () => {
-    console.log(`🚀 Game Service is running on: http://localhost:${port}`);
+    logger.info('Game Service started', { port });
   });
 }
 
 process.on('SIGTERM', async () => {
-  console.log('SIGTERM signal received: closing HTTP server');
+  logger.info('SIGTERM signal received', { message: 'closing HTTP server' });
   await disconnectDatabase();
   await disconnectRedis();
   process.exit(0);
 });
 
 process.on('SIGINT', async () => {
-  console.log('SIGINT signal received: closing HTTP server');
+  logger.info('SIGINT signal received', { message: 'closing HTTP server' });
   await disconnectDatabase();
   await disconnectRedis();
   process.exit(0);
 });
 
 startServer().catch((error) => {
-  console.error('Failed to start server:', error);
+  logger.error('Failed to start server', { error });
   process.exit(1);
 });

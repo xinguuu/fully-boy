@@ -4,6 +4,7 @@ import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { SentryExceptionFilter } from './filters/sentry-exception.filter';
 import { initSentry } from './config/sentry.config';
+import { logger } from '@xingu/shared/logger';
 
 async function bootstrap() {
   // Initialize Sentry FIRST
@@ -27,7 +28,7 @@ async function bootstrap() {
   const port = process.env.PORT || 3001;
   await app.listen(port);
 
-  console.log(`🚀 Auth Service is running on: http://localhost:${port}`);
+  logger.info('Auth Service started', { port });
 }
 
 bootstrap();
