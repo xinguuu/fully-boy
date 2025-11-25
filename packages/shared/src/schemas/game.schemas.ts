@@ -1,6 +1,49 @@
 import { z } from 'zod';
 import { GameType, Category } from '../types';
 
+// ==========================================
+// Media Settings Schema
+// ==========================================
+
+const cropAreaSchema = z.object({
+  x: z.number().min(0).max(100),
+  y: z.number().min(0).max(100),
+  width: z.number().min(0).max(100),
+  height: z.number().min(0).max(100),
+});
+
+const maskTypeSchema = z.enum(['none', 'blur', 'mosaic', 'spotlight']);
+
+const imageMediaSettingsSchema = z.object({
+  data: z.string().optional(), // Base64 (temporary)
+  cropArea: cropAreaSchema.optional(),
+  maskType: maskTypeSchema.optional(),
+  maskIntensity: z.number().min(0).max(100).optional(),
+});
+
+const audioMediaSettingsSchema = z.object({
+  data: z.string().optional(), // Base64 (temporary)
+  startTime: z.number().min(0).optional(),
+  endTime: z.number().min(0).optional(),
+});
+
+const videoMediaSettingsSchema = z.object({
+  data: z.string().optional(), // Base64 (temporary)
+  startTime: z.number().min(0).optional(),
+  endTime: z.number().min(0).optional(),
+  cropArea: cropAreaSchema.optional(),
+});
+
+const mediaSettingsSchema = z.object({
+  image: imageMediaSettingsSchema.optional(),
+  audio: audioMediaSettingsSchema.optional(),
+  video: videoMediaSettingsSchema.optional(),
+});
+
+// ==========================================
+// Game Schemas
+// ==========================================
+
 export const createGameSchema = z.object({
   templateId: z.string().cuid().optional(),
   title: z.string().min(1).max(200),
@@ -13,7 +56,7 @@ export const createGameSchema = z.object({
   needsMobile: z.boolean(),
   settings: z.object({
     timeLimit: z.number().int().min(5).max(300).optional(),
-    pointsPerCorrect: z.number().int().min(1).max(1000),
+    pointsPerCorrect: z.number().int().min(1).max(1000).optional().default(100),
     timeBonusEnabled: z.boolean().optional(),
     soundEnabled: z.boolean().optional(),
   }),
@@ -21,11 +64,12 @@ export const createGameSchema = z.object({
   questions: z
     .array(
       z.object({
-        order: z.number().int().min(1),
+        order: z.number().int().min(0),
         content: z.string().min(1).max(500),
         imageUrl: z.string().url().optional(),
         videoUrl: z.string().url().optional(),
         audioUrl: z.string().url().optional(),
+        mediaSettings: mediaSettingsSchema.optional(),
         data: z.record(z.any()),
       })
     )
@@ -38,15 +82,22 @@ export const updateGameSchema = createGameSchema
   .partial()
   .omit({ templateId: true })
   .extend({
+    settings: z.object({
+      timeLimit: z.number().int().min(5).max(300).optional(),
+      pointsPerCorrect: z.number().int().min(1).max(1000).optional(),
+      timeBonusEnabled: z.boolean().optional(),
+      soundEnabled: z.boolean().optional(),
+    }).optional(),
     questions: z
       .array(
         z.object({
           id: z.string().cuid().optional(), // Allow id for existing questions
-          order: z.number().int().min(1),
+          order: z.number().int().min(0),
           content: z.string().min(1).max(500),
           imageUrl: z.string().url().optional(),
           videoUrl: z.string().url().optional(),
           audioUrl: z.string().url().optional(),
+          mediaSettings: mediaSettingsSchema.optional(),
           data: z.record(z.any()),
         })
       )

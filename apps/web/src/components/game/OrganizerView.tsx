@@ -88,6 +88,7 @@ export function OrganizerView({
               imageUrl={currentQuestion.imageUrl}
               videoUrl={currentQuestion.videoUrl}
               audioUrl={currentQuestion.audioUrl}
+              mediaSettings={currentQuestion.mediaSettings}
               autoPlay={true}
             />
 

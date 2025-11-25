@@ -45,6 +45,71 @@ export interface Game {
   updatedAt: Date;
 }
 
+// ==========================================
+// Media Settings Types
+// ==========================================
+
+/**
+ * Crop area for image/video (percentage-based, 0-100)
+ */
+export interface CropArea {
+  x: number; // Left position (%)
+  y: number; // Top position (%)
+  width: number; // Width (%)
+  height: number; // Height (%)
+}
+
+/**
+ * Mask type for hiding parts of image
+ * - none: No mask, show full image
+ * - blur: Blur everything except crop area
+ * - mosaic: Pixelate everything except crop area
+ * - spotlight: Dark overlay with spotlight on crop area
+ */
+export type MaskType = 'none' | 'blur' | 'mosaic' | 'spotlight';
+
+/**
+ * Image media settings
+ */
+export interface ImageMediaSettings {
+  data?: string; // Base64 data (temporary, will migrate to S3 URL)
+  cropArea?: CropArea; // Area to show/highlight
+  maskType?: MaskType; // How to hide the rest
+  maskIntensity?: number; // 0-100, strength of blur/mosaic
+}
+
+/**
+ * Audio media settings
+ */
+export interface AudioMediaSettings {
+  data?: string; // Base64 data (temporary)
+  startTime?: number; // Start time in seconds
+  endTime?: number; // End time in seconds
+}
+
+/**
+ * Video media settings
+ */
+export interface VideoMediaSettings {
+  data?: string; // Base64 data (temporary)
+  startTime?: number; // Start time in seconds
+  endTime?: number; // End time in seconds
+  cropArea?: CropArea; // Optional crop for video
+}
+
+/**
+ * Combined media settings for a question
+ */
+export interface MediaSettings {
+  image?: ImageMediaSettings;
+  audio?: AudioMediaSettings;
+  video?: VideoMediaSettings;
+}
+
+// ==========================================
+// Question Types
+// ==========================================
+
 export interface Question {
   id: string;
   gameId: string;
@@ -54,6 +119,7 @@ export interface Question {
   imageUrl: string | null;
   videoUrl: string | null;
   audioUrl: string | null;
+  mediaSettings?: MediaSettings | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -113,6 +179,7 @@ export interface QuestionInput {
   imageUrl?: string;
   videoUrl?: string;
   audioUrl?: string;
+  mediaSettings?: MediaSettings;
 }
 
 /**

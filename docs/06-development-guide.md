@@ -1879,6 +1879,29 @@ model Question {
 
 ## 📝 Recent Changes
 
+### 2025-11-25
+
+**Media Editing System Implemented**:
+- ✅ Added `mediaSettings` JSON field to Question model (Prisma migration)
+- ✅ Created MediaSettings types: `CropArea`, `MaskType`, `ImageMediaSettings`, `AudioMediaSettings`, `VideoMediaSettings`
+- ✅ Added Zod validation schemas for media settings
+- ✅ Extended QuestionMedia component with:
+  - `MaskedImage`: blur/mosaic/spotlight effects for partial image reveal
+  - `RangeAudioPlayer`: startTime/endTime playback for music quiz
+  - `RangeVideoPlayer`: video clip playback with time range
+- ✅ Created MediaEditor component for edit page:
+  - Image: drag-to-select crop area, mask type selection, intensity slider
+  - Audio: time range input, quick presets (3s/5s/10s), preview playback
+  - Video: time range input, preview playback
+  - File upload with Base64 conversion
+- ✅ Integrated MediaEditor into QuestionEditPanel
+
+**Technical Debt (Pre-deployment Required)**:
+- ⚠️ Media files stored as Base64 in DB (temporary for development)
+- Must migrate to AWS S3 before production deployment
+
+---
+
 ### 2025-11-24
 
 **Game History System Completed**:
@@ -1917,7 +1940,7 @@ This includes:
 
 ---
 
-**Last Updated**: 2025-11-20
+**Last Updated**: 2025-11-25
 **Maintained By**: Claude AI Assistant
 
 **See Also**:

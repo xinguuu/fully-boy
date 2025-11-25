@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
+import { Toaster } from 'sonner';
 import { QueryProvider } from '@/lib/providers/query-provider';
 import { PluginProvider } from '@/components/providers/PluginProvider';
 import './globals.css';
@@ -52,6 +53,17 @@ export default function RootLayout({
         <PluginProvider>
           <QueryProvider>{children}</QueryProvider>
         </PluginProvider>
+        <Toaster
+          position="top-center"
+          toastOptions={{
+            style: {
+              background: 'white',
+              border: '1px solid #e5e7eb',
+              boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
+            },
+          }}
+          richColors
+        />
       </body>
     </html>
   );

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 import { logger } from '@/lib/logger';
 
 export default function HomePage() {
@@ -23,7 +24,7 @@ export default function HomePage() {
     e.preventDefault();
 
     if (pin.length !== 6) {
-      alert('6자리 PIN을 입력해주세요');
+      toast.error('6자리 PIN을 입력해주세요');
       return;
     }
 

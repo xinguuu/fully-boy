@@ -28,6 +28,7 @@ export default function GameHistoryPage() {
 
   const isLoading = authLoading || gameLoading || resultsLoading;
   const results = resultsData?.results || [];
+  const totalPlayCount = resultsData?.total || 0;
 
   if (isLoading) {
     return (
@@ -72,8 +73,7 @@ export default function GameHistoryPage() {
           <h2 className="text-3xl font-bold mb-2">{game.title}</h2>
           <p className="text-primary-50 mb-4">{game.description || '게임 설명이 없습니다'}</p>
           <div className="flex items-center gap-6 text-sm">
-            <span>📊 총 플레이: {results.length}번</span>
-            <span>🎮 총 플레이 횟수: {game.playCount || 0}회</span>
+            <span>🎮 총 플레이 횟수: {totalPlayCount}회</span>
           </div>
         </div>
 

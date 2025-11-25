@@ -125,10 +125,14 @@ model Question {
   content String
   data    Json
 
-  // Media
+  // Media URLs (external links or S3 URLs after migration)
   imageUrl String?
   videoUrl String?
   audioUrl String?
+
+  // Media settings (crop, mask, playback range, base64 data for dev)
+  // Structure: { image?: {...}, audio?: {...}, video?: {...} }
+  mediaSettings Json?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import * as React from 'react';
+import * as DropdownMenuPrimitive from '@radix-ui/react-dropdown-menu';
 import { ChevronDown } from 'lucide-react';
 
 export interface DropdownMenuItem {
@@ -14,14 +15,17 @@ export interface DropdownMenuItem {
 export interface DropdownMenuProps {
   trigger: React.ReactNode;
   items: DropdownMenuItem[];
-  align?: 'left' | 'right';
+  align?: 'start' | 'end' | 'left' | 'right';
   className?: string;
 }
 
 /**
- * DropdownMenu component - Custom dropdown menu with flexible trigger and items
+ * DropdownMenu component - Radix UI based dropdown with full accessibility
  *
- * Based on design-guide.md line 681-740
+ * Features:
+ * - Keyboard navigation (Arrow keys, Enter, Escape)
+ * - Screen reader support (ARIA attributes)
+ * - Focus management
  *
  * @example
  * ```tsx
@@ -40,88 +44,48 @@ export interface DropdownMenuProps {
  * />
  * ```
  */
-export function DropdownMenu({ trigger, items, align = 'right', className = '' }: DropdownMenuProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        setIsOpen(false);
-      }
-    };
-
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-      document.addEventListener('keydown', handleEscape);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('keydown', handleEscape);
-    };
-  }, [isOpen]);
-
-  const handleItemClick = (item: DropdownMenuItem) => {
-    item.onClick();
-    setIsOpen(false);
-  };
+export function DropdownMenu({ trigger, items, align = 'end', className = '' }: DropdownMenuProps) {
+  // Convert legacy 'left'/'right' to Radix 'start'/'end'
+  const radixAlign = align === 'left' ? 'start' : align === 'right' ? 'end' : align;
 
   return (
-    <div ref={dropdownRef} className={`relative ${className}`}>
-      {/* Trigger */}
-      <div onClick={() => setIsOpen(!isOpen)} className="cursor-pointer">
-        {trigger}
-      </div>
+    <DropdownMenuPrimitive.Root>
+      <DropdownMenuPrimitive.Trigger asChild>
+        <div className={`cursor-pointer ${className}`}>{trigger}</div>
+      </DropdownMenuPrimitive.Trigger>
 
-      {/* Dropdown Menu */}
-      {isOpen && (
-        <div
-          className={`
-            absolute top-full mt-2
-            w-48
-            bg-white dark:bg-dark-2
-            border border-gray-200 dark:border-dark-3
-            rounded-lg
-            shadow-xl
-            py-2
-            z-50
-            animate-slide-down
-            ${align === 'right' ? 'right-0' : 'left-0'}
-          `.trim().replace(/\s+/g, ' ')}
+      <DropdownMenuPrimitive.Portal>
+        <DropdownMenuPrimitive.Content
+          align={radixAlign}
+          sideOffset={8}
+          className="z-50 min-w-[12rem] overflow-hidden rounded-lg border border-gray-200 bg-white py-2 shadow-xl animate-in fade-in-0 zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2"
         >
           {items.map((item, index) => (
-            <div key={index}>
-              {item.separator && index > 0 && <div className="h-px bg-gray-200 dark:bg-dark-3 my-1" />}
-              <button
-                onClick={() => handleItemClick(item)}
+            <React.Fragment key={index}>
+              {item.separator && index > 0 && (
+                <DropdownMenuPrimitive.Separator className="h-px bg-gray-200 my-1" />
+              )}
+              <DropdownMenuPrimitive.Item
+                onClick={item.onClick}
                 className={`
-                  w-full px-4 py-2
-                  text-left text-sm
-                  flex items-center gap-2
-                  transition-colors
-                  cursor-pointer
+                  relative flex items-center gap-2 px-4 py-2 text-sm outline-none cursor-pointer
+                  transition-colors select-none
+                  data-[highlighted]:outline-none
                   ${
                     item.variant === 'danger'
-                      ? 'text-error hover:bg-error-light'
-                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-3'
+                      ? 'text-red-600 data-[highlighted]:bg-red-50'
+                      : 'text-gray-700 data-[highlighted]:bg-gray-100'
                   }
-                `.trim().replace(/\s+/g, ' ')}
+                `}
               >
                 {item.icon && <span className="flex-shrink-0">{item.icon}</span>}
                 <span>{item.label}</span>
-              </button>
-            </div>
+              </DropdownMenuPrimitive.Item>
+            </React.Fragment>
           ))}
-        </div>
-      )}
-    </div>
+        </DropdownMenuPrimitive.Content>
+      </DropdownMenuPrimitive.Portal>
+    </DropdownMenuPrimitive.Root>
   );
 }
 
@@ -143,13 +107,13 @@ export function DropdownButton({
   label,
   icon,
   items,
-  align = 'right',
+  align = 'end',
   className = '',
 }: {
   label: string;
   icon?: React.ReactNode;
   items: DropdownMenuItem[];
-  align?: 'left' | 'right';
+  align?: 'start' | 'end' | 'left' | 'right';
   className?: string;
 }) {
   return (

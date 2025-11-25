@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 import { STORAGE_KEYS } from '@/lib/constants/storage';
 import { INPUT_LIMITS } from '@/lib/constants/validation';
 
@@ -17,12 +18,12 @@ export default function JoinRoomPage() {
     e.preventDefault();
 
     if (!nickname.trim()) {
-      alert('닉네임을 입력해주세요');
+      toast.error('닉네임을 입력해주세요');
       return;
     }
 
     if (nickname.length > INPUT_LIMITS.NICKNAME) {
-      alert(`닉네임은 ${INPUT_LIMITS.NICKNAME}자 이하로 입력해주세요`);
+      toast.error(`닉네임은 ${INPUT_LIMITS.NICKNAME}자 이하로 입력해주세요`);
       return;
     }
 

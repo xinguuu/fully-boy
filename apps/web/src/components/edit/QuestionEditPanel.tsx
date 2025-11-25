@@ -4,7 +4,10 @@ import { useState, useEffect, useMemo } from 'react';
 import { Plus, Trash2, Check, Eye, EyeOff } from 'lucide-react';
 import { ParticipantView } from '@/components/game/ParticipantView';
 import { OrganizerView } from '@/components/game/OrganizerView';
+import { MediaEditor } from '@/components/edit/media';
+import { Select } from '@/components/ui';
 import type { Question, Player, LeaderboardEntry } from '@/lib/websocket/types';
+import type { MediaSettings } from '@xingu/shared';
 
 interface QuestionFormData {
   id?: string;
@@ -17,6 +20,9 @@ interface QuestionFormData {
     duration?: number;
   };
   imageUrl?: string;
+  videoUrl?: string;
+  audioUrl?: string;
+  mediaSettings?: MediaSettings;
 }
 
 interface QuestionEditPanelProps {
@@ -36,6 +42,12 @@ export function QuestionEditPanel({ question, questionNumber, onSave, onDelete, 
   const [showPreview, setShowPreview] = useState(false);
   const [previewMode, setPreviewMode] = useState<'participant' | 'organizer'>('participant');
 
+  // Media state
+  const [imageUrl, setImageUrl] = useState<string | undefined>();
+  const [videoUrl, setVideoUrl] = useState<string | undefined>();
+  const [audioUrl, setAudioUrl] = useState<string | undefined>();
+  const [mediaSettings, setMediaSettings] = useState<MediaSettings | undefined>();
+
   useEffect(() => {
     if (question) {
       setContent(question.content);
@@ -43,6 +55,11 @@ export function QuestionEditPanel({ question, questionNumber, onSave, onDelete, 
       setOptions(question.data.options || ['', '', '', '']);
       setCorrectAnswer(question.data.correctAnswer || '');
       setDuration(question.data.duration || 30);
+      // Media
+      setImageUrl(question.imageUrl);
+      setVideoUrl(question.videoUrl);
+      setAudioUrl(question.audioUrl);
+      setMediaSettings(question.mediaSettings);
     } else {
       // Reset for new question
       setContent('');
@@ -50,6 +67,11 @@ export function QuestionEditPanel({ question, questionNumber, onSave, onDelete, 
       setOptions(['', '', '', '']);
       setCorrectAnswer('');
       setDuration(30);
+      // Media
+      setImageUrl(undefined);
+      setVideoUrl(undefined);
+      setAudioUrl(undefined);
+      setMediaSettings(undefined);
     }
   }, [question]);
 
@@ -64,9 +86,24 @@ export function QuestionEditPanel({ question, questionNumber, onSave, onDelete, 
         correctAnswer,
         duration,
       },
-      imageUrl: question?.imageUrl,
+      imageUrl,
+      videoUrl,
+      audioUrl,
+      mediaSettings,
     };
     onSave(newQuestion);
+  };
+
+  const handleMediaChange = (data: {
+    mediaSettings?: MediaSettings;
+    imageUrl?: string;
+    audioUrl?: string;
+    videoUrl?: string;
+  }) => {
+    if (data.mediaSettings !== undefined) setMediaSettings(data.mediaSettings);
+    if (data.imageUrl !== undefined) setImageUrl(data.imageUrl);
+    if (data.audioUrl !== undefined) setAudioUrl(data.audioUrl);
+    if (data.videoUrl !== undefined) setVideoUrl(data.videoUrl);
   };
 
   const handleAddOption = () => {
@@ -102,11 +139,12 @@ export function QuestionEditPanel({ question, questionNumber, onSave, onDelete, 
         correctAnswer: correctAnswer || defaultCorrectAnswer,
         duration,
       },
-      imageUrl: question?.imageUrl,
-      videoUrl: undefined,
-      audioUrl: undefined,
+      imageUrl,
+      videoUrl,
+      audioUrl,
+      mediaSettings,
     };
-  }, [content, type, options, correctAnswer, duration, questionNumber, question?.imageUrl]);
+  }, [content, type, options, correctAnswer, duration, questionNumber, imageUrl, videoUrl, audioUrl, mediaSettings]);
 
   // Generate dummy players with answers (for organizer view statistics)
   const dummyPlayers = useMemo<Player[]>(() => {
@@ -217,19 +255,19 @@ export function QuestionEditPanel({ question, questionNumber, onSave, onDelete, 
 
           {/* Question Type */}
           <div>
-            <label htmlFor="question-type" className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               질문 유형
             </label>
-            <select
-              id="question-type"
+            <Select
               value={type}
-              onChange={(e) => setType(e.target.value as any)}
-              className="h-11 w-full px-4 border border-gray-300 rounded-lg bg-white text-gray-900 transition-all duration-200 ease-out hover:border-gray-400 focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 focus:outline-none cursor-pointer"
-            >
-              <option value="multiple-choice">객관식 (선택지)</option>
-              <option value="true-false">O/X 퀴즈</option>
-              <option value="short-answer">주관식</option>
-            </select>
+              onChange={(value) => setType(value as 'multiple-choice' | 'true-false' | 'short-answer')}
+              options={[
+                { value: 'multiple-choice', label: '객관식 (선택지)' },
+                { value: 'true-false', label: 'O/X 퀴즈' },
+                { value: 'short-answer', label: '주관식' },
+              ]}
+              fullWidth
+            />
           </div>
 
           {/* Duration */}
@@ -381,6 +419,21 @@ export function QuestionEditPanel({ question, questionNumber, onSave, onDelete, 
               />
             </div>
           )}
+
+          {/* Media Editor */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              미디어 (선택사항)
+            </label>
+            <MediaEditor
+              mediaSettings={mediaSettings}
+              imageUrl={imageUrl}
+              audioUrl={audioUrl}
+              videoUrl={videoUrl}
+              onChange={handleMediaChange}
+            />
+            <p className="text-xs text-gray-500 mt-2">💡 이미지, 오디오, 비디오를 추가하고 크롭/마스킹/구간 재생을 설정할 수 있습니다</p>
+          </div>
 
           {/* Preview Toggle Button */}
           {content.trim() && (

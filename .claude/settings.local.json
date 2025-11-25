@@ -91,7 +91,8 @@
       "Bash(for:*)",
       "Bash(do lsof -ti:$port)",
       "Bash(do echo 'Killing port $port...')",
-      "Bash(PRISMA_USER_CONSENT_FOR_DANGEROUS_AI_ACTION=\"오케이 리셋해\" pnpm --filter=@xingu/database exec prisma migrate reset --force)"
+      "Bash(PRISMA_USER_CONSENT_FOR_DANGEROUS_AI_ACTION=\"오케이 리셋해\" pnpm --filter=@xingu/database exec prisma migrate reset --force)",
+      "Bash(NODE_ENV=production pnpm:*)"
     ],
     "deny": [],
     "ask": []

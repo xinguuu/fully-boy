@@ -1,6 +1,8 @@
 import { prisma } from '../config/database';
+import { redis } from '../config/redis';
 import { Prisma } from '@prisma/client';
 import { NotFoundError } from '../middleware/error.middleware';
+import { logger } from '@xingu/shared/logger';
 import type { CreateResultDto, ResultResponse } from '../types/result.types';
 
 export class ResultService {
@@ -72,6 +74,30 @@ export class ResultService {
       return gameResult;
     });
 
+    // 5. Invalidate template cache (for Browse page updates)
+    // Clear all template list caches using SCAN (non-blocking)
+    try {
+      let cursor = '0';
+      do {
+        const [nextCursor, keys] = await redis.scan(
+          cursor,
+          'MATCH',
+          'templates:list:*',
+          'COUNT',
+          100
+        );
+
+        if (keys.length > 0) {
+          await redis.del(...keys);
+        }
+
+        cursor = nextCursor;
+      } while (cursor !== '0');
+    } catch (error) {
+      // Log but don't fail the request if cache invalidation fails
+      logger.error('Failed to invalidate template cache', { error });
+    }
+
     return {
       id: result.id,
       roomId: result.roomId,
@@ -105,7 +131,21 @@ export class ResultService {
     };
   }
 
-  async getResultsByGameId(gameId: string, limit = 10): Promise<ResultResponse[]> {
+  async getResultsByGameId(
+    gameId: string,
+    limit = 10
+  ): Promise<{ results: ResultResponse[]; total: number }> {
+    // Get total count of results for this game
+    const total = await prisma.room.count({
+      where: {
+        gameId,
+        result: {
+          isNot: null,
+        },
+      },
+    });
+
+    // Get paginated results
     const rooms = await prisma.room.findMany({
       where: { gameId },
       include: {
@@ -115,7 +155,7 @@ export class ResultService {
       take: limit,
     });
 
-    return rooms
+    const results = rooms
       .filter((room) => room.result !== null)
       .map((room) => ({
         id: room.result!.id,
@@ -127,6 +167,8 @@ export class ResultService {
         questionStats: room.result!.questionStats as any,
         createdAt: room.result!.createdAt,
       }));
+
+    return { results, total };
   }
 }
 

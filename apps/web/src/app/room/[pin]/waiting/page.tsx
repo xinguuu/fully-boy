@@ -4,6 +4,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useGameSocket, useAuth } from '@/lib/hooks';
 import { useEffect, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
+import { toast } from 'sonner';
 import { STORAGE_KEYS } from '@/lib/constants/storage';
 import { logger } from '@/lib/logger';
 
@@ -111,9 +112,11 @@ export default function WaitingRoomPage() {
     try {
       await navigator.clipboard.writeText(pin);
       setCopied(true);
+      toast.success('PIN이 복사되었습니다!');
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
       logger.error('Failed to copy PIN:', err);
+      toast.error('복사에 실패했습니다.');
     }
   };
 

@@ -21,8 +21,8 @@ export abstract class BaseGameTypePlugin implements GameTypePlugin {
   public abstract readonly category: PluginCategory;
 
   // Default scoring constants (can be overridden)
-  protected readonly DEFAULT_BASE_POINTS = 1000;
-  protected readonly DEFAULT_SPEED_BONUS_MULTIPLIER = 0.5;
+  protected readonly DEFAULT_BASE_POINTS = 100;
+  protected readonly DEFAULT_SPEED_BONUS_MULTIPLIER = 0.3;
 
   /**
    * Calculate score using Kahoot-style formula

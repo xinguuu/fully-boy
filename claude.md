@@ -301,6 +301,7 @@ async getOrCreateTags(tagNames: string[]): Promise<Tag[]>
 - ✅ **Organizer reconnection handling** (auto-detect organizer without nickname prompt)
 - ✅ **Plugin System** (frontend + backend, 554 lines, 3 game types)
 - ✅ **Question media support** (image, audio, video with QuestionMedia component)
+- ✅ **Media editing system** (crop, mask, time range for image/audio/video quiz games)
 - ✅ **Room status protection** (prevents joins after game started/finished)
 - ✅ **Centralized constants** (game timing, Redis keys in shared constants)
 - ✅ **3-column edit layout** (list | edit panel | preview - no modal interruptions)
@@ -312,11 +313,20 @@ async getOrCreateTags(tagNames: string[]): Promise<Tag[]>
 
 ### Known Issues
 
-- None currently 🎉
+- ⚠️ **Media files stored in DB (Base64)** - 개발 편의를 위해 미디어 파일을 DB에 Base64로 임시 저장 중
+  - **배포 전 필수 작업**: AWS S3로 마이그레이션 필요
+  - DB 용량 급증 위험 (이미지/오디오 파일당 수 MB)
+  - 마이그레이션 시 `mediaData` (base64) → `mediaUrl` (S3 URL) 변환 필요
+  - 관련 파일: `packages/database/prisma/schema.prisma`, `QuestionMedia.tsx`
 
 **Recently Fixed**:
 
-*2025-11-24 (Latest)*:
+*2025-11-25 (Latest)*:
+- ✅ **Media editing system** → Full implementation (crop, mask, time range playback)
+- ✅ DB schema updated → `mediaSettings Json?` field added to Question model
+- ✅ Type system extended → MediaSettings types in @xingu/shared
+
+*2025-11-24*:
 - ✅ **playCount not incrementing** → Fixed in result-service (games now track play statistics)
 - ✅ **Template usage not tracked** → Added sourceGameId (templates show plays from all copies)
 - ✅ Type duplication → Single source of truth in @xingu/shared (100% consistency)
@@ -511,6 +521,7 @@ chore: Build/config
 - [x] 404/500 error pages
 - [ ] GitHub Actions CI
 - [x] Lighthouse audit on production build (✅ 98/100 Performance, 95/100 Accessibility, 96/100 Best Practices, 100/100 SEO)
+- [ ] **AWS S3 media migration** - DB Base64 저장 → S3 URL 방식으로 변경 (필수!)
 
 ---
 

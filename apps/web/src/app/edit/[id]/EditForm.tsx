@@ -3,7 +3,7 @@
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { useGame, useTemplate, useCreateGame, useUpdateGame, useCreateRoom, useAuth } from '@/lib/hooks';
-import type { Game, Question } from '@xingu/shared';
+import type { Game, Question, MediaSettings } from '@xingu/shared';
 import { ArrowLeft, Trash2, Plus, Settings, Zap } from 'lucide-react';
 import { SettingsModal } from '@/components/edit/SettingsModal';
 import { BulkSettingsModal } from '@/components/edit/BulkSettingsModal';
@@ -25,6 +25,9 @@ interface QuestionFormData {
     duration?: number;
   };
   imageUrl?: string;
+  videoUrl?: string;
+  audioUrl?: string;
+  mediaSettings?: MediaSettings;
 }
 
 export default function EditForm() {
@@ -84,6 +87,9 @@ export default function EditForm() {
               content: q.content,
               data: q.data as QuestionFormData['data'],
               imageUrl: q.imageUrl || undefined,
+              videoUrl: q.videoUrl || undefined,
+              audioUrl: q.audioUrl || undefined,
+              mediaSettings: q.mediaSettings || undefined,
             }))
           );
         } else {
@@ -98,6 +104,9 @@ export default function EditForm() {
               content: q.content,
               data: q.data as QuestionFormData['data'],
               imageUrl: q.imageUrl || undefined,
+              videoUrl: q.videoUrl || undefined,
+              audioUrl: q.audioUrl || undefined,
+              mediaSettings: q.mediaSettings || undefined,
             }))
           );
         } else {
@@ -132,6 +141,9 @@ export default function EditForm() {
             content: q.content,
             data: q.data,
             imageUrl: q.imageUrl,
+            videoUrl: q.videoUrl,
+            audioUrl: q.audioUrl,
+            mediaSettings: q.mediaSettings,
           })),
           sourceGameId: templateId || undefined,
         });
@@ -149,6 +161,9 @@ export default function EditForm() {
             content: q.content,
             data: q.data,
             imageUrl: q.imageUrl,
+            videoUrl: q.videoUrl,
+            audioUrl: q.audioUrl,
+            mediaSettings: q.mediaSettings,
           })),
         });
       }
@@ -186,6 +201,9 @@ export default function EditForm() {
             content: q.content,
             data: q.data,
             imageUrl: q.imageUrl,
+            videoUrl: q.videoUrl,
+            audioUrl: q.audioUrl,
+            mediaSettings: q.mediaSettings,
           })),
           sourceGameId: templateId || undefined,
         });
@@ -204,6 +222,9 @@ export default function EditForm() {
             content: q.content,
             data: q.data,
             imageUrl: q.imageUrl,
+            videoUrl: q.videoUrl,
+            audioUrl: q.audioUrl,
+            mediaSettings: q.mediaSettings,
           })),
         });
       }

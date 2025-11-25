@@ -1,4 +1,4 @@
-import type { WS_EVENTS } from '@xingu/shared';
+import type { WS_EVENTS, MediaSettings } from '@xingu/shared';
 
 export type WsEvent = (typeof WS_EVENTS)[keyof typeof WS_EVENTS];
 
@@ -44,6 +44,7 @@ export interface Question {
   imageUrl?: string;
   videoUrl?: string;
   audioUrl?: string;
+  mediaSettings?: MediaSettings | null;
 }
 
 export interface Game {

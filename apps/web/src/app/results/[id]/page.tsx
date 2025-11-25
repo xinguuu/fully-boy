@@ -2,6 +2,7 @@
 
 import { useRouter, useParams } from 'next/navigation';
 import { ArrowLeft, Trophy, Download, Share2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { useResultByRoom } from '@/lib/hooks';
 import { formatDate, formatDuration } from '@/types/result.types';
 import { Footer } from '@/components/layout/Footer';
@@ -54,13 +55,13 @@ export default function ResultDetailPage() {
         .catch((err) => logger.error('Share failed:', err));
     } else {
       navigator.clipboard.writeText(url);
-      alert('링크가 클립보드에 복사되었습니다!');
+      toast.success('링크가 클립보드에 복사되었습니다!');
     }
   };
 
   const handleDownload = () => {
     // TODO: Implement PDF download
-    alert('PDF 다운로드 기능은 준비 중입니다.');
+    toast.info('PDF 다운로드 기능은 준비 중입니다.');
   };
 
   return (

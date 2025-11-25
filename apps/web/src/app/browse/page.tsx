@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Search, User, Star, Users, Clock, Sparkles, TrendingUp, Crown, Smartphone, Zap, History, BarChart3, Settings, LogOut } from 'lucide-react';
+import { toast } from 'sonner';
 import {
   useTemplates,
   useGames,
@@ -13,7 +14,7 @@ import {
 } from '@/lib/hooks';
 import type { Game } from '@xingu/shared';
 import { GameType } from '@xingu/shared';
-import { Select, DropdownMenu } from '@/components/ui';
+import { Select, DropdownMenu, ConfirmDialog } from '@/components/ui';
 import { Footer } from '@/components/layout/Footer';
 import { logger } from '@/lib/logger';
 
@@ -41,14 +42,11 @@ export default function BrowsePage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('popular');
   const [mounted, setMounted] = useState(false);
+  const [deleteGameId, setDeleteGameId] = useState<string | null>(null);
 
-  // Data fetching hooks - conditional based on activeTab
-  const { data: templatesResponse } = useTemplates({
-    enabled: activeTab === 'browse',
-  });
-  const { data: myGames = [] } = useGames({
-    enabled: activeTab === 'myGames',
-  });
+  // Data fetching hooks - always enabled for accurate tab counts
+  const { data: templatesResponse } = useTemplates();
+  const { data: myGames = [] } = useGames();
   const { mutateAsync: deleteGame, isPending: isDeleting } = useDeleteGame();
   const { mutateAsync: addFavorite } = useAddFavorite();
   const { mutateAsync: removeFavorite } = useRemoveFavorite();
@@ -155,19 +153,25 @@ export default function BrowsePage() {
       }
     } catch (error) {
       logger.error('Failed to toggle favorite:', error);
-      alert('즐겨찾기 변경에 실패했습니다. 다시 시도해주세요.');
+      toast.error('즐겨찾기 변경에 실패했습니다. 다시 시도해주세요.');
     }
   };
 
-  const handleDelete = async (gameId: string) => {
-    if (window.confirm('정말 이 게임을 삭제하시겠습니까?')) {
-      try {
-        await deleteGame(gameId);
-        // Query will be automatically invalidated by useDeleteGame hook
-      } catch (error) {
-        logger.error('Failed to delete game:', error);
-        alert('게임 삭제에 실패했습니다. 다시 시도해주세요.');
-      }
+  const handleDeleteClick = (gameId: string) => {
+    setDeleteGameId(gameId);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteGameId) return;
+
+    try {
+      await deleteGame(deleteGameId);
+      toast.success('게임이 삭제되었습니다.');
+    } catch (error) {
+      logger.error('Failed to delete game:', error);
+      toast.error('게임 삭제에 실패했습니다. 다시 시도해주세요.');
+    } finally {
+      setDeleteGameId(null);
     }
   };
 
@@ -476,7 +480,7 @@ export default function BrowsePage() {
                       isMyGame={true}
                       onCreateRoom={handleCreateRoom}
                       onToggleFavorite={toggleFavorite}
-                      onDelete={handleDelete}
+                      onDelete={handleDeleteClick}
                       onViewHistory={() => router.push(`/games/${game.id}/history`)}
                       isDeleting={isDeleting}
                     />
@@ -495,6 +499,19 @@ export default function BrowsePage() {
 
       {/* Footer */}
       <Footer />
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        open={!!deleteGameId}
+        onOpenChange={(open) => !open && setDeleteGameId(null)}
+        title="게임 삭제"
+        description="정말 이 게임을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."
+        confirmText="삭제"
+        cancelText="취소"
+        variant="danger"
+        onConfirm={handleDeleteConfirm}
+        isLoading={isDeleting}
+      />
     </div>
   );
 }

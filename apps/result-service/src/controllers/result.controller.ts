@@ -38,10 +38,10 @@ export class ResultController {
       throw new ValidationError('Limit must be between 1 and 100');
     }
 
-    const results = await resultService.getResultsByGameId(gameId, limit);
+    const { results, total } = await resultService.getResultsByGameId(gameId, limit);
     res.status(200).json({
       results,
-      total: results.length,
+      total,
     });
   }
 }
