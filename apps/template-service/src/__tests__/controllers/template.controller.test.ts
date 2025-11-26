@@ -112,14 +112,17 @@ describe('TemplateController', () => {
         mockResponse as Response
       );
 
-      expect(templateService.getTemplates).toHaveBeenCalledWith({
-        gameType: 'OX_QUIZ',
-        category: 'QUIZ',
-        limit: 10,
-        offset: 5,
-        sortBy: 'playCount',
-        order: 'desc',
-      });
+      expect(templateService.getTemplates).toHaveBeenCalledWith(
+        {
+          gameType: 'OX_QUIZ',
+          category: 'QUIZ',
+          limit: 10,
+          offset: 5,
+          sortBy: 'playCount',
+          order: 'desc',
+        },
+        undefined // userId (optional)
+      );
       expect(mockResponse.status).toHaveBeenCalledWith(200);
     });
   });

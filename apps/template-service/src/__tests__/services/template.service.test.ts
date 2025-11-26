@@ -174,34 +174,54 @@ describe('TemplateService', () => {
       expect(redis.setex).toHaveBeenCalledOnce();
     });
 
-    it('should return null if template not found', async () => {
+    it('should return null if template not found and cache the not-found result', async () => {
       vi.mocked(redis.get).mockResolvedValue(null);
       vi.mocked(prisma.game.findFirst).mockResolvedValue(null);
+      vi.mocked(redis.setex).mockResolvedValue('OK');
 
       const result = await templateService.getTemplateById('999');
 
       expect(result).toBeNull();
-      expect(redis.setex).not.toHaveBeenCalled();
+      // Null caching: cache "not found" result to prevent cache penetration
+      expect(redis.setex).toHaveBeenCalledWith(
+        'templates:detail:999',
+        300, // NULL_CACHE TTL (5 minutes)
+        JSON.stringify({ notFound: true })
+      );
+    });
+
+    it('should return null from cached not-found result', async () => {
+      // Cached "not found" result
+      vi.mocked(redis.get).mockResolvedValue(JSON.stringify({ notFound: true }));
+
+      const result = await templateService.getTemplateById('999');
+
+      expect(result).toBeNull();
+      expect(prisma.game.findFirst).not.toHaveBeenCalled(); // DB not queried
     });
   });
 
   describe('invalidateCache', () => {
     it('should delete specific template cache', async () => {
       vi.mocked(redis.del).mockResolvedValue(1);
-      vi.mocked(redis.keys).mockResolvedValue([]);
+      // Mock redis.scan to return empty result (cursor '0' means done)
+      vi.mocked(redis.scan).mockResolvedValue(['0', []]);
 
       await templateService.invalidateCache('1');
 
       expect(redis.del).toHaveBeenCalledWith('templates:detail:1');
     });
 
-    it('should delete all list caches', async () => {
+    it('should delete all list caches using SCAN', async () => {
       const listKeys = ['templates:list:1', 'templates:list:2'];
-      vi.mocked(redis.keys).mockResolvedValue(listKeys);
       vi.mocked(redis.del).mockResolvedValue(2);
+      // Mock redis.scan: first call returns keys, second call returns empty (done)
+      vi.mocked(redis.scan)
+        .mockResolvedValueOnce(['0', listKeys]);
 
       await templateService.invalidateCache('1');
 
+      expect(redis.scan).toHaveBeenCalledWith('0', 'MATCH', 'templates:list:*', 'COUNT', 100);
       expect(redis.del).toHaveBeenCalledWith(...listKeys);
     });
   });

@@ -104,7 +104,12 @@ export class TemplateService {
 
     const cached = await redis.get(cacheKey);
     if (cached) {
-      return JSON.parse(cached);
+      const parsed = JSON.parse(cached);
+      // Check if this is a cached "not found" result (cache penetration protection)
+      if (parsed.notFound) {
+        return null;
+      }
+      return parsed;
     }
 
     const template = await prisma.game.findFirst({
@@ -148,6 +153,9 @@ export class TemplateService {
     });
 
     if (!template) {
+      // Cache "not found" result to prevent cache penetration attacks
+      // Short TTL (5 min) allows deleted items to become available quickly
+      await redis.setex(cacheKey, REDIS_TTL.NULL_CACHE, JSON.stringify({ notFound: true }));
       return null;
     }
 

@@ -81,6 +81,14 @@ export const REDIS_TTL = {
   TEMPLATE_CACHE: 3600, // 1 hour = 60 * 60
 
   /**
+   * Null cache expiration (5 minutes)
+   * Used by: template-service
+   * Reason: Cache "not found" results to prevent cache penetration attacks
+   * Short TTL allows deleted items to become available relatively quickly
+   */
+  NULL_CACHE: 300, // 5 minutes = 5 * 60
+
+  /**
    * Refresh token expiration (7 days)
    * Used by: auth-service
    * Reason: Users should re-authenticate after 1 week for security
