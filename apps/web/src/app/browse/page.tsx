@@ -31,6 +31,67 @@ const getGameTypeLabel = (gameType: GameType): string => {
   return labels[gameType] || gameType;
 };
 
+// 게임 타입 카드 정보
+interface GameTypeInfo {
+  type: GameType;
+  name: string;
+  description: string;
+  emoji: string;
+  isParty: boolean;
+  gradient: string;
+}
+
+const GAME_TYPE_CARDS: GameTypeInfo[] = [
+  {
+    type: GameType.OX_QUIZ,
+    name: 'OX 퀴즈',
+    description: 'O 또는 X로 답하는 간단한 퀴즈',
+    emoji: '⭕',
+    isParty: false,
+    gradient: 'from-blue-400 to-blue-600',
+  },
+  {
+    type: GameType.FOUR_CHOICE_QUIZ,
+    name: '4지선다 퀴즈',
+    description: '4개의 선택지 중 정답 맞추기',
+    emoji: '📝',
+    isParty: false,
+    gradient: 'from-orange-400 to-red-500',
+  },
+  {
+    type: GameType.BALANCE_GAME,
+    name: '밸런스 게임',
+    description: '둘 중 하나! 취향 선택 게임',
+    emoji: '⚖️',
+    isParty: true,
+    gradient: 'from-purple-400 to-pink-500',
+  },
+  {
+    type: GameType.LIAR_GAME,
+    name: '라이어 게임',
+    description: '라이어를 찾아라! 심리 추리 게임',
+    emoji: '🤥',
+    isParty: true,
+    gradient: 'from-green-400 to-teal-500',
+  },
+  {
+    type: GameType.INITIAL_QUIZ,
+    name: '초성 퀴즈',
+    description: '초성만 보고 단어 맞추기',
+    emoji: '🔤',
+    isParty: false,
+    gradient: 'from-amber-400 to-yellow-500',
+  },
+  {
+    type: GameType.SPEED_QUIZ,
+    name: '스피드 퀴즈',
+    description: '빠르게 단어 맞추기',
+    emoji: '⚡',
+    isParty: false,
+    gradient: 'from-cyan-400 to-blue-500',
+  },
+];
+
 export default function BrowsePage() {
   const router = useRouter();
   const { user, isLoading, isAuthenticated } = useAuth();
@@ -421,6 +482,44 @@ export default function BrowsePage() {
         {/* Browse Tab Content */}
         {activeTab === 'browse' && (
           <div>
+            {/* Game Type Selection Section */}
+            {!searchQuery && (
+              <section className="mb-10">
+                <div className="mb-6">
+                  <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                    🎮 새 게임 만들기
+                  </h2>
+                  <p className="text-gray-600">
+                    원하는 게임 타입을 선택해서 처음부터 만들어보세요!
+                  </p>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+                  {GAME_TYPE_CARDS.map((gameType) => (
+                    <button
+                      key={gameType.type}
+                      onClick={() => router.push(`/edit/new?gameType=${gameType.type}`)}
+                      className={`group relative p-4 rounded-xl border-2 border-transparent bg-gradient-to-br ${gameType.gradient} text-white shadow-md hover:shadow-xl hover:scale-105 transition-all duration-200 cursor-pointer overflow-hidden`}
+                    >
+                      <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <div className="relative text-center">
+                        <div className="text-3xl mb-2">{gameType.emoji}</div>
+                        <div className="font-bold text-sm mb-1">{gameType.name}</div>
+                        <div className="text-xs opacity-90 line-clamp-2">{gameType.description}</div>
+                      </div>
+                      <div className="absolute top-2 right-2">
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
+                          gameType.isParty ? 'bg-white/30' : 'bg-white/30'
+                        }`}>
+                          {gameType.isParty ? '파티' : '퀴즈'}
+                        </span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* Template Section */}
             <div className="mb-6">
               <h2 className="text-2xl font-bold text-gray-900 mb-2">
                 💡 템플릿으로 빠르게 시작하기

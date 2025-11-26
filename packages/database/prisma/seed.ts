@@ -460,6 +460,218 @@ async function main() {
 
   console.log('✅ Created Liar Game party template:', liarGame.title);
 
+  // Balance Game: 밸런스 게임
+  const balanceGame = await prisma.game.create({
+    data: {
+      title: '밸런스 게임 - 음식 월드컵',
+      description: 'A vs B! 당신의 선택은? 친구들과 함께 투표 결과를 확인해보세요!',
+      thumbnail: null,
+      gameType: GameType.FOUR_CHOICE_QUIZ,
+      category: Category.ICE_BREAKING,
+      gameCategory: TemplateCategory.PARTY,
+      isPublic: true,
+      duration: 10,
+      minPlayers: 2,
+      maxPlayers: 100,
+      needsMobile: true,
+      settings: {
+        timeLimit: 15,
+        pointsPerCorrect: 100,
+        timeBonusEnabled: false,
+        soundEnabled: true,
+      },
+      questions: {
+        create: [
+          {
+            order: 1,
+            content: '평생 하나만 먹어야 한다면?',
+            data: {
+              type: 'balance-game',
+              optionA: '삼겹살',
+              optionB: '치킨',
+              duration: 15,
+              scoringMode: 'none',
+            },
+          },
+          {
+            order: 2,
+            content: '금요일 퇴근 후 저녁 메뉴는?',
+            data: {
+              type: 'balance-game',
+              optionA: '짜장면',
+              optionB: '짬뽕',
+              duration: 15,
+              scoringMode: 'none',
+            },
+          },
+          {
+            order: 3,
+            content: '아침에 먹는다면?',
+            data: {
+              type: 'balance-game',
+              optionA: '밥',
+              optionB: '빵',
+              duration: 15,
+              scoringMode: 'none',
+            },
+          },
+          {
+            order: 4,
+            content: '여름에 먹는 라면은?',
+            data: {
+              type: 'balance-game',
+              optionA: '뜨거운 라면',
+              optionB: '비빔면',
+              duration: 15,
+              scoringMode: 'none',
+            },
+          },
+          {
+            order: 5,
+            content: '피자 먹을 때는?',
+            data: {
+              type: 'balance-game',
+              optionA: '콜라',
+              optionB: '맥주',
+              duration: 15,
+              scoringMode: 'none',
+            },
+          },
+          {
+            order: 6,
+            content: '떡볶이 소스는?',
+            data: {
+              type: 'balance-game',
+              optionA: '매운맛',
+              optionB: '로제',
+              duration: 15,
+              scoringMode: 'none',
+            },
+          },
+          {
+            order: 7,
+            content: '커피는?',
+            data: {
+              type: 'balance-game',
+              optionA: '아메리카노',
+              optionB: '라떼',
+              duration: 15,
+              scoringMode: 'none',
+            },
+          },
+          {
+            order: 8,
+            content: '치킨은?',
+            data: {
+              type: 'balance-game',
+              optionA: '후라이드',
+              optionB: '양념',
+              duration: 15,
+              scoringMode: 'none',
+            },
+          },
+        ],
+      },
+    },
+  });
+
+  console.log('✅ Created Balance Game template:', balanceGame.title);
+
+  // Balance Game 2: 이상형 월드컵 스타일
+  const balanceGame2 = await prisma.game.create({
+    data: {
+      title: '밸런스 게임 - 회사 생활',
+      description: '직장인이라면 공감하는 밸런스 게임! 당신의 선택은?',
+      thumbnail: null,
+      gameType: GameType.FOUR_CHOICE_QUIZ,
+      category: Category.ICE_BREAKING,
+      gameCategory: TemplateCategory.PARTY,
+      isPublic: true,
+      duration: 10,
+      minPlayers: 2,
+      maxPlayers: 100,
+      needsMobile: true,
+      settings: {
+        timeLimit: 15,
+        pointsPerCorrect: 100,
+        timeBonusEnabled: false,
+        soundEnabled: true,
+      },
+      questions: {
+        create: [
+          {
+            order: 1,
+            content: '야근해야 한다면?',
+            data: {
+              type: 'balance-game',
+              optionA: '월요일 야근',
+              optionB: '금요일 야근',
+              duration: 15,
+              scoringMode: 'none',
+            },
+          },
+          {
+            order: 2,
+            content: '회식 메뉴는?',
+            data: {
+              type: 'balance-game',
+              optionA: '고기집',
+              optionB: '횟집',
+              duration: 15,
+              scoringMode: 'none',
+            },
+          },
+          {
+            order: 3,
+            content: '출근 방법은?',
+            data: {
+              type: 'balance-game',
+              optionA: '지하철 1시간',
+              optionB: '버스 환승 40분',
+              duration: 15,
+              scoringMode: 'none',
+            },
+          },
+          {
+            order: 4,
+            content: '점심은?',
+            data: {
+              type: 'balance-game',
+              optionA: '혼밥',
+              optionB: '팀 점심',
+              duration: 15,
+              scoringMode: 'none',
+            },
+          },
+          {
+            order: 5,
+            content: '회사에서 일할 때?',
+            data: {
+              type: 'balance-game',
+              optionA: '이어폰 듣기',
+              optionB: '조용히 집중',
+              duration: 15,
+              scoringMode: 'none',
+            },
+          },
+          {
+            order: 6,
+            content: '연차 쓴다면?',
+            data: {
+              type: 'balance-game',
+              optionA: '월요일 연차',
+              optionB: '금요일 연차',
+              duration: 15,
+              scoringMode: 'none',
+            },
+          },
+        ],
+      },
+    },
+  });
+
+  console.log('✅ Created Balance Game 2 template:', balanceGame2.title);
+
   console.log('🎉 Seeding completed successfully!');
 }
 

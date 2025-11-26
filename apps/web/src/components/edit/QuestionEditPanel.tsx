@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
-import { Plus, Trash2, Check, Eye, EyeOff } from 'lucide-react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { Plus, Trash2, Check, Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { ParticipantView } from '@/components/game/ParticipantView';
 import { OrganizerView } from '@/components/game/OrganizerView';
 import { MediaEditor } from '@/components/edit/media';
@@ -35,11 +35,13 @@ interface QuestionEditPanelProps {
   question: QuestionFormData | null;
   questionNumber: number;
   onSave: (question: QuestionFormData) => void;
+  onChange?: (question: QuestionFormData) => void;
   onDelete?: () => void;
   onCancel?: () => void;
+  hidePreview?: boolean;
 }
 
-export function QuestionEditPanel({ question, questionNumber, onSave, onDelete, onCancel }: QuestionEditPanelProps) {
+export function QuestionEditPanel({ question, questionNumber, onSave, onChange, onDelete, onCancel, hidePreview = false }: QuestionEditPanelProps) {
   const [content, setContent] = useState('');
   const [type, setType] = useState<QuestionType>('multiple-choice');
   const [options, setOptions] = useState<string[]>(['', '', '', '']);
@@ -58,38 +60,96 @@ export function QuestionEditPanel({ question, questionNumber, onSave, onDelete, 
   const [audioUrl, setAudioUrl] = useState<string | undefined>();
   const [mediaSettings, setMediaSettings] = useState<MediaSettings | undefined>();
 
-  useEffect(() => {
+  // Track unsaved changes
+  const hasUnsavedChanges = useCallback(() => {
+    // New question - has changes if any content entered
+    if (!question) {
+      return content.trim() !== '' ||
+             (type === 'multiple-choice' && options.some(o => o.trim() !== '')) ||
+             (type === 'balance-game' && (optionA.trim() !== '' || optionB.trim() !== '')) ||
+             correctAnswer !== '' ||
+             imageUrl !== undefined ||
+             videoUrl !== undefined ||
+             audioUrl !== undefined;
+    }
+
+    // Existing question - compare with original
+    if (content !== question.content) return true;
+    if (type !== question.data.type) return true;
+    if (duration !== (question.data.duration || 30)) return true;
+    if (correctAnswer !== (question.data.correctAnswer || '')) return true;
+    if (optionA !== (question.data.optionA || '')) return true;
+    if (optionB !== (question.data.optionB || '')) return true;
+    if (imageUrl !== question.imageUrl) return true;
+    if (videoUrl !== question.videoUrl) return true;
+    if (audioUrl !== question.audioUrl) return true;
+
+    // Compare options array
+    const originalOptions = question.data.options || ['', '', '', ''];
+    if (options.length !== originalOptions.length) return true;
+    for (let i = 0; i < options.length; i++) {
+      if (options[i] !== originalOptions[i]) return true;
+    }
+
+    return false;
+  }, [question, content, type, options, correctAnswer, duration, optionA, optionB, imageUrl, videoUrl, audioUrl]);
+
+  // Reset form to original question data
+  const resetForm = useCallback(() => {
     if (question) {
       setContent(question.content);
       setType(question.data.type);
       setOptions(question.data.options || ['', '', '', '']);
       setCorrectAnswer(question.data.correctAnswer || '');
       setDuration(question.data.duration || 30);
-      // Balance game specific
       setOptionA(question.data.optionA || '');
       setOptionB(question.data.optionB || '');
-      // Media
       setImageUrl(question.imageUrl);
       setVideoUrl(question.videoUrl);
       setAudioUrl(question.audioUrl);
       setMediaSettings(question.mediaSettings);
     } else {
-      // Reset for new question
       setContent('');
       setType('multiple-choice');
       setOptions(['', '', '', '']);
       setCorrectAnswer('');
       setDuration(30);
-      // Balance game specific
       setOptionA('');
       setOptionB('');
-      // Media
       setImageUrl(undefined);
       setVideoUrl(undefined);
       setAudioUrl(undefined);
       setMediaSettings(undefined);
     }
   }, [question]);
+
+  useEffect(() => {
+    resetForm();
+  }, [resetForm]);
+
+  // Notify parent of changes for real-time preview
+  useEffect(() => {
+    if (onChange) {
+      onChange({
+        id: question?.id,
+        order: question?.order || 0,
+        content,
+        data: {
+          type,
+          options: type === 'multiple-choice' ? options : type === 'true-false' ? ['O', 'X'] : undefined,
+          correctAnswer: type !== 'balance-game' ? correctAnswer : undefined,
+          duration,
+          optionA: type === 'balance-game' ? optionA : undefined,
+          optionB: type === 'balance-game' ? optionB : undefined,
+          scoringMode: type === 'balance-game' ? 'none' : undefined,
+        },
+        imageUrl,
+        videoUrl,
+        audioUrl,
+        mediaSettings,
+      });
+    }
+  }, [onChange, question?.id, question?.order, content, type, options, correctAnswer, duration, optionA, optionB, imageUrl, videoUrl, audioUrl, mediaSettings]);
 
   const handleSave = () => {
     const newQuestion: QuestionFormData = {
@@ -534,7 +594,7 @@ export function QuestionEditPanel({ question, questionNumber, onSave, onDelete, 
           </div>
 
           {/* Preview Toggle Button */}
-          {content.trim() && (
+          {!hidePreview && content.trim() && (
             <button
               type="button"
               onClick={() => setShowPreview(!showPreview)}
@@ -555,7 +615,7 @@ export function QuestionEditPanel({ question, questionNumber, onSave, onDelete, 
           )}
 
           {/* Preview */}
-          {showPreview && content.trim() && (
+          {!hidePreview && showPreview && content.trim() && (
             <div className="border-t border-gray-200 pt-6">
               <div className="mb-4">
                 <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
@@ -644,15 +704,27 @@ export function QuestionEditPanel({ question, questionNumber, onSave, onDelete, 
           )}
         </div>
         <div className="flex items-center gap-3">
-          {onCancel && (
-            <button
-              type="button"
-              onClick={onCancel}
-              className="px-6 py-2.5 border-2 border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-all duration-200 cursor-pointer"
-            >
-              취소
-            </button>
+          {hasUnsavedChanges() && (
+            <span className="flex items-center gap-1.5 text-sm text-amber-600">
+              <AlertCircle className="w-4 h-4" />
+              <span className="hidden sm:inline">저장되지 않은 변경사항</span>
+              <span className="sm:hidden">미저장</span>
+            </span>
           )}
+          <button
+            type="button"
+            onClick={() => {
+              if (onCancel) {
+                onCancel();
+              } else {
+                resetForm();
+              }
+            }}
+            disabled={!hasUnsavedChanges()}
+            className="px-6 py-2.5 border-2 border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            취소
+          </button>
           <button
             type="button"
             onClick={handleSave}

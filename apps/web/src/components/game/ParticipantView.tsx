@@ -21,17 +21,21 @@ interface ParticipantViewProps {
   totalQuestions: number;
   duration: number;
   currentQuestionStartedAt?: Date | string;
-  selectedAnswer: string | null;
-  shortAnswerInput: string;
-  hasAnswered: boolean;
-  questionEnded: boolean;
+  selectedAnswer?: string | null;
+  shortAnswerInput?: string;
+  hasAnswered?: boolean;
+  questionEnded?: boolean;
   lastAnswer?: PlayerAnswer;
-  currentScore: number;
+  currentScore?: number;
   currentRank?: number;
-  phase: GamePhase;
-  onAnswerSelect: (answer: string) => void;
-  onShortAnswerChange: (value: string) => void;
-  onShortAnswerSubmit: (e: React.FormEvent) => void;
+  phase?: GamePhase;
+  onAnswerSelect?: (answer: string) => void;
+  onShortAnswerChange?: (value: string) => void;
+  onShortAnswerSubmit?: (e: React.FormEvent) => void;
+  /** Preview mode: static display, no interactions */
+  isPreview?: boolean;
+  /** Custom class for container (useful for scaled preview) */
+  className?: string;
 }
 
 export function ParticipantView({
@@ -40,23 +44,25 @@ export function ParticipantView({
   totalQuestions,
   duration,
   currentQuestionStartedAt,
-  selectedAnswer,
-  shortAnswerInput,
-  hasAnswered,
-  questionEnded,
+  selectedAnswer = null,
+  shortAnswerInput = '',
+  hasAnswered = false,
+  questionEnded = false,
   lastAnswer,
-  currentScore,
-  currentRank,
-  phase,
+  currentScore = 150,
+  currentRank = 3,
+  phase = 'ANSWERING',
   onAnswerSelect,
   onShortAnswerChange,
   onShortAnswerSubmit,
+  isPreview = false,
+  className,
 }: ParticipantViewProps) {
   const pluginRegistry = usePluginRegistry();
   const questionData = currentQuestion.data;
 
-  // Phase 1: Answer submitted, waiting
-  if (phase === 'SUBMITTED' && hasAnswered && !questionEnded) {
+  // Phase 1: Answer submitted, waiting (skip in preview mode)
+  if (!isPreview && phase === 'SUBMITTED' && hasAnswered && !questionEnded) {
     return (
       <AnswerSubmittedScreen
         selectedAnswer={selectedAnswer || shortAnswerInput}
@@ -66,8 +72,8 @@ export function ParticipantView({
     );
   }
 
-  // Phase 2: Answer reveal with score animation (and leaderboard waiting)
-  if ((phase === 'ANSWER_REVEAL' || phase === 'LEADERBOARD') && questionEnded && lastAnswer) {
+  // Phase 2: Answer reveal with score animation (skip in preview mode)
+  if (!isPreview && (phase === 'ANSWER_REVEAL' || phase === 'LEADERBOARD') && questionEnded && lastAnswer) {
     const isBalanceGame = questionData.type === 'balance-game';
 
     // Balance Game: Show voting result screen (no correct answer)
@@ -215,10 +221,17 @@ export function ParticipantView({
   }
 
   // Phase 3: Answering
+  // Handlers with fallback for preview mode or when not provided
+  const handleAnswerSelect = isPreview ? () => {} : (onAnswerSelect ?? (() => {}));
+  const handleShortAnswerChange = isPreview ? () => {} : (onShortAnswerChange ?? (() => {}));
+  const handleShortAnswerSubmit = isPreview
+    ? (e: React.FormEvent) => e.preventDefault()
+    : (onShortAnswerSubmit ?? ((e: React.FormEvent) => e.preventDefault()));
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-secondary-50 p-4 flex items-center justify-center">
-      <div className="max-w-2xl w-full">
-        <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8">
+    <div className={className || "min-h-screen bg-gradient-to-br from-primary-50 via-white to-secondary-50 p-4 flex items-center justify-center"}>
+      <div className={isPreview ? "w-full h-full" : "max-w-2xl w-full"}>
+        <div className={isPreview ? "h-full flex flex-col" : "bg-white rounded-2xl shadow-xl p-6 md:p-8"}>
           <div className="flex items-center justify-between mb-6">
             <span className="text-lg font-semibold text-gray-600">
               Q {questionIndex + 1} / {totalQuestions}
@@ -233,9 +246,13 @@ export function ParticipantView({
             </div>
           </div>
 
-          <Timer duration={duration} startedAt={currentQuestionStartedAt} />
+          <Timer
+            duration={duration}
+            startedAt={isPreview ? undefined : currentQuestionStartedAt}
+            isPreview={isPreview}
+          />
 
-          <div className="mt-8 mb-8">
+          <div className="mt-8 mb-8 flex-1">
             <h2 className="text-2xl md:text-3xl font-bold text-gray-900 text-center mb-8">
               {currentQuestion.content}
             </h2>
@@ -245,7 +262,7 @@ export function ParticipantView({
               videoUrl={currentQuestion.videoUrl}
               audioUrl={currentQuestion.audioUrl}
               mediaSettings={currentQuestion.mediaSettings}
-              autoPlay={true}
+              autoPlay={!isPreview}
             />
 
             {(() => {
@@ -272,28 +289,28 @@ export function ParticipantView({
                 questionIndex,
                 totalQuestions,
                 duration,
-                currentQuestionStartedAt,
-                hasAnswered,
-                questionEnded,
+                currentQuestionStartedAt: isPreview ? undefined : currentQuestionStartedAt,
+                hasAnswered: isPreview ? false : hasAnswered,
+                questionEnded: isPreview ? false : questionEnded,
                 currentScore,
                 currentRank,
-                selectedAnswer,
-                shortAnswerInput,
-                onAnswerSelect,
-                onShortAnswerChange,
-                onShortAnswerSubmit,
-                lastAnswer,
+                selectedAnswer: isPreview ? null : selectedAnswer,
+                shortAnswerInput: isPreview ? '' : shortAnswerInput,
+                onAnswerSelect: handleAnswerSelect,
+                onShortAnswerChange: handleShortAnswerChange,
+                onShortAnswerSubmit: handleShortAnswerSubmit,
+                lastAnswer: isPreview ? undefined : lastAnswer,
               });
             })()}
           </div>
 
-          {hasAnswered && !questionEnded && (
+          {!isPreview && hasAnswered && !questionEnded && (
             <p className="text-center text-gray-500 text-sm">
               답안이 제출되었습니다. 결과를 기다려주세요...
             </p>
           )}
 
-          {!hasAnswered && (
+          {!isPreview && !hasAnswered && (
             <p className="text-center text-gray-500 text-sm">답을 선택하세요</p>
           )}
         </div>

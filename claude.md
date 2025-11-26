@@ -294,6 +294,7 @@ async getOrCreateTags(tagNames: string[]): Promise<Tag[]>
 - ✅ **Type Integration** (100% Frontend ↔ Backend type consistency via @xingu/shared)
 - ✅ **React Query cache optimization** (staleTime/gcTime for templates, games, favorites)
 - ✅ **Redis SCAN migration** (non-blocking operations, production-safe cache invalidation)
+- ✅ **Cache penetration protection** (template lookups cache null results to prevent DB hammering)
 
 #### Features
 - ✅ **Question intro screen** (2-second "1/3" display before each question)
@@ -324,10 +325,14 @@ async getOrCreateTags(tagNames: string[]): Promise<Tag[]>
 **Recently Fixed**:
 
 *2025-11-26 (Latest)*:
-- ✅ **Documentation sync** → Removed references to deleted docs (09-game-ideas.md)
+- ✅ **Balance game type added** → New plugin with dedicated UI components for balance-game
+- ✅ **Bulk settings modal** → Batch configuration for question time limits
+- ✅ **QuestionModal deprecated** → Removed in favor of inline QuestionEditPanel
+- ✅ **Cache penetration protection** → Template lookups now cache null results
+- ✅ **Redis SCAN optimization** → Improved cache invalidation efficiency
 - ✅ **Build error fixed** → Added `questionData` to `ScoreCalculationOptions` type
 - ✅ **Test sync** → Updated plugin tests (expected 3→5 game types)
-- ✅ **Plugin count updated** → Now 5 game types (added liar-game, balance-game)
+- ✅ **Game ideas doc updated** → 09-game-ideas.md restructured with implementation guides
 
 *2025-11-25*:
 - ✅ **Media editing system** → Full implementation (crop, mask, time range playback)
@@ -551,8 +556,9 @@ xingu/
     ├── 04-architecture.md       # 🏗️ System Architecture
     ├── 05-design-guide.md       # 🎨 Design System
     ├── 06-development-guide.md  # 💻 Development Guide & Conventions
-    ├── 07-deployment-guide.md   # 🚀 Deployment guide (NEW)
-    └── 08-sentry-setup.md       # 🐛 Sentry setup guide (NEW)
+    ├── 07-deployment-guide.md   # 🚀 Deployment guide
+    ├── 08-sentry-setup.md       # 🐛 Sentry setup guide
+    └── 09-game-ideas.md         # 🎮 Game ideas & implementation guides
 ```
 
 ---
