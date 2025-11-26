@@ -35,11 +35,15 @@ export interface Question {
   order: number;
   content: string;
   data: {
-    type: 'multiple-choice' | 'true-false' | 'short-answer' | 'balance';
-    correctAnswer: string;
+    type: 'multiple-choice' | 'true-false' | 'short-answer' | 'balance-game';
+    correctAnswer?: string;
     options?: string[];
     duration?: number;
     imageUrl?: string;
+    // Balance game specific
+    optionA?: string;
+    optionB?: string;
+    scoringMode?: 'majority' | 'none';
   };
   imageUrl?: string;
   videoUrl?: string;
@@ -154,7 +158,7 @@ export interface AnswerSubmittedResponse {
 
 export interface QuestionEndedResponse {
   questionIndex: number;
-  correctAnswer: string;
+  correctAnswer?: string; // Optional for balance game
   results: QuestionResult[];
   leaderboard: LeaderboardEntry[];
   statistics: QuestionStatistics;

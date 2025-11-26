@@ -141,6 +141,7 @@ export type {
   LiarGamePhase,
   LiarGameActionType,
 } from '../plugins/game-types/liar-game.plugin';
+export type { BalanceQuestionData } from '../plugins/game-types/balance-game.plugin';
 
 /**
  * Union type of all question data types
@@ -148,7 +149,8 @@ export type {
 export type AnyQuestionData =
   | import('../plugins/game-types/multiple-choice.plugin').MultipleChoiceQuestionData
   | import('../plugins/game-types/true-false.plugin').TrueFalseQuestionData
-  | import('../plugins/game-types/short-answer.plugin').ShortAnswerQuestionData;
+  | import('../plugins/game-types/short-answer.plugin').ShortAnswerQuestionData
+  | import('../plugins/game-types/balance-game.plugin').BalanceQuestionData;
 
 // ==========================================
 // DTO Types (from Zod schemas)

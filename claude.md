@@ -234,22 +234,24 @@ async getOrCreateTags(tagNames: string[]): Promise<Tag[]>
 ### Project Stage
 - **Architecture**: ✅ 6-Service MSA defined
 - **Infrastructure**: ✅ Docker + PostgreSQL + Redis ready
-- **Backend**: ✅ **100% Complete** (138 unit tests + 10 E2E tests passing)
+- **Backend**: ✅ **100% Complete** (~126 unit tests + 10 E2E tests)
 - **Frontend**: ✅ **Foundation + Core Pages Complete**
-- **Testing**: ✅ 138 backend unit tests + 10 backend E2E tests + 18 browser E2E tests (Playwright)
+- **Testing**: ✅ ~126 backend unit tests + 10 backend E2E tests + 18 browser E2E tests (Playwright)
 
 ### Backend Services (100% Complete)
 
 | Service | API | Tests | Status |
 |---------|-----|-------|--------|
 | auth-service | ✅ | 17 tests ✅ | 100% |
-| template-service | ✅ | 18 tests ✅ | 100% |
+| template-service | ✅ | 19 tests ✅ | 100% |
 | game-service | ✅ | 26 tests ✅ | 100% |
-| room-service | ✅ | 28 tests ✅ | 100% |
-| ws-service | ✅ | 28 tests ✅ | 100% |
-| result-service | ✅ | 21 tests ✅ | 100% |
+| room-service | ✅ | 29 tests (28✅/1⚠️) | 100% |
+| ws-service | ✅ | 13 tests (6✅/7⚠️) | 100% |
+| result-service | ✅ | 22 tests (16✅/6⚠️) | 100% |
 
-**Total: 138 unit tests + 10 E2E tests passing** 🎉
+**Note**: Some test expectations need sync with updated scoring constants (DEFAULT_BASE_POINTS: 1000→100)
+
+**Total: ~126 unit tests + 10 E2E tests** 🎉
 
 ### Frontend Pages
 
@@ -295,11 +297,11 @@ async getOrCreateTags(tagNames: string[]): Promise<Tag[]>
 
 #### Features
 - ✅ **Question intro screen** (2-second "1/3" display before each question)
-- ✅ **Multiple question types** (multiple-choice, true-false, short-answer)
+- ✅ **Multiple question types** (multiple-choice, true-false, short-answer, liar-game, balance-game)
 - ✅ **Template questions loading** (creates copies from template)
 - ✅ **Server-based synchronized timer** (absolute time sync across all clients)
 - ✅ **Organizer reconnection handling** (auto-detect organizer without nickname prompt)
-- ✅ **Plugin System** (frontend + backend, 554 lines, 3 game types)
+- ✅ **Plugin System** (frontend + backend, 5 game types: multiple-choice, true-false, short-answer, liar-game, balance-game)
 - ✅ **Question media support** (image, audio, video with QuestionMedia component)
 - ✅ **Media editing system** (crop, mask, time range for image/audio/video quiz games)
 - ✅ **Room status protection** (prevents joins after game started/finished)
@@ -321,7 +323,13 @@ async getOrCreateTags(tagNames: string[]): Promise<Tag[]>
 
 **Recently Fixed**:
 
-*2025-11-25 (Latest)*:
+*2025-11-26 (Latest)*:
+- ✅ **Documentation sync** → Removed references to deleted docs (09-game-ideas.md)
+- ✅ **Build error fixed** → Added `questionData` to `ScoreCalculationOptions` type
+- ✅ **Test sync** → Updated plugin tests (expected 3→5 game types)
+- ✅ **Plugin count updated** → Now 5 game types (added liar-game, balance-game)
+
+*2025-11-25*:
 - ✅ **Media editing system** → Full implementation (crop, mask, time range playback)
 - ✅ DB schema updated → `mediaSettings Json?` field added to Question model
 - ✅ Type system extended → MediaSettings types in @xingu/shared

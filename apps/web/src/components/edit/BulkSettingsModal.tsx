@@ -9,10 +9,14 @@ interface QuestionFormData {
   order: number;
   content: string;
   data: {
-    type: 'multiple-choice' | 'true-false' | 'short-answer';
+    type: 'multiple-choice' | 'true-false' | 'short-answer' | 'balance-game';
     options?: string[];
     correctAnswer?: string;
     duration?: number;
+    // Balance game specific
+    optionA?: string;
+    optionB?: string;
+    scoringMode?: 'majority' | 'none';
   };
   imageUrl?: string;
 }
@@ -30,6 +34,7 @@ export function BulkSettingsModal({ isOpen, onClose, questions, onApply }: BulkS
   const [multipleChoiceDuration, setMultipleChoiceDuration] = useState<number>(30);
   const [trueFalseDuration, setTrueFalseDuration] = useState<number>(20);
   const [shortAnswerDuration, setShortAnswerDuration] = useState<number>(45);
+  const [balanceGameDuration, setBalanceGameDuration] = useState<number>(15);
 
   // Calculate statistics
   const stats = {
@@ -37,6 +42,7 @@ export function BulkSettingsModal({ isOpen, onClose, questions, onApply }: BulkS
     multipleChoice: questions.filter((q) => q.data.type === 'multiple-choice').length,
     trueFalse: questions.filter((q) => q.data.type === 'true-false').length,
     shortAnswer: questions.filter((q) => q.data.type === 'short-answer').length,
+    balanceGame: questions.filter((q) => q.data.type === 'balance-game').length,
   };
 
   useEffect(() => {
@@ -47,6 +53,7 @@ export function BulkSettingsModal({ isOpen, onClose, questions, onApply }: BulkS
       setMultipleChoiceDuration(30);
       setTrueFalseDuration(20);
       setShortAnswerDuration(45);
+      setBalanceGameDuration(15);
     }
   }, [isOpen]);
 
@@ -67,6 +74,9 @@ export function BulkSettingsModal({ isOpen, onClose, questions, onApply }: BulkS
             break;
           case 'short-answer':
             newDuration = shortAnswerDuration;
+            break;
+          case 'balance-game':
+            newDuration = balanceGameDuration;
             break;
           default:
             newDuration = allDuration;
@@ -344,6 +354,44 @@ export function BulkSettingsModal({ isOpen, onClose, questions, onApply }: BulkS
                     </div>
                   </div>
                   <p className="text-xs text-purple-600 mt-2">💡 주관식은 입력 시간이 필요하므로 넉넉하게 설정하세요</p>
+                </div>
+              )}
+
+              {/* Balance Game */}
+              {stats.balanceGame > 0 && (
+                <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-semibold text-orange-700">⚖️ 밸런스 게임</span>
+                      <span className="text-xs text-orange-600 bg-orange-100 px-2 py-0.5 rounded-full">
+                        {stats.balanceGame}개
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="number"
+                      value={balanceGameDuration}
+                      onChange={(e) => setBalanceGameDuration(Number(e.target.value))}
+                      min={5}
+                      max={300}
+                      className="h-10 w-24 px-3 border border-orange-300 rounded-lg bg-white text-gray-900 transition-all duration-200 hover:border-orange-400 focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 focus:outline-none"
+                    />
+                    <span className="text-sm text-orange-700">초</span>
+                    <div className="flex gap-2">
+                      {[10, 15, 20].map((dur) => (
+                        <button
+                          key={dur}
+                          type="button"
+                          onClick={() => setBalanceGameDuration(dur)}
+                          className="px-3 py-1 text-xs bg-white hover:bg-orange-100 text-orange-700 rounded transition-colors cursor-pointer border border-orange-200"
+                        >
+                          {dur}초
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <p className="text-xs text-orange-600 mt-2">💡 밸런스 게임은 빠른 선택이 재미있어요</p>
                 </div>
               )}
             </div>

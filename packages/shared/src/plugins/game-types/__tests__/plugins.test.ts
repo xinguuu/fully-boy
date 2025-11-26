@@ -3,6 +3,8 @@ import {
   TrueFalsePlugin,
   MultipleChoicePlugin,
   ShortAnswerPlugin,
+  LiarGamePlugin,
+  BalanceGamePlugin,
   registerBuiltInPlugins,
   getBuiltInPlugins,
 } from '../index';
@@ -70,8 +72,8 @@ describe('Built-in Game Type Plugins', () => {
       });
 
       expect(result.isCorrect).toBe(true);
-      expect(result.points).toBeGreaterThan(1000); // Base + bonus
-      expect(result.breakdown.basePoints).toBe(1000);
+      expect(result.points).toBeGreaterThan(100); // Base + bonus
+      expect(result.breakdown.basePoints).toBe(100); // DEFAULT_BASE_POINTS = 100
       expect(result.breakdown.speedBonus).toBeGreaterThan(0);
     });
   });
@@ -232,6 +234,114 @@ describe('Built-in Game Type Plugins', () => {
     });
   });
 
+  describe('BalanceGamePlugin', () => {
+    let plugin: BalanceGamePlugin;
+
+    beforeEach(() => {
+      plugin = new BalanceGamePlugin();
+    });
+
+    it('should have correct type and name', () => {
+      expect(plugin.type).toBe('balance-game');
+      expect(plugin.name).toBe('밸런스 게임');
+    });
+
+    it('should validate correct question data', () => {
+      const questionData = {
+        type: 'balance-game',
+        optionA: '삼겹살',
+        optionB: '치킨',
+      };
+
+      expect(plugin.validateQuestionData(questionData)).toBe(true);
+    });
+
+    it('should reject invalid question data', () => {
+      const invalidData = [
+        { type: 'balance-game', optionA: '삼겹살' }, // Missing optionB
+        { type: 'balance-game', optionB: '치킨' }, // Missing optionA
+        { type: 'balance-game', optionA: '', optionB: '치킨' }, // Empty optionA
+        { type: 'balance-game', optionA: '삼겹살', optionB: '' }, // Empty optionB
+        { type: 'multiple-choice', optionA: '삼겹살', optionB: '치킨' }, // Wrong type
+      ];
+
+      invalidData.forEach((data) => {
+        expect(plugin.validateQuestionData(data)).toBe(false);
+      });
+    });
+
+    it('should accept valid answers (A or B)', () => {
+      const questionData = {
+        type: 'balance-game',
+        optionA: '삼겹살',
+        optionB: '치킨',
+      };
+
+      expect(plugin.checkAnswer(questionData, 'A')).toBe(true);
+      expect(plugin.checkAnswer(questionData, 'B')).toBe(true);
+      expect(plugin.checkAnswer(questionData, 'C')).toBe(false);
+      expect(plugin.checkAnswer(questionData, '삼겹살')).toBe(false);
+    });
+
+    it('should get default question data', () => {
+      const defaultData = plugin.getDefaultQuestionData();
+      expect(defaultData.type).toBe('balance-game');
+      expect(defaultData.optionA).toBe('선택지 A');
+      expect(defaultData.optionB).toBe('선택지 B');
+      expect(defaultData.duration).toBe(15);
+      expect(defaultData.scoringMode).toBe('none');
+    });
+
+    it('should calculate participation score for none mode', () => {
+      const questionData = {
+        type: 'balance-game',
+        optionA: '삼겹살',
+        optionB: '치킨',
+        scoringMode: 'none' as const,
+      };
+
+      const result = plugin.calculateScore({
+        questionData,
+        isCorrect: true,
+        responseTimeMs: 5000,
+        questionDuration: 15,
+      });
+
+      expect(result.points).toBe(100); // Participation points only
+      expect(result.isCorrect).toBe(true);
+    });
+
+    it('should calculate majority score for majority mode', () => {
+      const questionData = {
+        type: 'balance-game',
+        optionA: '삼겹살',
+        optionB: '치킨',
+        scoringMode: 'majority' as const,
+      };
+
+      // In majority mode, isCorrect is determined by the caller
+      const majorityResult = plugin.calculateScore({
+        questionData,
+        isCorrect: true,
+        responseTimeMs: 5000, // 5 seconds
+        questionDuration: 15, // 15 seconds
+      });
+
+      expect(majorityResult.isCorrect).toBe(true);
+      expect(majorityResult.points).toBeGreaterThan(500); // Base (500) + speed bonus
+
+      const minorityResult = plugin.calculateScore({
+        questionData,
+        isCorrect: false,
+        responseTimeMs: 5000,
+        questionDuration: 15,
+      });
+
+      expect(minorityResult.isCorrect).toBe(false);
+      expect(minorityResult.points).toBe(0);
+    });
+  });
+
   describe('registerBuiltInPlugins()', () => {
     beforeEach(() => {
       gameTypeRegistry.clear();
@@ -242,10 +352,12 @@ describe('Built-in Game Type Plugins', () => {
 
       registerBuiltInPlugins();
 
-      expect(gameTypeRegistry.size()).toBe(3);
+      expect(gameTypeRegistry.size()).toBe(5);
       expect(gameTypeRegistry.has('true-false')).toBe(true);
       expect(gameTypeRegistry.has('multiple-choice')).toBe(true);
       expect(gameTypeRegistry.has('short-answer')).toBe(true);
+      expect(gameTypeRegistry.has('liar-game')).toBe(true);
+      expect(gameTypeRegistry.has('balance-game')).toBe(true);
     });
 
     it('should get built-in plugins', () => {
@@ -254,6 +366,8 @@ describe('Built-in Game Type Plugins', () => {
       expect(plugins.trueFalse).toBeInstanceOf(TrueFalsePlugin);
       expect(plugins.multipleChoice).toBeInstanceOf(MultipleChoicePlugin);
       expect(plugins.shortAnswer).toBeInstanceOf(ShortAnswerPlugin);
+      expect(plugins.liarGame).toBeInstanceOf(LiarGamePlugin);
+      expect(plugins.balanceGame).toBeInstanceOf(BalanceGamePlugin);
     });
   });
 });

@@ -9,15 +9,21 @@ import { Select } from '@/components/ui';
 import type { Question, Player, LeaderboardEntry } from '@/lib/websocket/types';
 import type { MediaSettings } from '@xingu/shared';
 
+type QuestionType = 'multiple-choice' | 'true-false' | 'short-answer' | 'balance-game';
+
 interface QuestionFormData {
   id?: string;
   order: number;
   content: string;
   data: {
-    type: 'multiple-choice' | 'true-false' | 'short-answer';
+    type: QuestionType;
     options?: string[];
     correctAnswer?: string;
     duration?: number;
+    // Balance game specific
+    optionA?: string;
+    optionB?: string;
+    scoringMode?: 'majority' | 'none';
   };
   imageUrl?: string;
   videoUrl?: string;
@@ -35,12 +41,16 @@ interface QuestionEditPanelProps {
 
 export function QuestionEditPanel({ question, questionNumber, onSave, onDelete, onCancel }: QuestionEditPanelProps) {
   const [content, setContent] = useState('');
-  const [type, setType] = useState<'multiple-choice' | 'true-false' | 'short-answer'>('multiple-choice');
+  const [type, setType] = useState<QuestionType>('multiple-choice');
   const [options, setOptions] = useState<string[]>(['', '', '', '']);
   const [correctAnswer, setCorrectAnswer] = useState('');
   const [duration, setDuration] = useState<number>(30);
   const [showPreview, setShowPreview] = useState(false);
   const [previewMode, setPreviewMode] = useState<'participant' | 'organizer'>('participant');
+
+  // Balance game specific state
+  const [optionA, setOptionA] = useState('');
+  const [optionB, setOptionB] = useState('');
 
   // Media state
   const [imageUrl, setImageUrl] = useState<string | undefined>();
@@ -55,6 +65,9 @@ export function QuestionEditPanel({ question, questionNumber, onSave, onDelete, 
       setOptions(question.data.options || ['', '', '', '']);
       setCorrectAnswer(question.data.correctAnswer || '');
       setDuration(question.data.duration || 30);
+      // Balance game specific
+      setOptionA(question.data.optionA || '');
+      setOptionB(question.data.optionB || '');
       // Media
       setImageUrl(question.imageUrl);
       setVideoUrl(question.videoUrl);
@@ -67,6 +80,9 @@ export function QuestionEditPanel({ question, questionNumber, onSave, onDelete, 
       setOptions(['', '', '', '']);
       setCorrectAnswer('');
       setDuration(30);
+      // Balance game specific
+      setOptionA('');
+      setOptionB('');
       // Media
       setImageUrl(undefined);
       setVideoUrl(undefined);
@@ -83,8 +99,12 @@ export function QuestionEditPanel({ question, questionNumber, onSave, onDelete, 
       data: {
         type,
         options: type === 'multiple-choice' ? options : type === 'true-false' ? ['O', 'X'] : undefined,
-        correctAnswer,
+        correctAnswer: type !== 'balance-game' ? correctAnswer : undefined,
         duration,
+        // Balance game specific
+        optionA: type === 'balance-game' ? optionA : undefined,
+        optionB: type === 'balance-game' ? optionB : undefined,
+        scoringMode: type === 'balance-game' ? 'none' : undefined,
       },
       imageUrl,
       videoUrl,
@@ -122,7 +142,9 @@ export function QuestionEditPanel({ question, questionNumber, onSave, onDelete, 
     setOptions(updated);
   };
 
-  const isValid = content.trim() !== '' && (type !== 'multiple-choice' || options.some((opt) => opt.trim() !== ''));
+  const isValid = content.trim() !== '' &&
+    (type === 'multiple-choice' ? options.some((opt) => opt.trim() !== '') : true) &&
+    (type === 'balance-game' ? (optionA.trim() !== '' && optionB.trim() !== '') : true);
 
   // Generate dummy data for preview
   const previewQuestion = useMemo<Question>(() => {
@@ -136,15 +158,19 @@ export function QuestionEditPanel({ question, questionNumber, onSave, onDelete, 
       data: {
         type,
         options: validOptions,
-        correctAnswer: correctAnswer || defaultCorrectAnswer,
+        correctAnswer: type !== 'balance-game' ? (correctAnswer || defaultCorrectAnswer) : undefined,
         duration,
+        // Balance game specific
+        optionA: type === 'balance-game' ? (optionA || '선택지 A') : undefined,
+        optionB: type === 'balance-game' ? (optionB || '선택지 B') : undefined,
+        scoringMode: type === 'balance-game' ? 'none' : undefined,
       },
       imageUrl,
       videoUrl,
       audioUrl,
       mediaSettings,
     };
-  }, [content, type, options, correctAnswer, duration, questionNumber, imageUrl, videoUrl, audioUrl, mediaSettings]);
+  }, [content, type, options, correctAnswer, duration, questionNumber, imageUrl, videoUrl, audioUrl, mediaSettings, optionA, optionB]);
 
   // Generate dummy players with answers (for organizer view statistics)
   const dummyPlayers = useMemo<Player[]>(() => {
@@ -194,6 +220,25 @@ export function QuestionEditPanel({ question, questionNumber, onSave, onDelete, 
             answer: i < 7 ? (correctAnswer || 'O') : (correctAnswer === 'O' ? 'X' : 'O'),
             isCorrect: i < 7,
             points: i < 7 ? 100 : 0,
+            responseTimeMs: Math.floor(Math.random() * 10000),
+            submittedAt: new Date(),
+          }
+        },
+        isOrganizer: false,
+        joinedAt: new Date(),
+      }));
+    } else if (type === 'balance-game') {
+      // Balance game: 65% choose A, 35% choose B
+      return Array.from({ length: 11 }, (_, i) => ({
+        id: `dummy-${i}`,
+        socketId: `socket-dummy-${i}`,
+        nickname: `참가자${i + 1}`,
+        score: Math.floor(Math.random() * 500),
+        answers: {
+          [questionNumber - 1]: {
+            answer: i < 7 ? 'A' : 'B', // 7 choose A, 4 choose B
+            isCorrect: true, // No correct answer in balance game
+            points: 100,
             responseTimeMs: Math.floor(Math.random() * 10000),
             submittedAt: new Date(),
           }
@@ -260,11 +305,12 @@ export function QuestionEditPanel({ question, questionNumber, onSave, onDelete, 
             </label>
             <Select
               value={type}
-              onChange={(value) => setType(value as 'multiple-choice' | 'true-false' | 'short-answer')}
+              onChange={(value) => setType(value as QuestionType)}
               options={[
                 { value: 'multiple-choice', label: '객관식 (선택지)' },
                 { value: 'true-false', label: 'O/X 퀴즈' },
                 { value: 'short-answer', label: '주관식' },
+                { value: 'balance-game', label: '밸런스 게임 (A vs B)' },
               ]}
               fullWidth
             />
@@ -417,6 +463,58 @@ export function QuestionEditPanel({ question, questionNumber, onSave, onDelete, 
                 className="h-11 w-full px-4 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder:text-gray-400 transition-all duration-200 hover:border-gray-400 focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 focus:outline-none"
                 placeholder="정답을 입력하세요"
               />
+            </div>
+          )}
+
+          {/* Balance Game Options */}
+          {type === 'balance-game' && (
+            <div className="space-y-4">
+              <label className="block text-sm font-medium text-gray-700">
+                선택지 <span className="text-error">*</span>
+              </label>
+
+              {/* Option A */}
+              <div className="p-4 rounded-xl border-2 border-red-200 bg-red-50">
+                <div className="flex items-center gap-3 mb-3">
+                  <span className="w-10 h-10 rounded-full bg-red-500 text-white flex items-center justify-center text-xl font-bold">
+                    A
+                  </span>
+                  <span className="text-lg font-semibold text-red-700">선택지 A</span>
+                </div>
+                <input
+                  type="text"
+                  value={optionA}
+                  onChange={(e) => setOptionA(e.target.value)}
+                  className="h-12 w-full px-4 border-2 border-red-300 rounded-lg bg-white text-gray-900 placeholder:text-gray-400 transition-all duration-200 hover:border-red-400 focus:border-red-500 focus:ring-4 focus:ring-red-500/10 focus:outline-none text-lg"
+                  placeholder="예: 삼겹살"
+                />
+              </div>
+
+              {/* VS Divider */}
+              <div className="flex items-center justify-center">
+                <div className="flex-1 h-0.5 bg-gradient-to-r from-red-200 via-gray-300 to-blue-200" />
+                <span className="px-4 text-2xl font-black text-gray-400">VS</span>
+                <div className="flex-1 h-0.5 bg-gradient-to-r from-gray-300 via-gray-300 to-blue-200" />
+              </div>
+
+              {/* Option B */}
+              <div className="p-4 rounded-xl border-2 border-blue-200 bg-blue-50">
+                <div className="flex items-center gap-3 mb-3">
+                  <span className="w-10 h-10 rounded-full bg-blue-500 text-white flex items-center justify-center text-xl font-bold">
+                    B
+                  </span>
+                  <span className="text-lg font-semibold text-blue-700">선택지 B</span>
+                </div>
+                <input
+                  type="text"
+                  value={optionB}
+                  onChange={(e) => setOptionB(e.target.value)}
+                  className="h-12 w-full px-4 border-2 border-blue-300 rounded-lg bg-white text-gray-900 placeholder:text-gray-400 transition-all duration-200 hover:border-blue-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 focus:outline-none text-lg"
+                  placeholder="예: 치킨"
+                />
+              </div>
+
+              <p className="text-xs text-gray-500">💡 밸런스 게임은 정답이 없어요! 참가자들의 투표 결과만 표시됩니다.</p>
             </div>
           )}
 

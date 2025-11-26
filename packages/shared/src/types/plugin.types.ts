@@ -26,6 +26,7 @@ export interface ScoreCalculationOptions {
   questionDuration: number; // in seconds
   basePoints?: number;
   speedBonusMultiplier?: number;
+  questionData?: QuestionData; // Optional: for plugins that need question-specific scoring
 }
 
 /**

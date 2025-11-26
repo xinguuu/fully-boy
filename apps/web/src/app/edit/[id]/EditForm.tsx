@@ -19,10 +19,14 @@ interface QuestionFormData {
   order: number;
   content: string;
   data: {
-    type: 'multiple-choice' | 'true-false' | 'short-answer';
+    type: 'multiple-choice' | 'true-false' | 'short-answer' | 'balance-game';
     options?: string[];
     correctAnswer?: string;
     duration?: number;
+    // Balance game specific
+    optionA?: string;
+    optionB?: string;
+    scoringMode?: 'majority' | 'none';
   };
   imageUrl?: string;
   videoUrl?: string;

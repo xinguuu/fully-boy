@@ -1,547 +1,870 @@
-# 🎮 Xingu Game Ideas
+# 🎮 Xingu 게임 아이디어 & 구현 가이드
 
-> **게임 기획안 모음집**
-> 팀 빌딩, 아이스브레이킹, 파티 게임 아이디어
-
----
-
-## 📋 목차
-
-- [팀 빌딩 & 아이스브레이킹 게임](#팀-빌딩--아이스브레이킹-게임)
-- [지식 & 퀴즈 게임](#지식--퀴즈-게임)
-- [창의성 & 표현 게임](#창의성--표현-게임)
-- [스피드 & 반응 게임](#스피드--반응-게임)
-- [구현 난이도별 분류](#구현-난이도별-분류)
+> 기존 인프라를 활용한 재미있는 게임 확장 아이디어
 
 ---
 
-## 🤝 팀 빌딩 & 아이스브레이킹 게임
+## 📊 현재 상태
 
-### 1. 마피아 게임 (Mafia/Werewolf) 🕵️
+### 구현 완료된 게임
+| 게임 타입 | 플러그인 | 질문 유형 | 미디어 지원 |
+|----------|---------|----------|------------|
+| OX 퀴즈 | `true-false` | O/X 선택 | ✅ 이미지/오디오/비디오 |
+| 4지선다 | `multiple-choice` | 2-6개 선택지 | ✅ 이미지/오디오/비디오 |
+| 초성 퀴즈 | `short-answer` | 텍스트 입력 | ✅ 이미지/오디오/비디오 |
+| 라이어 게임 | `liar-game` | 파티 게임 | ❌ |
 
-**게임 개요**
-- 직업을 배정받아 마피아와 시민으로 나뉘어 진행하는 추리 게임
-- 낮/밤 페이즈를 반복하며 토론과 투표로 승부 결정
-
-**게임 진행**
-1. 역할 배정 (마피아, 시민, 경찰, 의사 등)
-2. 밤: 마피아가 시민 제거, 경찰 조사, 의사 보호
-3. 낮: 토론 + 투표로 용의자 제거
-4. 마피아 전멸 또는 시민 수 ≤ 마피아 수로 게임 종료
-
-**Xingu 구현 방안**
-- 폰으로 비밀 역할 확인
-- 실시간 타이머 + 페이즈 전환 알림
-- MC가 게임 진행 컨트롤 (밤/낮 전환)
-- 익명 투표 시스템
-- 채팅으로 변론 가능 (선택)
-
-**플레이어 수**: 6~20명
-**예상 시간**: 20~40분
-**구현 난이도**: ⭐⭐⭐⭐ (고급)
+### 활용 가능한 기능
+- **이미지 마스킹**: blur, mosaic, spotlight (특정 영역만 보이기/숨기기)
+- **이미지 크롭**: 원하는 영역만 표시
+- **오디오/비디오 구간 재생**: startTime ~ endTime 설정
+- **실시간 점수 계산**: 빠른 정답 = 높은 점수 (카훗 스타일)
+- **WebSocket 실시간 통신**: 참가자 간 동기화
 
 ---
 
-### 2. 라이어 게임 (Liar Game) 🎭
+## 🌟 추천 게임 아이디어
 
-**게임 개요**
-- 한 명만 거짓말쟁이(라이어), 나머지는 같은 키워드 공유
-- 돌아가며 힌트를 말하며 라이어 찾기
-- 라이어가 키워드를 맞추면 역전승
-
-**게임 진행**
-1. 모두에게 키워드 제시 (라이어만 "라이어" 표시)
-2. 돌아가며 키워드 관련 힌트 말하기 (30초씩)
-3. 라이어 찾기 투표
-4. 라이어가 최다 득표 시 키워드 맞추기 기회
-5. 키워드 맞추면 라이어 승리, 틀리면 시민 승리
-
-**Xingu 구현 방안**
-- 폰으로 개인 키워드 확인
-- 순서 표시 + 타이머
-- 투표 시스템 (1인 1표)
-- 최종 키워드 입력창 (라이어용)
-- 실시간 투표 결과 공개
-
-**플레이어 수**: 4~10명
-**예상 시간**: 10~15분
-**구현 난이도**: ⭐⭐⭐ (중간)
+### 난이도 범례
+- ⭐ 쉬움: 기존 플러그인 활용, 콘텐츠만 제작
+- ⭐⭐ 중간: 새 플러그인 필요, 비교적 단순한 로직
+- ⭐⭐⭐ 어려움: 복잡한 세션 관리, 새 UI 컴포넌트 필요
 
 ---
 
-### 3. 밸런스 게임 (This or That) ⚖️
+## 1. 밸런스 게임 ⭐⭐
 
-**게임 개요**
-- 두 가지 선택지 중 하나를 골라 투표
-- 소수 의견자들끼리 이유 설명
-- 서로 알아가는 아이스브레이킹용
+### 개요
+> "삼겹살 vs 치킨, 당신의 선택은?"
 
-**게임 진행**
-1. 양자택일 질문 제시 ("치킨 vs 피자")
-2. 모두 투표 (A or B)
-3. 투표 결과 공개 (그래프)
-4. 소수 의견자 하이라이트
-5. 이유 발표 또는 채팅 공유
+2가지 선택지 중 하나를 고르고, 다른 참가자들의 선택 비율을 확인하는 게임.
 
-**Xingu 구현 방안**
-- 실시간 투표 결과 그래프 (바 차트)
-- 소수 의견자 강조 표시
-- 채팅으로 이유 공유
-- 통계 저장 ("우리 팀은 치킨파 70%")
-- 재밌는 질문 템플릿 제공
+### 게임 플로우
+```
+1. 질문 표시: "연봉 1억 백수 vs 연봉 5천만 워커홀릭"
+2. 참가자 투표 (10-30초)
+3. 결과 표시: "A: 65% vs B: 35%"
+4. 소수파 탈락 또는 다음 질문
+```
 
-**플레이어 수**: 제한 없음
-**예상 시간**: 1분/질문
-**구현 난이도**: ⭐ (즉시 가능)
+### 예시 질문들
+```
+- 평생 여름 vs 평생 겨울
+- 투명인간 능력 vs 순간이동 능력
+- 100억 받고 달 1년 살기 vs 지구에서 평범하게 살기
+- 모든 언어 마스터 vs 모든 악기 마스터
+- 과거로 10년 vs 미래로 10년
+```
 
----
+### 구현 방식
 
-### 4. 순발력 게임 (Two Truths and a Lie) 🤥
+#### A. 간단 버전 (기존 multiple-choice 활용)
+```typescript
+// 별도 플러그인 없이 4지선다로 구현 가능
+const questionData = {
+  type: 'multiple-choice',
+  options: ['삼겹살', '치킨'],
+  correctAnswer: null,  // 정답 없음 (투표형)
+  showResults: true,    // 결과 비율 표시
+};
+```
+- **장점**: 빠른 구현
+- **단점**: 정답 없는 투표형 처리 로직 추가 필요
 
-**게임 개요**
-- 자기소개로 3가지 사실 말하기 (2개 진실, 1개 거짓)
-- 다른 사람들이 거짓을 찾는 게임
-- 서로 알아가는 아이스브레이킹용
+#### B. 전용 플러그인 (추천)
+```typescript
+// packages/shared/src/plugins/game-types/balance-game.plugin.ts
 
-**게임 진행**
-1. 자기 차례에 3가지 문장 작성
-2. 화면에 표시
-3. 다른 참가자들이 거짓 투표
-4. 정답 공개 + 해설
-5. 정답 맞춘 사람에게 점수
+export interface BalanceQuestionData extends QuestionData {
+  type: 'balance-game';
+  optionA: string;
+  optionB: string;
+  imageA?: string;  // 선택지 A 이미지
+  imageB?: string;  // 선택지 B 이미지
+  eliminateMinority?: boolean;  // 소수파 탈락 모드
+}
 
-**Xingu 구현 방안**
-- 자기 차례에 3가지 입력 (폰)
-- 화면에 표시 (익명 또는 실명)
-- 투표 시스템 (1/2/3번 중 선택)
-- 정답 공개 애니메이션
-- 점수 집계
+export class BalanceGamePlugin extends BaseGameTypePlugin {
+  public readonly type = 'balance-game';
+  public readonly name = '밸런스 게임';
+  public readonly category = PluginCategory.QUIZ;
 
-**플레이어 수**: 4~20명
-**예상 시간**: 2~3분/인
-**구현 난이도**: ⭐⭐ (쉬움)
+  // 정답 체크 없음 (투표형)
+  public checkAnswer(): boolean {
+    return true;  // 모든 답변 유효
+  }
 
----
+  // 점수 계산: 다수파에 속하면 점수
+  public calculateScore(options: ScoreCalculationOptions): ScoreResult {
+    const { isCorrect, responseTimeMs, questionDuration } = options;
+    // isCorrect = 다수파 여부 (ws-service에서 계산 후 전달)
 
-### 5. 공통점 찾기 (Team Bonding) 🔗
+    if (!isCorrect) {
+      return { points: 0, isCorrect: false, responseTimeMs, breakdown: {...} };
+    }
 
-**게임 개요**
-- 팀원들의 공통점 찾기 미션
-- 제한 시간 내 최대한 많이 찾기
-- 팀 결속력 강화용
+    // 다수파: 기본 점수 + 빠른 응답 보너스
+    return this.calculateBaseScore(options);
+  }
+}
+```
 
-**게임 진행**
-1. 팀 나누기 (3~5명씩)
-2. 제한 시간 (5분) 동안 공통점 찾기
-3. 팀별로 공통점 제출
-4. MC가 검증 (증명 가능한 것만 인정)
-5. 가장 많이 찾은 팀 승리
+#### 프론트엔드 UI
+```tsx
+// 밸런스 게임 전용 컴포넌트
+function BalanceGameQuestion({ optionA, optionB, imageA, imageB }) {
+  return (
+    <div className="flex gap-4">
+      <BalanceOption
+        label={optionA}
+        image={imageA}
+        side="left"
+        color="bg-red-500"
+      />
+      <div className="text-4xl font-bold">VS</div>
+      <BalanceOption
+        label={optionB}
+        image={imageB}
+        side="right"
+        color="bg-blue-500"
+      />
+    </div>
+  );
+}
+```
 
-**Xingu 구현 방안**
-- 팀 자동 배정 또는 수동 배정
-- 팀 채팅방 제공
-- 공통점 제출 시스템 (텍스트 입력)
-- MC 검증 인터페이스 (승인/거부)
-- 실시간 리더보드
-
-**플레이어 수**: 9~30명 (3~6팀)
-**예상 시간**: 10~15분
-**구현 난이도**: ⭐⭐⭐ (중간)
-
----
-
-### 6. 역할극 게임 (Random Role Play) 🎬
-
-**게임 개요**
-- 랜덤 역할을 배정받아 상황극 진행
-- 다른 사람이 역할 맞추기
-- 연기 잘한 사람 MVP 선정
-
-**게임 진행**
-1. 각자 랜덤 역할 배정 ("화난 고객", "졸린 직원")
-2. 상황 시나리오 제시 ("카페에서 주문하기")
-3. 역할에 맞게 행동 (2~3분)
-4. 다른 사람이 역할 맞추기 투표
-5. 연기 잘한 사람 MVP 투표
-
-**Xingu 구현 방안**
-- 폰으로 비밀 역할 확인
-- 상황 시나리오 화면 표시
-- 역할 맞추기 투표 (객관식)
-- MVP 선정 투표
-- 재밌는 역할/상황 템플릿 제공
-
-**플레이어 수**: 4~12명
-**예상 시간**: 5~10분/라운드
-**구현 난이도**: ⭐⭐⭐ (중간)
-
----
-
-### 7. 컨센서스 게임 (Survival Ranking) 🏝️
-
-**게임 개요**
-- 특정 상황에서 아이템 중요도 순위 매기기
-- 팀 토론으로 합의점 찾기
-- 정답과 가장 가까운 팀 승리
-
-**게임 진행**
-1. 상황 제시 ("무인도에 표류")
-2. 10가지 아이템 제시 (로프, 칼, 물 등)
-3. 개인별 중요도 순위 매기기
-4. 팀 토론 (5분)
-5. 팀 최종 순위 제출
-6. 전문가 정답과 비교 (점수 계산)
-
-**Xingu 구현 방안**
-- 개인 순위 드래그 앤 드롭
-- 팀 토론 시간 타이머
-- 팀 최종 순위 제출 (합의)
-- 정답과 비교 알고리즘 (순위 차이 합산)
-- 해설 제공
-
-**플레이어 수**: 6~30명 (2~6팀)
-**예상 시간**: 15~20분
-**구현 난이도**: ⭐⭐⭐ (중간)
+### 예상 작업량
+- 플러그인: 50줄
+- 프론트엔드 컴포넌트: 100줄
+- **총 예상 시간: 2-3시간**
 
 ---
 
-## 📚 지식 & 퀴즈 게임
+## 2. 아이돌/연예인 얼굴 맞추기 ⭐
 
-### 8. 초성 게임 (팀전) 🔤
+### 개요
+> 점점 공개되는 얼굴을 보고 누구인지 맞추기
 
-**게임 개요**
-- 초성 힌트로 단어 맞추기
-- 팀 대항전
-- 먼저 맞추는 팀이 점수 획득
+이미지 마스킹 기능을 활용해 얼굴을 점진적으로 공개하는 퀴즈.
 
-**게임 진행**
-1. 팀 나누기 (2~4팀)
-2. 초성 힌트 제시 ("ㅅㄱ" → "사과")
-3. 팀원 누구나 정답 입력 가능
-4. 먼저 맞추는 팀 점수 획득
-5. 힌트 단계별 공개 (선택)
+### 게임 플로우
+```
+Round 1: 5% 공개 (눈만) → 맞추면 1500점
+Round 2: 30% 공개 (얼굴 일부) → 맞추면 1000점
+Round 3: 70% 공개 (대부분) → 맞추면 500점
+Round 4: 100% 공개 → 맞추면 200점
+```
 
-**Xingu 구현 방안**
-- 팀 자동 배정
-- 실시간 점수판
-- 동시 입력 가능 (먼저 제출한 답 우선)
-- 힌트 단계별 공개 (초성 → 자음 → 한 글자)
-- 난이도별 점수 차등
+### 마스킹 활용 방식
 
-**플레이어 수**: 제한 없음
-**예상 시간**: 1~2분/문제
-**구현 난이도**: ⭐ (즉시 가능 - 기존 단답형 활용)
+#### Spotlight 마스크 (추천)
+```typescript
+const question = {
+  content: "이 아이돌은 누구일까요?",
+  imageUrl: "/images/idol.jpg",
+  mediaSettings: {
+    image: {
+      maskType: 'spotlight',  // 지정 영역만 밝게
+      maskIntensity: 90,      // 90% 어둡게
+      cropArea: {
+        x: 40,   // 눈 부분만
+        y: 30,
+        width: 20,
+        height: 10,
+      }
+    }
+  },
+  data: {
+    type: 'multiple-choice',
+    options: ['아이유', '태연', '제니', '카리나'],
+    correctAnswer: '아이유',
+  }
+};
+```
 
----
+#### Blur 마스크
+```typescript
+mediaSettings: {
+  image: {
+    maskType: 'blur',
+    maskIntensity: 80,  // 80% 블러
+    cropArea: { /* 선명하게 보일 영역 */ }
+  }
+}
+```
 
-### 9. 음악 퀴즈 (노래 맞추기) 🎵
+### 콘텐츠 아이디어
+```
+- K-pop 아이돌 (BTS, 블랙핑크, 뉴진스 등)
+- 배우 (송강호, 전지현, 이정재 등)
+- 유튜버/스트리머
+- 스포츠 스타
+- 역사 인물
+```
 
-**게임 개요**
-- 노래 일부 재생하고 제목/가수 맞추기
-- 재생 시간 늘려가며 힌트 제공
-- 세대별 음악 카테고리
+### 구현 방식
+**새 플러그인 불필요!** 기존 `multiple-choice` + `mediaSettings` 조합으로 구현 가능.
 
-**게임 진행**
-1. 노래 1초 재생
-2. 정답 입력 (제목 또는 가수)
-3. 틀리면 3초 재생
-4. 틀리면 5초 재생
-5. 먼저 맞추는 사람 점수
+게임 편집 UI에서:
+1. 같은 이미지로 4개 질문 생성
+2. 각 질문마다 다른 `cropArea`와 `maskIntensity` 설정
+3. 점수는 질문 순서에 따라 자동 감소 (또는 수동 설정)
 
-**Xingu 구현 방안**
-- 오디오 파일 업로드
-- 재생 시간 제어 (1초 → 3초 → 5초)
-- 단답형 입력 (자동 채점)
-- 세대별 카테고리 (7080/9000/최신/K-POP)
-- **현재 K-POP 템플릿 활용 가능!**
-
-**플레이어 수**: 제한 없음
-**예상 시간**: 1~2분/곡
-**구현 난이도**: ⭐ (즉시 가능 - 미디어 지원 있음)
-
----
-
-### 10. 속담/사자성어 게임 📜
-
-**게임 개요**
-- 초성으로 속담/사자성어 맞추기
-- 현대어로 바꾸기
-- 팀 대항전
-
-**게임 진행**
-1. 초성 힌트 제시 ("ㄱㄱㅅㄷ ㅅㅎㄱ")
-2. 정답 입력 ("금강산도 식후경")
-3. 뜻 설명 제공
-4. 보너스: 현대어로 바꾸기 ("밥이 보약")
-
-**Xingu 구현 방안**
-- 초성 자동 변환
-- 단답형 입력
-- 뜻 해설 표시
-- 현대어 번역 보너스 문제
-- 난이도별 카테고리 (쉬운 속담/어려운 사자성어)
-
-**플레이어 수**: 제한 없음
-**예상 시간**: 1~2분/문제
-**구현 난이도**: ⭐ (즉시 가능)
+### 예상 작업량
+- 플러그인: 불필요
+- 편집 UI 개선: 50줄 (프리셋 버튼 추가)
+- **총 예상 시간: 1시간** (콘텐츠 제작 별도)
 
 ---
 
-### 11. 뇌섹 시대 (지식 배틀) 🧠
+## 3. 노래 맞추기 (1초/3초/5초) ⭐
 
-**게임 개요**
-- 다양한 분야의 지식 문제
-- 난이도별 점수 차등
-- 개인전 + 팀전 혼합
+### 개요
+> 짧은 오디오 클립을 듣고 노래 제목 맞추기
 
-**게임 진행**
-1. 분야 선택 (역사/과학/시사/문화)
-2. 난이도 선택 (100점/200점/300점)
-3. 객관식 또는 단답형 문제
-4. 정답 시 점수 획득
-5. 최종 랭킹 발표
+### 게임 플로우
+```
+Round 1: 1초만 재생 → 맞추면 1500점
+Round 2: 3초 재생 → 맞추면 1000점
+Round 3: 전체 재생 → 맞추면 500점
+```
 
-**Xingu 구현 방안**
-- 카테고리별 문제 은행
-- 난이도별 점수 설정
-- 객관식 + 단답형 혼합
-- 실시간 리더보드
-- 팀전 모드 (팀 점수 합산)
+### 오디오 구간 설정
+```typescript
+const question = {
+  content: "이 노래는?",
+  audioUrl: "/audio/song.mp3",
+  mediaSettings: {
+    audio: {
+      startTime: 45,   // 45초부터
+      endTime: 46,     // 46초까지 (1초)
+    }
+  },
+  data: {
+    type: 'multiple-choice',
+    options: ['Ditto', 'OMG', 'Super Shy', 'ETA'],
+    correctAnswer: 'Ditto',
+  }
+};
+```
 
-**플레이어 수**: 제한 없음
-**예상 시간**: 20~30분
-**구현 난이도**: ⭐⭐ (쉬움 - 기존 퀴즈 활용)
+### 콘텐츠 아이디어
+```
+- K-pop 히트곡 (하이라이트 구간)
+- 드라마 OST
+- 광고 CM송
+- 게임 BGM
+- 클래식 명곡
+- 효과음 (카톡 알림, 지하철 안내 등)
+```
 
----
+### 구현 방식
+**새 플러그인 불필요!** 기존 시스템 그대로 활용.
 
-## 🎨 창의성 & 표현 게임
-
-### 12. 그림 맞추기 (Pictionary) 🎨
-
-**게임 개요**
-- 한 명이 그림 그리기
-- 나머지가 정답 맞추기
-- 먼저 맞추는 사람 점수
-
-**게임 진행**
-1. 출제자에게 단어 제시
-2. 출제자가 그림 그리기 (제한 시간)
-3. 나머지 참가자가 정답 입력
-4. 먼저 맞추는 사람 점수
-5. 출제자도 점수 (정답자 수만큼)
-
-**Xingu 구현 방안**
-- 화면 공유 (MC가 태블릿/화이트보드)
-- 또는 간단한 웹 드로잉 툴 제공
-- 실시간 답변 제출
-- 힌트 단계별 공개 (글자 수 등)
-- 그리는 사람 교대 시스템
-
-**플레이어 수**: 4~20명
-**예상 시간**: 2~3분/라운드
-**구현 난이도**: ⭐⭐⭐⭐ (고급 - 실시간 드로잉)
+### 예상 작업량
+- **총 예상 시간: 0시간** (콘텐츠 제작만 필요)
 
 ---
 
-## ⚡ 스피드 & 반응 게임
+## 4. 영상 맞추기 ⭐
 
-### 13. 폭탄 돌리기 게임 💣
+### 개요
+> 짧은 영상 클립을 보고 어떤 콘텐츠인지 맞추기
 
-**게임 개요**
-- 랜덤 주제로 순서대로 답변
-- 시간 내 못 대면 탈락
-- 타이머가 랜덤하게 터짐
+### 게임 플로우
+```
+1. 3-5초 영상 클립 재생
+2. 4지선다 중 정답 선택
+3. 빠른 정답 = 높은 점수
+```
 
-**게임 진행**
-1. 주제 제시 ("과일 이름")
-2. 순서대로 답변 (중복 불가)
-3. 제한 시간 내 답변 필수 (5초)
-4. 못 대거나 중복 시 탈락
-5. 랜덤 시간에 폭탄 터짐
+### 비디오 구간 설정
+```typescript
+const question = {
+  content: "이 장면은 어떤 드라마?",
+  videoUrl: "/video/scene.mp4",
+  mediaSettings: {
+    video: {
+      startTime: 120,  // 2분부터
+      endTime: 125,    // 2분 5초까지
+    }
+  },
+  data: {
+    type: 'multiple-choice',
+    options: ['오징어 게임', '더 글로리', '이상한 변호사 우영우', '재벌집 막내아들'],
+    correctAnswer: '오징어 게임',
+  }
+};
+```
 
-**Xingu 구현 방안**
-- 순서 표시 (현재 차례 강조)
-- 실시간 타이머 (5초)
-- 중복 답변 자동 체크
-- 폭탄 터지는 애니메이션
-- 폰 진동으로 긴장감 조성
+### 콘텐츠 아이디어
+```
+- K-드라마 명장면
+- 예능 레전드 장면 (무한도전, 런닝맨 등)
+- 영화 명장면
+- 뮤직비디오
+- 유튜브 밈 영상
+```
 
-**플레이어 수**: 4~20명
-**예상 시간**: 5~10분
-**구현 난이도**: ⭐⭐⭐ (중간)
+### 구현 방식
+**새 플러그인 불필요!**
 
----
-
-### 14. 스피드 퀴즈 (팀 릴레이) ⚡
-
-**게임 개요**
-- 팀원이 돌아가며 문제 풀기
-- 각자 제한 시간 (10초)
-- 못 풀면 다음 사람에게 패스
-
-**게임 진행**
-1. 팀 나누기 (3~5명씩)
-2. 팀원 순서 정하기
-3. 순서대로 문제 풀기 (10초)
-4. 못 풀면 자동 패스
-5. 팀 총합 점수 계산
-
-**Xingu 구현 방안**
-- 팀 자동 배정
-- 순서대로 문제 활성화 (나머지는 대기)
-- 실시간 타이머 + 자동 패스
-- 팀 응원 이모지/사운드
-- 역전 보너스 문제
-
-**플레이어 수**: 6~30명 (2~6팀)
-**예상 시간**: 10~15분
-**구현 난이도**: ⭐⭐ (쉬움 - 기존 시스템 활용)
+### 예상 작업량
+- **총 예상 시간: 0시간** (콘텐츠 제작만 필요)
 
 ---
 
-### 15. 숫자 야구 (팀전) ⚾
+## 5. 순서 맞추기 (Ranking Quiz) ⭐⭐
 
-**게임 개요**
-- 팀별로 3자리 숫자 설정
-- 상대 팀 숫자 맞추기
-- 스트라이크/볼 힌트로 추리
+### 개요
+> 주어진 항목들을 올바른 순서로 배열하기
 
-**게임 진행**
-1. 팀별로 비밀 숫자 설정 (예: 123)
-2. 상대 팀 숫자 추측 (예: 456)
-3. 힌트 제공 (0스트라이크 1볼)
-4. 시도 횟수 제한 (10회)
-5. 먼저 맞추는 팀 승리
+### 게임 플로우
+```
+질문: "BTS 앨범을 발매 순서대로 나열하세요"
+항목: [Proof, BE, Wings, Dark & Wild]
+정답: [Dark & Wild, Wings, BE, Proof]
+```
 
-**Xingu 구현 방안**
-- 비밀 숫자 입력 (팀 대표)
-- 추측 입력 시스템
-- 스트라이크/볼 자동 계산
-- 턴제 진행 (교대로)
-- 시도 횟수 제한
+### 예시 질문들
+```
+- 역대 대통령 취임 순서
+- 아이폰 출시 순서
+- 월드컵 개최국 순서
+- 올림픽 개최 순서
+- K-pop 그룹 데뷔 순서
+- 역사적 사건 발생 순서
+```
 
-**플레이어 수**: 4~20명 (2~4팀)
-**예상 시간**: 10~15분
-**구현 난이도**: ⭐⭐⭐ (중간)
+### 구현 방식
 
----
+#### 플러그인
+```typescript
+// packages/shared/src/plugins/game-types/ranking-quiz.plugin.ts
 
-### 16. 스피드 게임 모음 🏃
+export interface RankingQuestionData extends QuestionData {
+  type: 'ranking-quiz';
+  items: string[];           // 섞인 항목들
+  correctOrder: string[];    // 정답 순서
+  imageUrls?: string[];      // 각 항목 이미지 (선택)
+  partialScoring?: boolean;  // 부분 점수 허용
+}
 
-**게임 개요**
-- 여러 미니게임을 연속으로 진행
-- 각 게임마다 점수 부여
-- 총합 점수로 승부
+export class RankingQuizPlugin extends BaseGameTypePlugin {
+  public readonly type = 'ranking-quiz';
+  public readonly name = '순서 맞추기';
+  public readonly category = PluginCategory.QUIZ;
 
-**포함 게임**
-1. "3의 배수에 박수" (반응 게임)
-2. "끝말잇기" (5초 제한)
-3. "초성 퀴즈" (10초 제한)
-4. "순서 맞추기" (역사적 사건 등)
+  public checkAnswer(
+    questionData: QuestionData,
+    userAnswer: unknown
+  ): boolean {
+    if (!Array.isArray(userAnswer)) return false;
+    const data = questionData as RankingQuestionData;
 
-**Xingu 구현 방안**
-- 미니게임 연속 진행 시스템
-- 각 게임 점수 누적
-- 실시간 리더보드
-- 게임 전환 애니메이션
-- 최종 종합 점수 발표
+    // 완전 일치 체크
+    return JSON.stringify(userAnswer) === JSON.stringify(data.correctOrder);
+  }
 
-**플레이어 수**: 제한 없음
-**예상 시간**: 15~20분
-**구현 난이도**: ⭐⭐⭐ (중간)
+  // 부분 점수 계산 (선택적)
+  public calculatePartialScore(
+    userOrder: string[],
+    correctOrder: string[]
+  ): number {
+    let correctPositions = 0;
+    for (let i = 0; i < userOrder.length; i++) {
+      if (userOrder[i] === correctOrder[i]) {
+        correctPositions++;
+      }
+    }
+    return correctPositions / correctOrder.length;  // 0~1 비율
+  }
+}
+```
 
----
+#### 프론트엔드 (드래그 앤 드롭)
+```tsx
+import { DndContext, closestCenter } from '@dnd-kit/core';
+import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 
-## 📊 구현 난이도별 분류
+function RankingQuestion({ items, onSubmit }) {
+  const [orderedItems, setOrderedItems] = useState(shuffle(items));
 
-### ⭐ 즉시 가능 (기존 시스템 활용)
-- **초성 게임** - 단답형 + 팀전
-- **밸런스 게임** - 객관식 + 통계
-- **속담 게임** - 단답형
-- **음악 퀴즈** - 미디어 지원 (K-POP 템플릿)
-- **뇌섹 시대** - 객관식/단답형
+  return (
+    <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+      <SortableContext items={orderedItems} strategy={verticalListSortingStrategy}>
+        {orderedItems.map((item, index) => (
+          <SortableItem key={item} id={item} index={index + 1} />
+        ))}
+      </SortableContext>
+      <Button onClick={() => onSubmit(orderedItems)}>제출</Button>
+    </DndContext>
+  );
+}
+```
 
-### ⭐⭐ 쉬움 (약간의 추가 기능)
-- **순발력 게임** - 자기소개 입력 + 투표
-- **스피드 퀴즈** - 순서 제어 + 팀전
+### 필요 패키지
+```bash
+pnpm add @dnd-kit/core @dnd-kit/sortable @dnd-kit/utilities
+```
 
-### ⭐⭐⭐ 중간 (추가 기능 필요)
-- **라이어 게임** - 역할 배정 + 투표
-- **폭탄 돌리기** - 순서 + 랜덤 타이머
-- **공통점 찾기** - 팀 채팅 + 검증 시스템
-- **역할극 게임** - 역할 배정 + 투표
-- **컨센서스 게임** - 순위 매기기 + 비교 알고리즘
-- **숫자 야구** - 턴제 로직
-- **스피드 게임 모음** - 미니게임 연속 진행
-
-### ⭐⭐⭐⭐ 고급 (복잡한 로직/새로운 기능)
-- **마피아 게임** - 페이즈 시스템 + 복잡한 역할
-- **그림 맞추기** - 실시간 드로잉
-
----
-
-## 🎯 추천 로드맵
-
-### Phase 1: 즉시 구현 (1주일)
-1. ✅ **K-POP 퀴즈** (이미 있음)
-2. **밸런스 게임** (아이스브레이킹)
-3. **초성 게임** (팀전)
-
-### Phase 2: 핵심 게임 (2주일)
-4. **라이어 게임** (가장 인기 많을 것)
-5. **폭탄 돌리기** (긴장감)
-6. **음악 퀴즈 확장** (세대별)
-
-### Phase 3: 심화 게임 (3주일)
-7. **마피아 게임** (복잡하지만 인기)
-8. **역할극 게임** (창의적)
-9. **컨센서스 게임** (팀 빌딩)
-
-### Phase 4: 고급 기능 (4주일+)
-10. **그림 맞추기** (실시간 드로잉)
-11. **스피드 게임 모음** (미니게임 묶음)
+### 예상 작업량
+- 플러그인: 80줄
+- 프론트엔드 컴포넌트: 150줄
+- **총 예상 시간: 4-5시간**
 
 ---
 
-## 📝 기술 요구사항 정리
+## 6. 매칭 게임 ⭐⭐
 
-### 새로 필요한 기능
+### 개요
+> 왼쪽과 오른쪽 항목을 올바르게 연결하기
 
-1. **팀 시스템**
-   - 팀 자동/수동 배정
-   - 팀 점수 집계
-   - 팀 채팅방
+### 게임 플로우
+```
+왼쪽: [BTS, 블랙핑크, 뉴진스, 에스파]
+오른쪽: [하이브, YG, 어도어, SM]
 
-2. **역할 배정 시스템**
-   - 비밀 정보 전달 (개인별 다른 화면)
-   - 역할별 권한 제어
+연결: BTS ↔ 하이브, 블랙핑크 ↔ YG, ...
+```
 
-3. **투표 시스템**
-   - 1인 1표 투표
-   - 실시간 결과 집계
-   - 익명/공개 투표
+### 예시 질문들
+```
+- 아이돌 ↔ 소속사
+- 드라마 ↔ 주연 배우
+- 국가 ↔ 수도
+- 유행어 ↔ 의미
+- 브랜드 ↔ 로고
+- 노래 ↔ 가수
+```
 
-4. **순서 제어 시스템**
-   - 턴제 진행
-   - 순서대로 입력 활성화
-   - 시간 제한 + 자동 패스
+### 구현 방식
 
-5. **페이즈 시스템** (마피아용)
-   - 낮/밤 전환
-   - 페이즈별 다른 UI
+#### 플러그인
+```typescript
+export interface MatchingQuestionData extends QuestionData {
+  type: 'matching-quiz';
+  leftItems: string[];
+  rightItems: string[];  // 섞여서 표시됨
+  correctPairs: [string, string][];  // [left, right] 쌍
+  imageLeft?: string[];   // 왼쪽 항목 이미지
+  imageRight?: string[];  // 오른쪽 항목 이미지
+}
 
-6. **드로잉 시스템** (그림 맞추기용)
-   - 실시간 캔버스 공유
-   - 또는 외부 툴 연동
+export class MatchingQuizPlugin extends BaseGameTypePlugin {
+  public readonly type = 'matching-quiz';
+  public readonly name = '매칭 게임';
+
+  public checkAnswer(
+    questionData: QuestionData,
+    userAnswer: unknown
+  ): boolean {
+    const data = questionData as MatchingQuestionData;
+    const userPairs = userAnswer as [string, string][];
+
+    // 모든 쌍이 일치하는지 확인
+    const correctSet = new Set(data.correctPairs.map(p => `${p[0]}:${p[1]}`));
+    const userSet = new Set(userPairs.map(p => `${p[0]}:${p[1]}`));
+
+    return correctSet.size === userSet.size &&
+           [...correctSet].every(p => userSet.has(p));
+  }
+}
+```
+
+#### 프론트엔드 (선 연결 UI)
+```tsx
+function MatchingQuestion({ leftItems, rightItems, onSubmit }) {
+  const [connections, setConnections] = useState<Map<string, string>>(new Map());
+  const [selectedLeft, setSelectedLeft] = useState<string | null>(null);
+
+  const handleLeftClick = (item: string) => {
+    setSelectedLeft(item);
+  };
+
+  const handleRightClick = (item: string) => {
+    if (selectedLeft) {
+      setConnections(prev => new Map(prev).set(selectedLeft, item));
+      setSelectedLeft(null);
+    }
+  };
+
+  return (
+    <div className="flex justify-between">
+      <div className="flex flex-col gap-2">
+        {leftItems.map(item => (
+          <MatchItem
+            key={item}
+            label={item}
+            selected={selectedLeft === item}
+            connected={connections.has(item)}
+            onClick={() => handleLeftClick(item)}
+          />
+        ))}
+      </div>
+
+      <ConnectionLines connections={connections} />
+
+      <div className="flex flex-col gap-2">
+        {rightItems.map(item => (
+          <MatchItem
+            key={item}
+            label={item}
+            connected={[...connections.values()].includes(item)}
+            onClick={() => handleRightClick(item)}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+```
+
+### 예상 작업량
+- 플러그인: 80줄
+- 프론트엔드 컴포넌트: 200줄
+- **총 예상 시간: 5-6시간**
 
 ---
 
-## 💡 다음 단계
+## 7. 빈칸 채우기 (고급 주관식) ⭐⭐
 
-어떤 게임부터 시작할까요?
+### 개요
+> 문장의 빈칸에 알맞은 단어 입력하기
 
-1. **즉시 구현 가능** - 밸런스 게임, 초성 게임
-2. **인기 예상** - 라이어 게임, 마피아 게임
-3. **차별화** - 역할극 게임, 컨센서스 게임
+### 게임 플로우
+```
+질문: "BTS의 데뷔곡은 '____'이다"
+정답: "No More Dream" 또는 "노모어드림"
+```
 
-선택하시면 상세 기획안 + 구현 계획 작성해드리겠습니다! 🚀
+### 개선된 주관식 플러그인
+```typescript
+export interface FillBlankQuestionData extends QuestionData {
+  type: 'fill-blank';
+  sentence: string;           // "BTS의 데뷔곡은 '____'이다"
+  blankPosition: number;      // 빈칸 위치 (문자 인덱스)
+  correctAnswers: string[];   // 허용되는 정답들
+  hints?: string[];           // 힌트 (시간 지나면 공개)
+  caseSensitive?: boolean;
+  allowTypos?: number;        // 허용 오타 수 (Levenshtein distance)
+}
+```
+
+### 유사도 매칭 (오타 허용)
+```typescript
+import { distance } from 'fastest-levenshtein';
+
+public checkAnswer(questionData: QuestionData, userAnswer: unknown): boolean {
+  const data = questionData as FillBlankQuestionData;
+  const answer = String(userAnswer).trim().toLowerCase();
+
+  for (const correct of data.correctAnswers) {
+    const correctLower = correct.toLowerCase();
+
+    // 정확히 일치
+    if (answer === correctLower) return true;
+
+    // 오타 허용
+    if (data.allowTypos && distance(answer, correctLower) <= data.allowTypos) {
+      return true;
+    }
+  }
+
+  return false;
+}
+```
+
+### 예상 작업량
+- 플러그인: 60줄
+- **총 예상 시간: 2시간**
+
+---
+
+## 8. 스피드 퀴즈 (설명 게임) ⭐⭐⭐
+
+### 개요
+> 한 사람이 단어를 설명하고, 다른 사람들이 맞추기
+
+### 게임 플로우
+```
+1. 설명자 선정 (랜덤 또는 순서대로)
+2. 설명자에게만 단어 표시: "김치찌개"
+3. 설명자가 음성/텍스트로 설명 (단어 직접 언급 금지)
+4. 다른 참가자들이 실시간으로 정답 입력
+5. 먼저 맞춘 사람 + 설명자 점수 획득
+6. 제한 시간 내 최대한 많은 단어 맞추기
+```
+
+### 세션 상태
+```typescript
+interface SpeedQuizSessionData {
+  currentExplainer: string;     // 현재 설명자 ID
+  currentWord: string;          // 현재 단어
+  wordIndex: number;            // 현재 단어 인덱스
+  words: string[];              // 전체 단어 목록
+  scores: Record<string, number>;
+  roundTimeLimit: number;       // 라운드 제한 시간
+  skipCount: number;            // 남은 패스 횟수
+}
+
+type SpeedQuizPhase = 'waiting' | 'explaining' | 'result' | 'next-explainer';
+```
+
+### 액션 타입
+```typescript
+type SpeedQuizAction =
+  | { type: 'start-round' }
+  | { type: 'submit-guess'; guess: string }
+  | { type: 'skip-word' }
+  | { type: 'correct' }  // 설명자가 정답 확인
+  | { type: 'end-round' };
+```
+
+### 구현 복잡도
+- 실시간 텍스트 입력 처리
+- 설명자/참가자 분리된 화면
+- 타이머 동기화
+- 패스 기능
+
+### 예상 작업량
+- 플러그인: 200줄
+- 프론트엔드: 400줄
+- WebSocket 핸들러: 150줄
+- **총 예상 시간: 8-10시간**
+
+---
+
+## 9. 그림 퀴즈 (캐치마인드) ⭐⭐⭐
+
+### 개요
+> 한 사람이 그림을 그리고, 다른 사람들이 맞추기
+
+### 필요 기능
+- 실시간 캔버스 드로잉 (Socket.io로 좌표 전송)
+- 그리기 도구 (펜, 지우개, 색상, 굵기)
+- 추측 입력
+- 힌트 시스템
+
+### 기술 스택
+```typescript
+// Canvas 데이터 전송
+interface DrawEvent {
+  type: 'start' | 'move' | 'end' | 'clear';
+  x: number;
+  y: number;
+  color: string;
+  size: number;
+}
+
+// Socket 이벤트
+socket.emit('draw', drawEvent);
+socket.on('draw', (event) => renderToCanvas(event));
+```
+
+### 예상 작업량
+- 플러그인: 150줄
+- 캔버스 컴포넌트: 300줄
+- WebSocket 핸들러: 200줄
+- **총 예상 시간: 12-15시간**
+
+---
+
+## 10. 몸으로 말해요 ⭐⭐⭐
+
+### 개요
+> 화면에 나온 단어를 몸으로 표현, 다른 사람이 맞추기
+
+### 게임 플로우
+```
+1. 출제자 선정
+2. 출제자 화면에 단어 표시 (다른 사람 안 보임)
+3. 출제자가 몸으로 표현 (실제 대면 또는 화상)
+4. 맞추는 사람이 정답 입력
+5. 점수 획득
+```
+
+### 특징
+- 모바일 필수 (출제자 화면)
+- MC 모드와 잘 어울림
+- 대면 파티에 적합
+
+### 구현
+스피드 퀴즈와 유사하지만 더 단순 (설명 없이 화면 표시만)
+
+### 예상 작업량
+- 플러그인: 100줄
+- 프론트엔드: 200줄
+- **총 예상 시간: 4-5시간**
+
+---
+
+## 11. 공통점 찾기 ⭐⭐
+
+### 개요
+> 여러 이미지/단어의 공통점 맞추기
+
+### 게임 플로우
+```
+이미지: [김치, 불고기, 비빔밥, 삼겹살]
+질문: "이것들의 공통점은?"
+정답: "한국 음식" 또는 "Korean food"
+```
+
+### 구현
+기존 `short-answer` 플러그인에 다중 이미지 표시 UI 추가
+
+### 예상 작업량
+- UI 컴포넌트: 80줄
+- **총 예상 시간: 2시간**
+
+---
+
+## 12. 업다운 게임 ⭐⭐
+
+### 개요
+> 숫자를 맞추는 게임, "업" 또는 "다운" 힌트 제공
+
+### 게임 플로우
+```
+질문: "서울의 인구는 몇 명일까요? (만 단위)"
+참가자: "500"
+힌트: "UP! ⬆️"
+참가자: "800"
+힌트: "DOWN! ⬇️"
+참가자: "650"
+정답!
+```
+
+### 세션 상태
+```typescript
+interface UpDownSessionData {
+  targetNumber: number;
+  minRange: number;
+  maxRange: number;
+  guesses: { playerId: string; guess: number; hint: 'up' | 'down' | 'correct' }[];
+  currentTurn: string;
+}
+```
+
+### 예상 작업량
+- 플러그인: 100줄
+- 프론트엔드: 150줄
+- **총 예상 시간: 4시간**
+
+---
+
+## 📊 우선순위 추천
+
+### 즉시 가능 (콘텐츠만 제작)
+| 순위 | 게임 | 이유 |
+|------|------|------|
+| 1 | 노래 맞추기 | 플러그인 불필요, 인기 보장 |
+| 2 | 영상 맞추기 | 플러그인 불필요, 트렌디 |
+| 3 | 얼굴 맞추기 | 마스킹 기능 활용 |
+
+### 단기 개발 (1-2일)
+| 순위 | 게임 | 예상 시간 | ROI |
+|------|------|----------|-----|
+| 1 | 밸런스 게임 | 2-3시간 | ⭐⭐⭐⭐⭐ |
+| 2 | 빈칸 채우기 | 2시간 | ⭐⭐⭐⭐ |
+| 3 | 공통점 찾기 | 2시간 | ⭐⭐⭐ |
+
+### 중기 개발 (3-5일)
+| 순위 | 게임 | 예상 시간 | ROI |
+|------|------|----------|-----|
+| 1 | 순서 맞추기 | 4-5시간 | ⭐⭐⭐⭐ |
+| 2 | 매칭 게임 | 5-6시간 | ⭐⭐⭐⭐ |
+| 3 | 몸으로 말해요 | 4-5시간 | ⭐⭐⭐ |
+
+### 장기 개발 (1주+)
+| 순위 | 게임 | 예상 시간 | ROI |
+|------|------|----------|-----|
+| 1 | 스피드 퀴즈 | 8-10시간 | ⭐⭐⭐⭐⭐ |
+| 2 | 그림 퀴즈 | 12-15시간 | ⭐⭐⭐⭐ |
+
+---
+
+## 🛠️ 구현 시 공통 작업
+
+### 새 플러그인 추가 체크리스트
+```
+□ packages/shared/src/plugins/game-types/[name].plugin.ts 생성
+□ packages/shared/src/plugins/game-types/index.ts에 export 추가
+□ packages/shared/src/types/game.types.ts GameType enum 추가
+□ packages/database/prisma/schema.prisma GameType enum 추가
+□ prisma migrate 실행
+□ 프론트엔드 컴포넌트 생성
+□ 테스트 작성
+□ 문서 업데이트
+```
+
+### 테스트 템플릿
+```typescript
+describe('NewGamePlugin', () => {
+  let plugin: NewGamePlugin;
+
+  beforeEach(() => {
+    plugin = new NewGamePlugin();
+  });
+
+  describe('checkAnswer', () => {
+    it('should return true for correct answer', () => {
+      // ...
+    });
+
+    it('should return false for incorrect answer', () => {
+      // ...
+    });
+  });
+
+  describe('validateQuestionData', () => {
+    it('should validate correct data', () => {
+      // ...
+    });
+  });
+});
+```
+
+---
+
+## 💡 콘텐츠 아이디어
+
+### K-pop
+- 아이돌 얼굴 맞추기
+- 노래 1초 듣고 맞추기
+- 뮤비 장면 맞추기
+- 앨범 발매 순서
+- 아이돌-그룹 매칭
+
+### K-드라마
+- 명대사 누가 말했나
+- 장면 어떤 드라마
+- 드라마-배우 매칭
+- OST 맞추기
+
+### 예능
+- 레전드 장면
+- 유행어 퀴즈
+- 멤버 맞추기
+
+### 트렌드/밈
+- 밈 의미 맞추기
+- 유행어 빈칸 채우기
+- SNS 트렌드 퀴즈
+
+### 일반 상식
+- 역사 순서
+- 지리 퀴즈
+- 과학 상식
+
+---
+
+## 📝 결론
+
+**즉시 시작 추천:**
+1. 기존 플러그인으로 콘텐츠 제작 (노래/영상/얼굴 맞추기)
+2. 밸런스 게임 플러그인 개발 (2-3시간)
+3. 순서 맞추기 개발 (4-5시간)
+
+이 순서로 진행하면 최소 노력으로 최대 게임 다양성을 확보할 수 있습니다!

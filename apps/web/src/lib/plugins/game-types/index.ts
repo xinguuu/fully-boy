@@ -3,6 +3,7 @@ import { TrueFalseFrontendPlugin } from './TrueFalsePlugin';
 import { MultipleChoiceFrontendPlugin } from './MultipleChoicePlugin';
 import { ShortAnswerFrontendPlugin } from './ShortAnswerPlugin';
 import { LiarGameFrontendPlugin } from './LiarGamePlugin';
+import { BalanceGameFrontendPlugin } from './BalanceGamePlugin';
 import { logger } from '../../logger';
 
 // Export plugins
@@ -10,6 +11,7 @@ export { TrueFalseFrontendPlugin } from './TrueFalsePlugin';
 export { MultipleChoiceFrontendPlugin } from './MultipleChoicePlugin';
 export { ShortAnswerFrontendPlugin } from './ShortAnswerPlugin';
 export { LiarGameFrontendPlugin } from './LiarGamePlugin';
+export { BalanceGameFrontendPlugin } from './BalanceGamePlugin';
 
 /**
  * Register all built-in frontend game type plugins
@@ -24,6 +26,7 @@ export function registerFrontendPlugins(): void {
   registry.register(new MultipleChoiceFrontendPlugin());
   registry.register(new ShortAnswerFrontendPlugin());
   registry.register(new LiarGameFrontendPlugin());
+  registry.register(new BalanceGameFrontendPlugin());
 
   logger.debug('✅ Frontend game type plugins registered:', registry.getAllTypes());
 }

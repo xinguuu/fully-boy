@@ -36,7 +36,19 @@ export function OrganizerView({
 
   // Calculate answer statistics for the plugin
   const answerStats: Record<string, number> = {};
-  if (questionData.options) {
+
+  if (questionData.type === 'balance-game') {
+    // Balance game: count A and B answers
+    answerStats['A'] = 0;
+    answerStats['B'] = 0;
+
+    players.forEach((player) => {
+      const answer = String(player.answers[questionIndex]?.answer || '');
+      if (answer === 'A' || answer === 'B') {
+        answerStats[answer]++;
+      }
+    });
+  } else if (questionData.options) {
     questionData.options.forEach((option) => {
       answerStats[option] = 0;
     });

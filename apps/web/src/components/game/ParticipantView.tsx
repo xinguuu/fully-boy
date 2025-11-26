@@ -68,6 +68,74 @@ export function ParticipantView({
 
   // Phase 2: Answer reveal with score animation (and leaderboard waiting)
   if ((phase === 'ANSWER_REVEAL' || phase === 'LEADERBOARD') && questionEnded && lastAnswer) {
+    const isBalanceGame = questionData.type === 'balance-game';
+
+    // Balance Game: Show voting result screen (no correct answer)
+    if (isBalanceGame) {
+      const userChoice = lastAnswer.answer as string;
+      const choiceLabel = userChoice === 'A' ? questionData.optionA : questionData.optionB;
+
+      return (
+        <>
+          <ScoreAnimation
+            isCorrect={true}
+            points={lastAnswer.points}
+            message="투표 완료!"
+          />
+          <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-secondary-50 p-4 flex items-center justify-center">
+            <div className="max-w-2xl w-full">
+              <NextQuestionCountdown show={true} duration={5} variant="inline" />
+
+              <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8 animate-slide-up">
+                <div className="text-center">
+                  <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-6">
+                    {currentQuestion.content}
+                  </h2>
+
+                  <div className={`p-6 rounded-xl border-4 transition-all duration-300 ${
+                    userChoice === 'A'
+                      ? 'bg-red-50 border-red-400'
+                      : 'bg-blue-50 border-blue-400'
+                  }`}>
+                    <div className="flex items-center justify-center gap-3 mb-3">
+                      <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white text-xl font-bold ${
+                        userChoice === 'A' ? 'bg-red-500' : 'bg-blue-500'
+                      }`}>
+                        {userChoice}
+                      </div>
+                      <h3 className={`font-bold text-2xl ${
+                        userChoice === 'A' ? 'text-red-700' : 'text-blue-700'
+                      }`}>
+                        {choiceLabel}
+                      </h3>
+                    </div>
+
+                    <p className="text-gray-600 mt-4">
+                      결과 화면에서 투표 결과를 확인하세요!
+                    </p>
+                  </div>
+
+                  <div className="mt-8 flex items-center justify-between bg-gray-50 rounded-lg p-4">
+                    <div className="text-left">
+                      <p className="text-sm text-gray-600">현재 점수</p>
+                      <p className="text-2xl font-bold text-primary-600">{currentScore}점</p>
+                    </div>
+                    {currentRank && (
+                      <div className="text-right">
+                        <p className="text-sm text-gray-600">순위</p>
+                        <p className="text-2xl font-bold text-secondary-600">{currentRank}등</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      );
+    }
+
+    // Regular quiz: Show correct/incorrect result
     return (
       <>
         <ScoreAnimation
