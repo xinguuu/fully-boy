@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useSound } from '@/lib/hooks';
 import { SOUND_TYPES } from '@/lib/constants/sounds';
 
@@ -19,29 +19,46 @@ export function Podium({ entries, onFirstPlaceReveal }: PodiumProps) {
   const [revealedCount, setRevealedCount] = useState(0);
   const { playSound } = useSound();
 
+  // Use refs to avoid useEffect dependency issues
+  const playSoundRef = useRef(playSound);
+  const onFirstPlaceRevealRef = useRef(onFirstPlaceReveal);
+
+  useEffect(() => {
+    playSoundRef.current = playSound;
+  }, [playSound]);
+
+  useEffect(() => {
+    onFirstPlaceRevealRef.current = onFirstPlaceReveal;
+  }, [onFirstPlaceReveal]);
+
   const top3 = entries.slice(0, 3);
   const second = top3.find((e) => e.rank === 2);
   const first = top3.find((e) => e.rank === 1);
   const third = top3.find((e) => e.rank === 3);
 
+  // Determine max reveals based on actual participants
+  const maxReveals = Math.min(3, entries.length);
+
   useEffect(() => {
-    if (revealedCount >= 3) return;
+    if (revealedCount >= maxReveals) return;
+
+    const delay = revealedCount === 0 ? 800 : 1200; // Slightly longer delays for better effect
 
     const timer = setTimeout(() => {
       setRevealedCount((prev) => {
         const next = prev + 1;
-        if (next === 3) {
-          playSound(SOUND_TYPES.VICTORY);
-          onFirstPlaceReveal?.();
+        if (next >= maxReveals) {
+          playSoundRef.current(SOUND_TYPES.VICTORY);
+          onFirstPlaceRevealRef.current?.();
         } else {
-          playSound(SOUND_TYPES.PODIUM_REVEAL);
+          playSoundRef.current(SOUND_TYPES.PODIUM_REVEAL);
         }
         return next;
       });
-    }, revealedCount === 0 ? 500 : 1000);
+    }, delay);
 
     return () => clearTimeout(timer);
-  }, [revealedCount, playSound, onFirstPlaceReveal]);
+  }, [revealedCount, maxReveals]);
 
   const getPodiumHeight = (rank: number) => {
     switch (rank) {
@@ -95,11 +112,13 @@ export function Podium({ entries, onFirstPlaceReveal }: PodiumProps) {
     }
   };
 
+  // Sort ranks in descending order (reveal lowest rank first: 3rd → 2nd → 1st)
+  const ranksToReveal = top3.map((e) => e.rank).sort((a, b) => b - a);
+
   const isRevealed = (rank: number) => {
-    if (rank === 3) return revealedCount >= 1;
-    if (rank === 2) return revealedCount >= 2;
-    if (rank === 1) return revealedCount >= 3;
-    return false;
+    const revealIndex = ranksToReveal.indexOf(rank);
+    if (revealIndex === -1) return false;
+    return revealedCount > revealIndex;
   };
 
   const renderPodiumSpot = (entry: PodiumEntry | undefined) => {

@@ -18,6 +18,7 @@ export function SoundToggle({ className = '', size = 'md' }: SoundToggleProps) {
 
   return (
     <button
+      type="button"
       onClick={toggleMute}
       className={`
         ${sizeClasses[size]}
