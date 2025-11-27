@@ -36,6 +36,8 @@ interface ParticipantViewProps {
   isPreview?: boolean;
   /** Custom class for container (useful for scaled preview) */
   className?: string;
+  /** Current answer streak count */
+  streak?: number;
 }
 
 export function ParticipantView({
@@ -57,6 +59,7 @@ export function ParticipantView({
   onShortAnswerSubmit,
   isPreview = false,
   className,
+  streak = 0,
 }: ParticipantViewProps) {
   const pluginRegistry = usePluginRegistry();
   const questionData = currentQuestion.data;
@@ -148,6 +151,7 @@ export function ParticipantView({
           isCorrect={lastAnswer.isCorrect}
           points={lastAnswer.points}
           message={lastAnswer.isCorrect ? undefined : '다음 문제에서 도전하세요!'}
+          streak={lastAnswer.isCorrect ? streak : 0}
         />
         <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-secondary-50 p-4 flex items-center justify-center">
           <div className="max-w-2xl w-full">

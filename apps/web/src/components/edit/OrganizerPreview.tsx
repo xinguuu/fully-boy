@@ -1,6 +1,7 @@
 'use client';
 
 import type { MediaSettings } from '@xingu/shared';
+import { PreviewMedia } from './PreviewMedia';
 
 interface QuestionData {
   type: 'multiple-choice' | 'true-false' | 'short-answer' | 'balance-game';
@@ -39,7 +40,7 @@ export function OrganizerPreview({
     );
   }
 
-  const { content, data, imageUrl } = question;
+  const { content, data, mediaSettings } = question;
   const duration = data.duration || 30;
 
   return (
@@ -68,11 +69,12 @@ export function OrganizerPreview({
       </h2>
 
       {/* Media Preview */}
-      {imageUrl && (
-        <div className="flex justify-center mb-2">
-          <img src={imageUrl} alt="" className="max-h-12 rounded object-contain" />
-        </div>
-      )}
+      <PreviewMedia
+        mediaSettings={mediaSettings}
+        imageUrl={question.imageUrl}
+        videoUrl={question.videoUrl}
+        audioUrl={question.audioUrl}
+      />
 
       {/* Answer Options */}
       <div className="flex-1 overflow-hidden">

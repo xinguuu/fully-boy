@@ -107,10 +107,13 @@ const config: Config = {
         'fade-in': 'fadeIn 300ms ease-out',
         'slide-up': 'slideUp 400ms ease-out',
         'slide-down': 'slideDown 400ms ease-out',
+        'slide-in-right': 'slideInRight 400ms ease-out',
         'scale-in': 'scaleIn 300ms ease-out',
         'bounce-slow': 'bounce 2s ease-in-out infinite',
         shimmer: 'shimmer 2s infinite linear',
         ripple: 'ripple 600ms ease-out',
+        pop: 'pop 400ms cubic-bezier(0.34, 1.56, 0.64, 1)',
+        shake: 'shake 500ms ease-in-out',
       },
       keyframes: {
         fadeIn: {
@@ -136,6 +139,22 @@ const config: Config = {
         ripple: {
           '0%': { width: '0', height: '0', opacity: '0.5' },
           '100%': { width: '500px', height: '500px', opacity: '0' },
+        },
+        slideInRight: {
+          '0%': { transform: 'translateX(50px)', opacity: '0' },
+          '100%': { transform: 'translateX(0)', opacity: '1' },
+        },
+        pop: {
+          '0%': { transform: 'scale(0)' },
+          '50%': { transform: 'scale(1.2)' },
+          '100%': { transform: 'scale(1)' },
+        },
+        shake: {
+          '0%, 100%': { transform: 'translateX(0)' },
+          '20%': { transform: 'translateX(-10px)' },
+          '40%': { transform: 'translateX(10px)' },
+          '60%': { transform: 'translateX(-10px)' },
+          '80%': { transform: 'translateX(10px)' },
         },
       },
     },

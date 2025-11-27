@@ -1,13 +1,17 @@
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import { useGameSocket, useAuth } from '@/lib/hooks';
+import { useEffect, useState, useRef } from 'react';
+import { useGameSocket, useAuth, useSound } from '@/lib/hooks';
 import { ParticipantView } from '@/components/game/ParticipantView';
 import { OrganizerView } from '@/components/game/OrganizerView';
 import { LeaderboardScreen } from '@/components/game/LeaderboardScreen';
+import { SoundToggle } from '@/components/game/SoundToggle';
+import { Confetti } from '@/components/game/Confetti';
+import { Podium } from '@/components/game/Podium';
 import { STORAGE_KEYS } from '@/lib/constants/storage';
 import { GAME_UI_TIMING, GAME_SETTINGS } from '@/lib/constants/game';
+import { SOUND_TYPES } from '@/lib/constants/sounds';
 import type { GamePhase } from '@/types/game.types';
 
 export default function LiveGamePage() {
@@ -33,9 +37,15 @@ export default function LiveGamePage() {
   const [showResults, setShowResults] = useState(false);
   const [showQuestionIntro, setShowQuestionIntro] = useState(false);
   const [gamePhase, setGamePhase] = useState<GamePhase>('ANSWERING');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [redirectCountdown, setRedirectCountdown] = useState(8);
+  const { playSound } = useSound();
+  const hasPlayedVictorySoundRef = useRef(false);
 
   const {
     isConnected,
+    connectionStatus,
+    reconnectAttempt,
     roomState,
     game,
     currentQuestion,
@@ -68,6 +78,30 @@ export default function LiveGamePage() {
   // Calculate current rank
   const currentRank = leaderboard.find((entry) => entry.nickname === nickname)?.rank;
 
+  // Calculate answer streak (consecutive correct answers ending at current/last question)
+  const calculateStreak = (): number => {
+    if (!currentPlayer || !roomState) return 0;
+
+    const answers = currentPlayer.answers;
+    let streak = 0;
+
+    // Count backwards from current question to find consecutive correct answers
+    for (let i = roomState.currentQuestionIndex; i >= 0; i--) {
+      const answer = answers[i];
+      if (answer?.isCorrect) {
+        streak++;
+      } else if (answer !== undefined) {
+        // Found an incorrect answer, stop counting
+        break;
+      }
+      // If answer is undefined, the question hasn't been answered yet, continue checking
+    }
+
+    return streak;
+  };
+
+  const currentStreak = calculateStreak();
+
   // Question intro screen
   useEffect(() => {
     if (!currentQuestion || !roomState) return;
@@ -77,6 +111,8 @@ export default function LiveGamePage() {
     setShortAnswerInput('');
     setShowResults(false);
     setGamePhase('QUESTION_INTRO');
+    setIsSubmitting(false);
+    playSound(SOUND_TYPES.QUESTION_START);
 
     const timer = setTimeout(() => {
       setShowQuestionIntro(false);
@@ -85,7 +121,7 @@ export default function LiveGamePage() {
     }, GAME_UI_TIMING.QUESTION_INTRO_MS);
 
     return () => clearTimeout(timer);
-  }, [currentQuestion, roomState?.currentQuestionIndex]);
+  }, [currentQuestion, roomState?.currentQuestionIndex, playSound]);
 
   // Handle answer submission phase
   useEffect(() => {
@@ -110,6 +146,38 @@ export default function LiveGamePage() {
     return undefined;
   }, [questionEnded]);
 
+  // Clean up localStorage and play victory sound when game finishes
+  useEffect(() => {
+    if (roomState?.status === 'finished') {
+      localStorage.removeItem(STORAGE_KEYS.ROOM_NICKNAME(pin));
+      localStorage.removeItem(STORAGE_KEYS.ROOM_PARTICIPANT_ID(pin));
+      localStorage.removeItem(STORAGE_KEYS.ROOM_IS_ORGANIZER(pin));
+
+      if (!hasPlayedVictorySoundRef.current) {
+        hasPlayedVictorySoundRef.current = true;
+        playSound(SOUND_TYPES.VICTORY);
+      }
+    }
+  }, [roomState?.status, pin, playSound]);
+
+  // Auto-redirect countdown when game finishes
+  useEffect(() => {
+    if (roomState?.status !== 'finished') return;
+
+    const interval = setInterval(() => {
+      setRedirectCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          router.push(isOrganizer ? '/browse' : '/');
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [roomState?.status, isOrganizer, router]);
+
   const handleJoinRoom = (e: React.FormEvent) => {
     e.preventDefault();
     if (!nickname.trim()) return;
@@ -118,8 +186,10 @@ export default function LiveGamePage() {
   };
 
   const handleAnswerSelect = (answer: string) => {
-    if (hasAnswered || !answerStartTime) return;
+    if (hasAnswered || isSubmitting || !answerStartTime) return;
 
+    setIsSubmitting(true);
+    playSound(SOUND_TYPES.ANSWER_SUBMIT);
     const responseTimeMs = Date.now() - answerStartTime;
     setSelectedAnswer(answer);
     submitAnswer(answer, responseTimeMs);
@@ -127,8 +197,10 @@ export default function LiveGamePage() {
 
   const handleShortAnswerSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (hasAnswered || !answerStartTime || !shortAnswerInput.trim()) return;
+    if (hasAnswered || isSubmitting || !answerStartTime || !shortAnswerInput.trim()) return;
 
+    setIsSubmitting(true);
+    playSound(SOUND_TYPES.ANSWER_SUBMIT);
     const responseTimeMs = Date.now() - answerStartTime;
     setSelectedAnswer(shortAnswerInput);
     submitAnswer(shortAnswerInput, responseTimeMs);
@@ -157,11 +229,40 @@ export default function LiveGamePage() {
   }
 
   if ((storedNickname || storedIsOrganizer) && !isConnected) {
+    const getConnectionMessage = () => {
+      switch (connectionStatus) {
+        case 'reconnecting':
+          return `연결이 끊겼습니다. 재연결 시도 중... (${reconnectAttempt}/5)`;
+        case 'failed':
+          return '연결에 실패했습니다.';
+        case 'disconnected':
+          return '연결이 끊겼습니다. 재연결 대기 중...';
+        default:
+          return '게임 연결 중...';
+      }
+    };
+
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-secondary-50 flex items-center justify-center p-4">
         <div className="text-center">
-          <div className="animate-spin h-12 w-12 border-4 border-primary-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-          <p className="text-xl font-semibold text-gray-700">게임 연결 중...</p>
+          {connectionStatus === 'failed' ? (
+            <div className="w-16 h-16 bg-error-light rounded-full flex items-center justify-center mx-auto mb-4">
+              <span className="text-error text-3xl">!</span>
+            </div>
+          ) : (
+            <div className="animate-spin h-12 w-12 border-4 border-primary-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+          )}
+          <p className={`text-xl font-semibold ${connectionStatus === 'failed' ? 'text-error' : 'text-gray-700'}`}>
+            {getConnectionMessage()}
+          </p>
+          {connectionStatus === 'failed' && (
+            <button
+              onClick={() => window.location.reload()}
+              className="mt-4 px-6 py-2 bg-primary-500 hover:bg-primary-600 text-white font-semibold rounded-lg transition-all cursor-pointer"
+            >
+              다시 연결하기
+            </button>
+          )}
         </div>
       </div>
     );
@@ -226,40 +327,52 @@ export default function LiveGamePage() {
   // Game finished - Final results
   if (roomState.status === 'finished') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-secondary-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-xl p-8 max-w-2xl w-full">
-          <h1 className="text-4xl font-bold text-center mb-8">🎉 게임 종료!</h1>
+      <div className="min-h-screen bg-gradient-to-br from-primary-600 via-secondary-500 to-primary-700 flex flex-col items-center justify-center p-4 relative overflow-hidden">
+        {/* Background decoration */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute -top-1/2 -left-1/2 w-full h-full bg-gradient-to-br from-white/10 to-transparent rounded-full blur-3xl" />
+          <div className="absolute -bottom-1/2 -right-1/2 w-full h-full bg-gradient-to-tl from-white/10 to-transparent rounded-full blur-3xl" />
+        </div>
 
-          <div className="mb-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4 text-center">🏆 최종 순위</h2>
-            <div className="space-y-3">
-              {leaderboard.slice(0, 10).map((entry) => (
-                <div
-                  key={`final-${entry.rank}`}
-                  className={`flex items-center justify-between p-4 rounded-lg ${
-                    entry.rank <= 3 ? 'bg-gradient-to-r from-accent-100 to-accent-50' : 'bg-gray-50'
-                  }`}
-                >
-                  <div className="flex items-center gap-4">
-                    <span className="text-2xl font-bold text-primary-500 w-8">
-                      {entry.rank === 1 && '🥇'}
-                      {entry.rank === 2 && '🥈'}
-                      {entry.rank === 3 && '🥉'}
-                      {entry.rank > 3 && `${entry.rank}위`}
-                    </span>
-                    <span className="font-semibold text-gray-900">{entry.nickname}</span>
+        <Confetti isActive={true} duration={6000} particleCount={200} />
+        <SoundToggle className="absolute top-4 right-4 text-white z-20" />
+
+        <h1 className="text-5xl md:text-6xl font-bold text-white text-center mb-4 animate-slide-down relative z-10 drop-shadow-lg">
+          🎉 게임 종료!
+        </h1>
+
+        <div className="w-full max-w-4xl relative z-10">
+          <Podium entries={leaderboard} />
+
+          {leaderboard.length > 3 && (
+            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 md:p-6 mt-6 border border-white/20">
+              <div className="space-y-2">
+                {leaderboard.slice(3, 10).map((entry) => (
+                  <div
+                    key={`final-${entry.rank}`}
+                    className="flex items-center justify-between p-3 md:p-4 bg-white/10 rounded-xl hover:bg-white/20 transition-colors"
+                  >
+                    <div className="flex items-center gap-3 md:gap-4">
+                      <span className="text-xl md:text-2xl font-bold text-white/80 w-10 text-center">
+                        {entry.rank}위
+                      </span>
+                      <span className="font-semibold text-white truncate max-w-[120px] md:max-w-[200px]">
+                        {entry.nickname}
+                      </span>
+                    </div>
+                    <span className="text-lg md:text-xl font-bold text-white">{entry.score}점</span>
                   </div>
-                  <span className="text-xl font-bold text-primary-600">{entry.score}점</span>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           <button
-            onClick={() => router.push('/browse')}
-            className="w-full bg-primary-500 hover:bg-primary-600 text-white font-semibold py-3 rounded-lg transition-all hover:scale-105 cursor-pointer"
+            onClick={() => router.push(isOrganizer ? '/browse' : '/')}
+            className="w-full mt-8 bg-white hover:bg-gray-50 text-primary-600 font-bold py-4 rounded-xl transition-all hover:scale-105 active:scale-100 cursor-pointer shadow-xl text-lg"
           >
-            게임 목록으로
+            {isOrganizer ? '게임 목록으로' : '홈으로'}{' '}
+            <span className="text-primary-400 font-normal">({redirectCountdown}초)</span>
           </button>
         </div>
       </div>
@@ -285,7 +398,8 @@ export default function LiveGamePage() {
   // Question intro screen
   if (showQuestionIntro) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-primary-500 via-primary-600 to-primary-700 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-primary-500 via-primary-600 to-primary-700 flex items-center justify-center p-4 relative">
+        <SoundToggle className="absolute top-4 right-4 text-white" />
         <div className="text-center animate-pulse">
           <div className="text-white/80 text-2xl font-medium mb-4">문제</div>
           <div className="text-white text-8xl md:text-9xl font-bold mb-4">
@@ -347,6 +461,7 @@ export default function LiveGamePage() {
       onAnswerSelect={handleAnswerSelect}
       onShortAnswerChange={setShortAnswerInput}
       onShortAnswerSubmit={handleShortAnswerSubmit}
+      streak={currentStreak}
     />
   );
 }

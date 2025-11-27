@@ -1,4 +1,4 @@
-import { randomUUID } from 'crypto';
+import { randomUUID, randomInt } from 'crypto';
 import { prisma } from '../config/database';
 import { redis } from '../config/redis';
 import { NotFoundError, ConflictError } from '../middleware/error.middleware';
@@ -14,7 +14,8 @@ import type {
 
 export class RoomService {
   private generatePIN(): string {
-    return Math.floor(100000 + Math.random() * 900000).toString();
+    // Use crypto.randomInt for cryptographically secure PIN generation
+    return randomInt(100000, 1000000).toString();
   }
 
   private async isPINUnique(pin: string): Promise<boolean> {
@@ -144,7 +145,7 @@ export class RoomService {
     const sessionId = randomUUID();
 
     const participant: Participant = {
-      id: `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id: randomUUID(),
       nickname: dto.nickname,
       deviceId: dto.deviceId,
       joinedAt: new Date(),

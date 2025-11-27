@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google';
 import { Toaster } from 'sonner';
 import { QueryProvider } from '@/lib/providers/query-provider';
 import { PluginProvider } from '@/components/providers/PluginProvider';
+import { SoundProvider } from '@/lib/providers/sound-provider';
 import './globals.css';
 
 const inter = Inter({
@@ -51,7 +52,9 @@ export default function RootLayout({
     <html lang="ko" className={inter.variable}>
       <body className={inter.className}>
         <PluginProvider>
-          <QueryProvider>{children}</QueryProvider>
+          <SoundProvider>
+            <QueryProvider>{children}</QueryProvider>
+          </SoundProvider>
         </PluginProvider>
         <Toaster
           position="top-center"

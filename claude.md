@@ -313,6 +313,11 @@ async getOrCreateTags(tagNames: string[]): Promise<Tag[]>
 - ✅ **Mobile filter** (browse page - all/mobile-required/no-mobile games)
 - ✅ **Game history system** (view all play records, detailed results, game-specific history)
 - ✅ **Profile dropdown with icons** (User, History, Settings, LogOut icons for all menu items)
+- ✅ **Sound system** (Web Audio API-based sound effects: countdown, correct/wrong, leaderboard, victory)
+- ✅ **Confetti celebration** (Canvas-based confetti animation on game completion)
+- ✅ **Podium animation** (Animated reveal of top 3 players with medals)
+- ✅ **Answer streak** (Consecutive correct answer tracking with visual feedback and sounds)
+- ✅ **Real-time answer counter** (Organizer view shows live response count with progress bar)
 
 ### Known Issues
 
@@ -324,7 +329,20 @@ async getOrCreateTags(tagNames: string[]): Promise<Tag[]>
 
 **Recently Fixed**:
 
-*2025-11-26 (Latest)*:
+*2025-11-27 (Latest)*:
+- ✅ **Sound system** → Web Audio API-based sound effects (countdown tick, correct/wrong, leaderboard reveal, victory fanfare)
+- ✅ **Confetti celebration** → Canvas-based particle animation on game completion
+- ✅ **Podium animation** → Animated reveal of top 3 with medals (3rd → 2nd → 1st order)
+- ✅ **Answer streak** → Track and display consecutive correct answers with sound effects
+- ✅ **Real-time answer counter** → Organizer view shows live response count with animated progress bar
+- ✅ **Sound toggle** → Mute/unmute button with localStorage persistence
+- ✅ **Double-submit prevention** → Added `isSubmitting` state to prevent duplicate answer submissions
+- ✅ **Connection status UI** → Show reconnection attempts, failure state, and manual reconnect button
+- ✅ **localStorage cleanup** → Clear session data (nickname, participantId, isOrganizer) when game finishes
+- ✅ **Timer accessibility** → Added `role="timer"`, `aria-live`, `role="progressbar"` attributes
+- ✅ **Leaderboard accessibility** → Added `role="list/listitem"`, `aria-label`, nickname truncation
+
+*2025-11-26*:
 - ✅ **Balance game type added** → New plugin with dedicated UI components for balance-game
 - ✅ **Bulk settings modal** → Batch configuration for question time limits
 - ✅ **QuestionModal deprecated** → Removed in favor of inline QuestionEditPanel

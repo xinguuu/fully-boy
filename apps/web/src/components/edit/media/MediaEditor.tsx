@@ -7,6 +7,17 @@ import { ImageEditor } from './ImageEditor';
 import { AudioEditor } from './AudioEditor';
 import { VideoEditor } from './VideoEditor';
 
+// File size limits (in bytes)
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
+const MAX_AUDIO_SIZE = 10 * 1024 * 1024; // 10MB
+const MAX_VIDEO_SIZE = 50 * 1024 * 1024; // 50MB
+
+const formatFileSize = (bytes: number): string => {
+  if (bytes < 1024) return `${bytes}B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)}KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)}MB`;
+};
+
 interface MediaEditorProps {
   mediaSettings?: MediaSettings;
   imageUrl?: string;
@@ -31,6 +42,7 @@ export function MediaEditor({
 }: MediaEditorProps) {
   const [activeTab, setActiveTab] = useState<MediaTab>('image');
   const [isDragging, setIsDragging] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Get current media data (base64 or URL)
@@ -41,8 +53,32 @@ export function MediaEditor({
   const hasAnyMedia = imageData || audioData || videoData;
 
   const processFile = async (file: File) => {
-    const base64 = await fileToBase64(file);
+    setError(null);
     const fileType = file.type.split('/')[0]; // 'image', 'audio', 'video'
+
+    // Validate file size
+    let maxSize: number;
+    let typeLabel: string;
+    if (fileType === 'image') {
+      maxSize = MAX_IMAGE_SIZE;
+      typeLabel = '이미지';
+    } else if (fileType === 'audio') {
+      maxSize = MAX_AUDIO_SIZE;
+      typeLabel = '오디오';
+    } else if (fileType === 'video') {
+      maxSize = MAX_VIDEO_SIZE;
+      typeLabel = '비디오';
+    } else {
+      setError('지원하지 않는 파일 형식입니다.');
+      return;
+    }
+
+    if (file.size > maxSize) {
+      setError(`${typeLabel} 파일은 ${formatFileSize(maxSize)} 이하만 업로드 가능합니다. (현재: ${formatFileSize(file.size)})`);
+      return;
+    }
+
+    const base64 = await fileToBase64(file);
 
     if (fileType === 'image') {
       onChange({
@@ -202,6 +238,26 @@ export function MediaEditor({
         </div>
       </div>
 
+      {/* Error Message */}
+      {error && (
+        <div className="mx-4 mt-3 p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
+          <span className="text-red-500 flex-shrink-0">⚠️</span>
+          <div className="flex-1">
+            <p className="text-sm text-red-700">{error}</p>
+            <p className="text-xs text-red-500 mt-1">
+              이미지: 최대 5MB | 오디오: 최대 10MB | 비디오: 최대 50MB
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setError(null)}
+            className="text-red-400 hover:text-red-600 cursor-pointer"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
       {/* Tabs - Image and Sound (Audio or Video) */}
       <div className="flex border-b border-gray-200">
         {[
@@ -236,7 +292,7 @@ export function MediaEditor({
             <div className="text-4xl mb-3">📁</div>
             <p className="text-gray-600 font-medium mb-1">파일을 드래그하거나 클릭하여 업로드</p>
             <p className="text-sm text-gray-400">
-              이미지, 오디오, 비디오 파일 지원
+              이미지(5MB), 오디오(10MB), 비디오(50MB) 지원
             </p>
           </div>
         )}

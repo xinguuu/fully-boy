@@ -17,10 +17,12 @@ describe('ScoreCalculatorService', () => {
       });
 
       expect(result.isCorrect).toBe(true);
-      expect(result.points).toBe(1500); // 1000 base + 500 speed bonus (full time remaining)
-      expect(result.breakdown.basePoints).toBe(1000);
-      expect(result.breakdown.speedBonus).toBe(500);
-      expect(result.breakdown.totalPoints).toBe(1500);
+      // DEFAULT_BASE_POINTS=100, DEFAULT_SPEED_BONUS_MULTIPLIER=0.3
+      // speedBonus = floor(100 * 0.3 * 1.0) = 30
+      expect(result.points).toBe(130); // 100 base + 30 speed bonus (full time remaining)
+      expect(result.breakdown.basePoints).toBe(100);
+      expect(result.breakdown.speedBonus).toBe(30);
+      expect(result.breakdown.totalPoints).toBe(130);
     });
 
     it('should give medium bonus for mid-time correct answer', () => {
@@ -31,8 +33,9 @@ describe('ScoreCalculatorService', () => {
       });
 
       expect(result.isCorrect).toBe(true);
-      expect(result.points).toBe(1250); // 1000 base + 250 speed bonus (50% time remaining)
-      expect(result.breakdown.speedBonus).toBe(250);
+      // speedBonus = floor(100 * 0.3 * 0.5) = 15
+      expect(result.points).toBe(115); // 100 base + 15 speed bonus (50% time remaining)
+      expect(result.breakdown.speedBonus).toBe(15);
     });
 
     it('should give no speed bonus for answer at deadline', () => {
@@ -43,7 +46,7 @@ describe('ScoreCalculatorService', () => {
       });
 
       expect(result.isCorrect).toBe(true);
-      expect(result.points).toBe(1000); // 1000 base + 0 speed bonus
+      expect(result.points).toBe(100); // 100 base + 0 speed bonus
       expect(result.breakdown.speedBonus).toBe(0);
     });
 
@@ -55,7 +58,7 @@ describe('ScoreCalculatorService', () => {
       });
 
       expect(result.isCorrect).toBe(true);
-      expect(result.points).toBe(1000); // 1000 base + 0 speed bonus (capped at 0)
+      expect(result.points).toBe(100); // 100 base + 0 speed bonus (capped at 0)
       expect(result.breakdown.speedBonus).toBe(0);
     });
 
@@ -81,9 +84,10 @@ describe('ScoreCalculatorService', () => {
         basePoints: 500,
       });
 
-      expect(result.points).toBe(750); // 500 base + 250 speed bonus
+      // speedBonus = floor(500 * 0.3 * 1.0) = 150
+      expect(result.points).toBe(650); // 500 base + 150 speed bonus
       expect(result.breakdown.basePoints).toBe(500);
-      expect(result.breakdown.speedBonus).toBe(250);
+      expect(result.breakdown.speedBonus).toBe(150);
     });
 
     it('should support custom speed bonus multiplier', () => {
@@ -91,11 +95,12 @@ describe('ScoreCalculatorService', () => {
         isCorrect: true,
         responseTimeMs: 0,
         questionDuration: 30,
-        speedBonusMultiplier: 1.0, // 100% bonus instead of 50%
+        speedBonusMultiplier: 1.0, // 100% bonus instead of 30%
       });
 
-      expect(result.points).toBe(2000); // 1000 base + 1000 speed bonus
-      expect(result.breakdown.speedBonus).toBe(1000);
+      // speedBonus = floor(100 * 1.0 * 1.0) = 100
+      expect(result.points).toBe(200); // 100 base + 100 speed bonus
+      expect(result.breakdown.speedBonus).toBe(100);
     });
 
     it('should round down speed bonus to integer', () => {
@@ -106,9 +111,9 @@ describe('ScoreCalculatorService', () => {
       });
 
       // timeRatio = 20/30 = 0.6667
-      // speedBonus = floor(1000 * 0.5 * 0.6667) = floor(333.35) = 333
-      expect(result.breakdown.speedBonus).toBe(333);
-      expect(result.points).toBe(1333);
+      // speedBonus = floor(100 * 0.3 * 0.6667) = floor(20) = 20
+      expect(result.breakdown.speedBonus).toBe(20);
+      expect(result.points).toBe(120);
     });
   });
 

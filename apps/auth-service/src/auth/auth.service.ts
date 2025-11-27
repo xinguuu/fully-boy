@@ -60,21 +60,61 @@ export class AuthService {
   }
 
   async login(dto: LoginDto): Promise<AuthResponse> {
+    // Check if account is locked due to failed attempts
+    await this.checkAccountLock(dto.email);
+
     const user = await this.prisma.user.findUnique({
       where: { email: dto.email },
     });
 
     if (!user) {
+      await this.incrementFailedAttempts(dto.email);
       throw new UnauthorizedException('Invalid credentials');
     }
 
     const isPasswordValid = await bcrypt.compare(dto.password, user.passwordHash);
 
     if (!isPasswordValid) {
+      await this.incrementFailedAttempts(dto.email);
       throw new UnauthorizedException('Invalid credentials');
     }
 
+    // Reset failed attempts on successful login
+    await this.resetFailedAttempts(dto.email);
+
     return this.generateTokens(user);
+  }
+
+  private async checkAccountLock(email: string): Promise<void> {
+    const key = `failed_login:${email}`;
+    const attempts = await this.redis.get(key);
+    const count = attempts ? parseInt(attempts, 10) : 0;
+
+    if (count >= 5) {
+      const ttl = await this.redis.ttl(key);
+      const minutes = Math.ceil(ttl / 60);
+      throw new UnauthorizedException(
+        `Account temporarily locked. Please try again in ${minutes} minute(s).`
+      );
+    }
+  }
+
+  private async incrementFailedAttempts(email: string): Promise<void> {
+    const key = `failed_login:${email}`;
+    const attempts = await this.redis.incr(key);
+
+    if (attempts === 1) {
+      // First failure: expire in 5 minutes
+      await this.redis.expire(key, 300);
+    } else if (attempts >= 5) {
+      // 5th failure: lock for 15 minutes
+      await this.redis.expire(key, 900);
+      logger.warn('Account locked due to failed login attempts', { email, attempts });
+    }
+  }
+
+  private async resetFailedAttempts(email: string): Promise<void> {
+    await this.redis.del(`failed_login:${email}`);
   }
 
   async logout(userId: string, refreshToken: string): Promise<void> {

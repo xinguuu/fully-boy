@@ -1,15 +1,16 @@
 'use client';
 
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useGame, useTemplate, useCreateGame, useUpdateGame, useCreateRoom, useAuth } from '@/lib/hooks';
 import type { Game, Question, MediaSettings } from '@xingu/shared';
-import { GameType, Category, TemplateCategory } from '@xingu/shared';
-import { ArrowLeft, Trash2, Plus, Settings, LayoutGrid, List, ChevronDown, X, FileText, Clock, Image, Volume2, Video, Check } from 'lucide-react';
+import { GameType } from '@xingu/shared';
+import { ArrowLeft, Trash2, Plus, Settings, LayoutGrid, List, FileText, ChevronDown, X, Clock, Check, Image as ImageIcon, Volume2, Video } from 'lucide-react';
 import { SettingsModal } from '@/components/edit/SettingsModal';
 import { QuestionEditPanel } from '@/components/edit/QuestionEditPanel';
 import { OrganizerPreview } from '@/components/edit/OrganizerPreview';
 import { ParticipantPreview } from '@/components/edit/ParticipantPreview';
+import { GAME_TYPE_DEFAULTS, GAME_TYPE_NAMES } from '@/components/edit/constants';
 import { logger } from '@/lib/logger';
 
 type GameWithQuestions = Game & {
@@ -25,7 +26,6 @@ interface QuestionFormData {
     options?: string[];
     correctAnswer?: string;
     duration?: number;
-    // Balance game specific
     optionA?: string;
     optionB?: string;
     scoringMode?: 'majority' | 'none';
@@ -35,89 +35,6 @@ interface QuestionFormData {
   audioUrl?: string;
   mediaSettings?: MediaSettings;
 }
-
-interface GameTypeDefaults {
-  gameType: GameType;
-  category: Category;
-  gameCategory: TemplateCategory;
-  needsMobile: boolean;
-  duration: number;
-  minPlayers: number;
-  maxPlayers: number;
-  questionType: QuestionFormData['data']['type'];
-}
-
-const GAME_TYPE_DEFAULTS: Record<GameType, GameTypeDefaults> = {
-  [GameType.OX_QUIZ]: {
-    gameType: GameType.OX_QUIZ,
-    category: Category.QUIZ,
-    gameCategory: TemplateCategory.QUIZ,
-    needsMobile: true,
-    duration: 10,
-    minPlayers: 2,
-    maxPlayers: 50,
-    questionType: 'true-false',
-  },
-  [GameType.FOUR_CHOICE_QUIZ]: {
-    gameType: GameType.FOUR_CHOICE_QUIZ,
-    category: Category.QUIZ,
-    gameCategory: TemplateCategory.QUIZ,
-    needsMobile: true,
-    duration: 15,
-    minPlayers: 2,
-    maxPlayers: 50,
-    questionType: 'multiple-choice',
-  },
-  [GameType.BALANCE_GAME]: {
-    gameType: GameType.BALANCE_GAME,
-    category: Category.ENTERTAINMENT,
-    gameCategory: TemplateCategory.PARTY,
-    needsMobile: false,
-    duration: 20,
-    minPlayers: 2,
-    maxPlayers: 100,
-    questionType: 'balance-game',
-  },
-  [GameType.LIAR_GAME]: {
-    gameType: GameType.LIAR_GAME,
-    category: Category.ENTERTAINMENT,
-    gameCategory: TemplateCategory.PARTY,
-    needsMobile: false,
-    duration: 30,
-    minPlayers: 4,
-    maxPlayers: 10,
-    questionType: 'short-answer',
-  },
-  [GameType.INITIAL_QUIZ]: {
-    gameType: GameType.INITIAL_QUIZ,
-    category: Category.QUIZ,
-    gameCategory: TemplateCategory.QUIZ,
-    needsMobile: true,
-    duration: 10,
-    minPlayers: 2,
-    maxPlayers: 50,
-    questionType: 'short-answer',
-  },
-  [GameType.SPEED_QUIZ]: {
-    gameType: GameType.SPEED_QUIZ,
-    category: Category.QUIZ,
-    gameCategory: TemplateCategory.QUIZ,
-    needsMobile: true,
-    duration: 10,
-    minPlayers: 2,
-    maxPlayers: 50,
-    questionType: 'short-answer',
-  },
-};
-
-const GAME_TYPE_NAMES: Record<GameType, string> = {
-  [GameType.OX_QUIZ]: 'OX 퀴즈',
-  [GameType.FOUR_CHOICE_QUIZ]: '4지선다 퀴즈',
-  [GameType.BALANCE_GAME]: '밸런스 게임',
-  [GameType.LIAR_GAME]: '라이어 게임',
-  [GameType.INITIAL_QUIZ]: '초성 퀴즈',
-  [GameType.SPEED_QUIZ]: '스피드 퀴즈',
-};
 
 export default function EditForm() {
   const params = useParams();
@@ -149,13 +66,22 @@ export default function EditForm() {
   const [timeLimit, setTimeLimit] = useState<number | null>(null);
   const [soundEnabled, setSoundEnabled] = useState(false);
 
-  // Selected question index: -1 = new question, null = no selection, number = question index
-  const [selectedQuestion, setSelectedQuestion] = useState<number | null>(null);
+  // Selected question ID: 'new' = new question, null = no selection, string = question ID
+  const [selectedQuestionId, setSelectedQuestionId] = useState<string | null>(null);
   // Real-time preview data from QuestionEditPanel
   const [previewData, setPreviewData] = useState<QuestionFormData | null>(null);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'edit' | 'grid'>('edit');
   const [isGameInfoOpen, setIsGameInfoOpen] = useState(false);
+
+  // Track initial state for unsaved changes detection
+  const initialStateRef = useRef<{
+    title: string;
+    description: string;
+    questions: QuestionFormData[];
+    soundEnabled: boolean;
+  } | null>(null);
+  const isSavingRef = useRef(false);
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -177,53 +103,111 @@ export default function EditForm() {
 
   useEffect(() => {
     if (sourceData) {
-      setTitle(isDraftMode ? `${sourceData.title} (복사본)` : sourceData.title);
-      setDescription(sourceData.description || '');
-
+      const newTitle = isDraftMode ? `${sourceData.title} (복사본)` : sourceData.title;
+      const newDescription = sourceData.description || '';
       const settings = sourceData.settings || {};
+      const newSoundEnabled = !!(settings.soundEnabled as boolean);
+
+      setTitle(newTitle);
+      setDescription(newDescription);
       setTimeLimit((settings.timeLimit as number) || null);
-      setSoundEnabled(!!(settings.soundEnabled as boolean));
+      setSoundEnabled(newSoundEnabled);
+
+      let newQuestions: QuestionFormData[] = [];
 
       if (!isDraftMode) {
         const gameSource = sourceData as GameWithQuestions;
         if (gameSource.questions && gameSource.questions.length > 0) {
-          setQuestions(
-            gameSource.questions.map((q) => ({
-              id: q.id,
-              order: q.order,
-              content: q.content,
-              data: q.data as QuestionFormData['data'],
-              imageUrl: q.imageUrl || undefined,
-              videoUrl: q.videoUrl || undefined,
-              audioUrl: q.audioUrl || undefined,
-              mediaSettings: q.mediaSettings || undefined,
-            }))
-          );
-        } else {
-          setQuestions([]);
+          newQuestions = gameSource.questions.map((q) => ({
+            id: q.id || crypto.randomUUID(), // Ensure ID exists
+            order: q.order,
+            content: q.content,
+            data: q.data as QuestionFormData['data'],
+            imageUrl: q.imageUrl || undefined,
+            videoUrl: q.videoUrl || undefined,
+            audioUrl: q.audioUrl || undefined,
+            mediaSettings: q.mediaSettings || undefined,
+          }));
         }
       } else {
         const templateSource = sourceData as GameWithQuestions;
         if (templateSource.questions && templateSource.questions.length > 0) {
-          setQuestions(
-            templateSource.questions.map((q) => ({
-              order: q.order,
-              content: q.content,
-              data: q.data as QuestionFormData['data'],
-              imageUrl: q.imageUrl || undefined,
-              videoUrl: q.videoUrl || undefined,
-              audioUrl: q.audioUrl || undefined,
-              mediaSettings: q.mediaSettings || undefined,
-            }))
-          );
-        } else {
-          setQuestions([]);
+          newQuestions = templateSource.questions.map((q) => ({
+            id: crypto.randomUUID(), // Generate new ID for draft copies
+            order: q.order,
+            content: q.content,
+            data: q.data as QuestionFormData['data'],
+            imageUrl: q.imageUrl || undefined,
+            videoUrl: q.videoUrl || undefined,
+            audioUrl: q.audioUrl || undefined,
+            mediaSettings: q.mediaSettings || undefined,
+          }));
         }
       }
+
+      setQuestions(newQuestions);
+
+      // Store initial state for unsaved changes detection
+      initialStateRef.current = {
+        title: newTitle,
+        description: newDescription,
+        questions: JSON.parse(JSON.stringify(newQuestions)),
+        soundEnabled: newSoundEnabled,
+      };
     }
   }, [sourceData, isDraftMode]);
 
+  // Check if there are unsaved changes
+  const hasUnsavedChanges = useCallback(() => {
+    // For new game mode, check if user has entered anything
+    if (isNewGameMode) {
+      const defaultTitle = gameTypeParam ? `새 ${GAME_TYPE_NAMES[gameTypeParam]}` : '';
+      return title !== defaultTitle || description !== '' || questions.length > 0;
+    }
+
+    // For draft/edit mode, compare with initial state
+    if (!initialStateRef.current) return false;
+
+    const initial = initialStateRef.current;
+
+    // Compare basic fields
+    if (title !== initial.title) return true;
+    if (description !== initial.description) return true;
+    if (soundEnabled !== initial.soundEnabled) return true;
+
+    // Compare questions length
+    if (questions.length !== initial.questions.length) return true;
+
+    // Compare each question
+    for (let i = 0; i < questions.length; i++) {
+      const current = questions[i];
+      const orig = initial.questions[i];
+
+      if (current.content !== orig.content) return true;
+      if (JSON.stringify(current.data) !== JSON.stringify(orig.data)) return true;
+      if (current.imageUrl !== orig.imageUrl) return true;
+      if (current.videoUrl !== orig.videoUrl) return true;
+      if (current.audioUrl !== orig.audioUrl) return true;
+      if (JSON.stringify(current.mediaSettings) !== JSON.stringify(orig.mediaSettings)) return true;
+    }
+
+    return false;
+  }, [isNewGameMode, gameTypeParam, title, description, soundEnabled, questions]);
+
+  // Warn user about unsaved changes when leaving
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges() && !isSavingRef.current) {
+        e.preventDefault();
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hasUnsavedChanges]);
+
   const handleSave = async () => {
+    isSavingRef.current = true;
     try {
       if (isNewGameMode) {
         if (!gameTypeDefaults) {
@@ -306,10 +290,12 @@ export default function EditForm() {
     } catch (error) {
       logger.error('Failed to save game:', error);
       alert('게임 저장에 실패했습니다. 다시 시도해주세요.');
+      isSavingRef.current = false;
     }
   };
 
   const handleSaveAndCreateRoom = async () => {
+    isSavingRef.current = true;
     try {
       let finalGameId = gameId;
 
@@ -402,49 +388,70 @@ export default function EditForm() {
     } catch (error) {
       logger.error('Failed to save and create room:', error);
       alert('게임 저장 또는 방 생성에 실패했습니다. 다시 시도해주세요.');
+      isSavingRef.current = false;
     }
   };
 
+  // Handle back navigation with unsaved changes warning
+  const handleBack = useCallback(() => {
+    if (hasUnsavedChanges()) {
+      const confirmed = window.confirm('저장하지 않은 변경사항이 있습니다. 정말 나가시겠습니까?');
+      if (!confirmed) return;
+    }
+    router.back();
+  }, [hasUnsavedChanges, router]);
+
+  // Helper to get selected question and its index
+  const getSelectedQuestion = useCallback(() => {
+    if (!selectedQuestionId || selectedQuestionId === 'new') return null;
+    return questions.find(q => q.id === selectedQuestionId) || null;
+  }, [selectedQuestionId, questions]);
+
+  const getSelectedQuestionIndex = useCallback(() => {
+    if (!selectedQuestionId || selectedQuestionId === 'new') return -1;
+    return questions.findIndex(q => q.id === selectedQuestionId);
+  }, [selectedQuestionId, questions]);
+
   const handleAddQuestion = () => {
-    // Set to -1 to indicate new question
-    setSelectedQuestion(-1);
+    setSelectedQuestionId('new');
   };
 
-  const handleSelectQuestion = (index: number | null) => {
-    setSelectedQuestion(index);
+  const handleSelectQuestion = (questionId: string | null) => {
+    setSelectedQuestionId(questionId);
     setPreviewData(null); // Reset preview data when selection changes
   };
 
-  const handleDeleteQuestion = (index: number) => {
-    const updated = questions.filter((_, i) => i !== index);
+  const handleDeleteQuestion = (questionId: string) => {
+    const updated = questions.filter(q => q.id !== questionId);
     const reordered = updated.map((q, idx) => ({ ...q, order: idx }));
     setQuestions(reordered);
     // Clear selection if deleting current question
-    if (selectedQuestion === index) {
-      setSelectedQuestion(null);
-    } else if (selectedQuestion !== null && selectedQuestion > index) {
-      // Adjust index if deleting before current selection
-      setSelectedQuestion(selectedQuestion - 1);
+    if (selectedQuestionId === questionId) {
+      setSelectedQuestionId(null);
     }
   };
 
   const handleSaveQuestion = (question: QuestionFormData) => {
-    if (selectedQuestion === -1) {
-      // Add new question
-      const newQuestion = { ...question, order: questions.length };
+    if (selectedQuestionId === 'new') {
+      // Add new question with generated ID
+      const newId = crypto.randomUUID();
+      const newQuestion = { ...question, id: newId, order: questions.length };
       setQuestions([...questions, newQuestion]);
-      setSelectedQuestion(questions.length); // Select the newly added question
-    } else if (selectedQuestion !== null && selectedQuestion >= 0) {
+      setSelectedQuestionId(newId); // Select the newly added question
+    } else if (selectedQuestionId) {
       // Update existing question
-      const updated = [...questions];
-      updated[selectedQuestion] = { ...question, order: selectedQuestion };
-      setQuestions(updated);
+      const index = questions.findIndex(q => q.id === selectedQuestionId);
+      if (index !== -1) {
+        const updated = [...questions];
+        updated[index] = { ...question, id: selectedQuestionId, order: index };
+        setQuestions(updated);
+      }
     }
   };
 
   const handleDeleteCurrentQuestion = () => {
-    if (selectedQuestion !== null && selectedQuestion >= 0) {
-      handleDeleteQuestion(selectedQuestion);
+    if (selectedQuestionId && selectedQuestionId !== 'new') {
+      handleDeleteQuestion(selectedQuestionId);
     }
   };
 
@@ -520,7 +527,7 @@ export default function EditForm() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <button
-                onClick={() => router.back()}
+                onClick={handleBack}
                 className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors duration-200 cursor-pointer"
               >
                 <ArrowLeft className="w-5 h-5" />
@@ -649,7 +656,7 @@ export default function EditForm() {
               <div className="flex-1 overflow-y-auto p-3 space-y-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
                 {/* Question Slides */}
                 {questions.map((question, qIndex) => {
-                  const isSelected = selectedQuestion === qIndex;
+                  const isSelected = selectedQuestionId === question.id;
                   const hasMedia = question.imageUrl || question.audioUrl || question.videoUrl;
                   const hasAnswer = question.data.type === 'balance-game'
                     ? (question.data.optionA && question.data.optionB)
@@ -657,8 +664,8 @@ export default function EditForm() {
 
                   return (
                     <button
-                      key={question.id || qIndex}
-                      onClick={() => handleSelectQuestion(qIndex)}
+                      key={question.id}
+                      onClick={() => handleSelectQuestion(question.id!)}
                       className={`w-full rounded-xl border-2 transition-all cursor-pointer relative overflow-hidden ${isSelected
                         ? 'border-primary-500 bg-white shadow-lg ring-2 ring-primary-500/20'
                         : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-md'
@@ -698,7 +705,7 @@ export default function EditForm() {
                         </div>
                         {hasMedia && (
                           <div className="flex items-center gap-1">
-                            {question.imageUrl && <Image className="w-3 h-3 text-blue-400" />}
+                            {question.imageUrl && <ImageIcon className="w-3 h-3 text-blue-400" />}
                             {question.audioUrl && <Volume2 className="w-3 h-3 text-purple-400" />}
                             {question.videoUrl && <Video className="w-3 h-3 text-red-400" />}
                           </div>
@@ -721,7 +728,7 @@ export default function EditForm() {
 
             {/* Right Main Area */}
             <div className="flex-1 flex flex-col overflow-hidden">
-              {selectedQuestion === null && questions.length === 0 ? (
+              {selectedQuestionId === null && questions.length === 0 ? (
                 /* Empty State - No Questions */
                 <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
                   <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-6">
@@ -738,7 +745,7 @@ export default function EditForm() {
                     첫 질문 추가하기
                   </button>
                 </div>
-              ) : selectedQuestion === null ? (
+              ) : selectedQuestionId === null ? (
                 /* No Selection State - Has Questions */
                 <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
                   <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-6">
@@ -756,8 +763,9 @@ export default function EditForm() {
                   <div className="lg:w-[35%] bg-gray-900 p-4 overflow-y-auto">
                     {(() => {
                       // Use previewData for real-time updates, fallback to saved question
-                      const displayQuestion = previewData ?? (selectedQuestion >= 0 ? questions[selectedQuestion] : null);
-                      const questionNum = selectedQuestion >= 0 ? selectedQuestion + 1 : questions.length + 1;
+                      const selectedIndex = getSelectedQuestionIndex();
+                      const displayQuestion = previewData ?? (selectedIndex >= 0 ? questions[selectedIndex] : null);
+                      const questionNum = selectedQuestionId === 'new' ? questions.length + 1 : selectedIndex + 1;
                       const totalNum = questions.length || 1;
 
                       return (
@@ -793,12 +801,12 @@ export default function EditForm() {
                   {/* Edit Panel (65%) */}
                   <div className="lg:w-[65%] overflow-y-auto border-l border-gray-200">
                     <QuestionEditPanel
-                      question={selectedQuestion === -1 ? null : (selectedQuestion >= 0 ? questions[selectedQuestion] : null)}
-                      questionNumber={selectedQuestion === -1 ? questions.length + 1 : (selectedQuestion >= 0 ? selectedQuestion + 1 : 0)}
+                      question={selectedQuestionId === 'new' ? null : getSelectedQuestion()}
+                      questionNumber={selectedQuestionId === 'new' ? questions.length + 1 : getSelectedQuestionIndex() + 1}
                       onSave={handleSaveQuestion}
                       onChange={setPreviewData}
-                      onDelete={selectedQuestion >= 0 ? handleDeleteCurrentQuestion : undefined}
-                      onCancel={selectedQuestion === -1 ? () => setSelectedQuestion(null) : undefined}
+                      onDelete={selectedQuestionId !== 'new' ? handleDeleteCurrentQuestion : undefined}
+                      onCancel={selectedQuestionId === 'new' ? () => setSelectedQuestionId(null) : undefined}
                       hidePreview
                     />
                   </div>
@@ -814,9 +822,9 @@ export default function EditForm() {
                 {/* Question Cards */}
                 {questions.map((question, qIndex) => (
                   <button
-                    key={question.id || qIndex}
+                    key={question.id}
                     onClick={() => {
-                      setSelectedQuestion(qIndex);
+                      setSelectedQuestionId(question.id!);
                       setViewMode('edit');
                     }}
                     className="aspect-[4/3] rounded-xl border-2 border-gray-200 bg-white hover:border-primary-300 hover:shadow-lg transition-all cursor-pointer relative overflow-hidden group"
@@ -827,7 +835,7 @@ export default function EditForm() {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleDeleteQuestion(qIndex);
+                        handleDeleteQuestion(question.id!);
                       }}
                       className="absolute top-2 right-2 w-7 h-7 rounded-full bg-white shadow text-gray-400 hover:text-error hover:bg-error-light flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
                     >
@@ -872,7 +880,7 @@ export default function EditForm() {
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between gap-4">
             <button
-              onClick={() => router.back()}
+              onClick={handleBack}
               className="px-6 py-2.5 border-2 border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-all duration-200 cursor-pointer"
             >
               취소

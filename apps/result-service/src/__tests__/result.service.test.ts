@@ -8,6 +8,7 @@ vi.mock('../config/database', () => ({
     room: {
       findUnique: vi.fn(),
       findMany: vi.fn(),
+      count: vi.fn(),
     },
     gameResult: {
       create: vi.fn(),
@@ -236,10 +237,12 @@ describe('ResultService', () => {
         },
       ];
 
+      vi.mocked(prisma.room.count).mockResolvedValue(2);
       vi.mocked(prisma.room.findMany).mockResolvedValue(mockRooms as any);
 
-      const results = await resultService.getResultsByGameId('game-123');
+      const { results, total } = await resultService.getResultsByGameId('game-123');
 
+      expect(prisma.room.count).toHaveBeenCalled();
       expect(prisma.room.findMany).toHaveBeenCalledWith({
         where: { gameId: 'game-123' },
         include: {
@@ -251,6 +254,7 @@ describe('ResultService', () => {
       expect(results).toHaveLength(2);
       expect(results[0].participantCount).toBe(10);
       expect(results[1].participantCount).toBe(8);
+      expect(total).toBe(2);
     });
 
     it('should filter out rooms without results', async () => {
@@ -278,12 +282,14 @@ describe('ResultService', () => {
         },
       ];
 
+      vi.mocked(prisma.room.count).mockResolvedValue(1);
       vi.mocked(prisma.room.findMany).mockResolvedValue(mockRooms as any);
 
-      const results = await resultService.getResultsByGameId('game-123');
+      const { results, total } = await resultService.getResultsByGameId('game-123');
 
       expect(results).toHaveLength(1);
       expect(results[0].participantCount).toBe(10);
+      expect(total).toBe(1);
     });
 
     it('should respect limit parameter', async () => {
@@ -305,6 +311,7 @@ describe('ResultService', () => {
         },
       ];
 
+      vi.mocked(prisma.room.count).mockResolvedValue(1);
       vi.mocked(prisma.room.findMany).mockResolvedValue(mockRooms as any);
 
       await resultService.getResultsByGameId('game-123', 5);
@@ -317,11 +324,13 @@ describe('ResultService', () => {
     });
 
     it('should return empty array if no results found', async () => {
+      vi.mocked(prisma.room.count).mockResolvedValue(0);
       vi.mocked(prisma.room.findMany).mockResolvedValue([]);
 
-      const results = await resultService.getResultsByGameId('game-123');
+      const { results, total } = await resultService.getResultsByGameId('game-123');
 
       expect(results).toEqual([]);
+      expect(total).toBe(0);
     });
   });
 });

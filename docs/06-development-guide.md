@@ -498,6 +498,43 @@ docker-compose down      # Stop all
 
 ## 📋 Recent Changes
 
+### 2025-11-27: Kahoot-style Game UX Improvements 🎮
+
+- **Status**: ✅ Complete
+- **Summary**: Added Kahoot-inspired game experience features including sound effects, confetti celebration, podium animation, answer streak, and real-time answer counter
+- **Impact**: Significantly enhanced game experience matching Kahoot's engaging UX
+
+**New Components**:
+
+**1. Sound System**:
+  - ✅ [apps/web/src/lib/providers/sound-provider.tsx](../apps/web/src/lib/providers/sound-provider.tsx) - Web Audio API-based SoundProvider and useSound hook
+  - ✅ [apps/web/src/lib/constants/sounds.ts](../apps/web/src/lib/constants/sounds.ts) - Sound type constants
+  - ✅ [apps/web/src/components/game/SoundToggle.tsx](../apps/web/src/components/game/SoundToggle.tsx) - Mute/unmute toggle button
+
+**2. Visual Effects**:
+  - ✅ [apps/web/src/components/game/Confetti.tsx](../apps/web/src/components/game/Confetti.tsx) - Canvas-based confetti celebration
+  - ✅ [apps/web/src/components/game/Podium.tsx](../apps/web/src/components/game/Podium.tsx) - Animated top 3 reveal with medals
+  - ✅ [apps/web/src/components/game/StreakBadge.tsx](../apps/web/src/components/game/StreakBadge.tsx) - Consecutive correct answer badge
+  - ✅ [apps/web/src/components/game/AnswerCounter.tsx](../apps/web/src/components/game/AnswerCounter.tsx) - Real-time response counter
+
+**3. Updated Components**:
+  - ✅ [apps/web/src/components/game/Timer.tsx](../apps/web/src/components/game/Timer.tsx) - Added countdown tick sounds (last 5 seconds)
+  - ✅ [apps/web/src/components/game/ScoreAnimation.tsx](../apps/web/src/components/game/ScoreAnimation.tsx) - Added streak display and sounds
+  - ✅ [apps/web/src/components/game/LeaderboardScreen.tsx](../apps/web/src/components/game/LeaderboardScreen.tsx) - Added reveal sound
+  - ✅ [apps/web/src/components/game/OrganizerView.tsx](../apps/web/src/components/game/OrganizerView.tsx) - Added answer counter
+  - ✅ [apps/web/src/components/game/ParticipantView.tsx](../apps/web/src/components/game/ParticipantView.tsx) - Added streak prop
+  - ✅ [apps/web/src/app/room/[pin]/game/page.tsx](../apps/web/src/app/room/[pin]/game/page.tsx) - Integrated all new features
+
+**Key Features**:
+
+1. **Sound Effects**: Countdown tick (5s), question start, answer submit, correct/wrong, streak (2/3/5), leaderboard reveal, victory fanfare
+2. **Confetti**: 200 particles, 6-second duration on game completion
+3. **Podium**: Reveals in order (3rd → 2nd → 1st) with sound effects
+4. **Streak**: Visual badge + sounds for 2+, 3+, 5+ consecutive correct answers
+5. **Answer Counter**: Animated progress bar showing X/Y responses in real-time
+
+---
+
 ### 2025-11-24: Template Usage Tracking via sourceGameId 🎯
 
 - **Status**: ✅ Complete
@@ -1879,6 +1916,27 @@ model Question {
 
 ## 📝 Recent Changes
 
+### 2025-11-27
+
+**Game Play UX Improvements**:
+- ✅ Added double-submit prevention with `isSubmitting` state in live game page
+- ✅ Implemented connection status feedback UI (connecting/disconnected/reconnecting/failed states)
+- ✅ Added reconnection attempt counter display (e.g., "재연결 시도 중... (2/5)")
+- ✅ Added "다시 연결하기" button when reconnection fails
+- ✅ Implemented localStorage cleanup when game finishes
+
+**Accessibility Improvements**:
+- ✅ Timer component: Added `role="timer"`, `aria-live`, `role="progressbar"`, `role="alert"`
+- ✅ LeaderboardScreen: Added `role="list"`, `role="listitem"`, `aria-label`, `role="status"`
+- ✅ Added nickname truncation with tooltip to prevent overflow
+
+**WebSocket Hook Enhancement**:
+- ✅ Added `ConnectionStatus` type export: `'connecting' | 'connected' | 'disconnected' | 'reconnecting' | 'failed'`
+- ✅ Added Socket.io reconnection event handlers (`reconnect_attempt`, `reconnect`, `reconnect_failed`)
+- ✅ Enhanced `useGameSocket` return values: `connectionStatus`, `reconnectAttempt`
+
+---
+
 ### 2025-11-25
 
 **Media Editing System Implemented**:
@@ -1940,7 +1998,7 @@ This includes:
 
 ---
 
-**Last Updated**: 2025-11-25
+**Last Updated**: 2025-11-27
 **Maintained By**: Claude AI Assistant
 
 **See Also**:

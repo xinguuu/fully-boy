@@ -3,6 +3,8 @@
 import { Timer } from './Timer';
 import { NextQuestionCountdown } from './NextQuestionCountdown';
 import { QuestionMedia } from './QuestionMedia';
+import { AnswerCounter } from './AnswerCounter';
+import { SoundToggle } from './SoundToggle';
 import type { Question, Player, LeaderboardEntry } from '@/lib/websocket/types';
 import { usePluginRegistry } from '@/lib/plugins/usePluginRegistry';
 
@@ -99,9 +101,13 @@ export function OrganizerView({
         isCorrect: player.answers[questionIndex]?.isCorrect,
       }));
 
+  const answeredCount = participants.filter((p) => p.hasAnswered).length;
+  const totalParticipants = participants.filter((p) => !players.find((pl) => pl.id === p.id && pl.isOrganizer)).length;
+
   return (
-    <div className={className || "min-h-screen bg-gradient-to-br from-primary-50 via-white to-secondary-50 p-4 md:p-8"}>
+    <div className={className || "min-h-screen bg-gradient-to-br from-primary-50 via-white to-secondary-50 p-4 md:p-8 relative"}>
       {!isPreview && <NextQuestionCountdown show={showResults} duration={5} />}
+      {!isPreview && <SoundToggle className="absolute top-4 right-4" />}
       <div className={isPreview ? "" : "max-w-6xl mx-auto"}>
         <div className={isPreview ? "h-full flex flex-col" : "bg-white rounded-2xl shadow-xl p-6 md:p-8 mb-6"}>
           <div className="flex items-center justify-between mb-6">
@@ -114,6 +120,16 @@ export function OrganizerView({
               </div>
             </div>
           </div>
+
+          {!showResults && !isPreview && (
+            <div className="mb-6">
+              <AnswerCounter
+                answered={answeredCount}
+                total={totalParticipants}
+                showResults={showResults}
+              />
+            </div>
+          )}
 
           {!showResults && (
             <Timer

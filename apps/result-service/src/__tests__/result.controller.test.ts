@@ -191,7 +191,10 @@ describe('ResultController', () => {
         query: {},
       } as Partial<Request>;
 
-      vi.mocked(resultService.getResultsByGameId).mockResolvedValue(mockResults);
+      vi.mocked(resultService.getResultsByGameId).mockResolvedValue({
+        results: mockResults,
+        total: mockResults.length,
+      });
 
       await resultController.getResultsByGameId(
         mockRequest as Request,
@@ -225,7 +228,10 @@ describe('ResultController', () => {
         query: { limit: '5' },
       } as Partial<Request>;
 
-      vi.mocked(resultService.getResultsByGameId).mockResolvedValue(mockResults);
+      vi.mocked(resultService.getResultsByGameId).mockResolvedValue({
+        results: mockResults,
+        total: mockResults.length,
+      });
 
       await resultController.getResultsByGameId(
         mockRequest as Request,

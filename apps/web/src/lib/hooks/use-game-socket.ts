@@ -22,8 +22,12 @@ interface UseGameSocketOptions {
   autoJoin?: boolean;
 }
 
+export type ConnectionStatus = 'connecting' | 'connected' | 'disconnected' | 'reconnecting' | 'failed';
+
 interface UseGameSocketReturn {
   isConnected: boolean;
+  connectionStatus: ConnectionStatus;
+  reconnectAttempt: number;
   roomState: RoomState | null;
   game: Game | null;
   currentQuestion: Question | null;
@@ -51,6 +55,8 @@ export function useGameSocket({
   autoJoin = false,
 }: UseGameSocketOptions): UseGameSocketReturn {
   const [isConnected, setIsConnected] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('connecting');
+  const [reconnectAttempt, setReconnectAttempt] = useState(0);
   const [roomState, setRoomState] = useState<RoomState | null>(null);
   const [game, setGame] = useState<Game | null>(null);
   const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null);
@@ -106,6 +112,8 @@ export function useGameSocket({
 
     const handleConnect = () => {
       setIsConnected(true);
+      setConnectionStatus('connected');
+      setReconnectAttempt(0);
       setError(null);
 
       // Auto-join for both organizer (no nickname) and participant (with nickname)
@@ -117,6 +125,29 @@ export function useGameSocket({
 
     const handleDisconnect = () => {
       setIsConnected(false);
+      setConnectionStatus('disconnected');
+    };
+
+    const handleReconnectAttempt = (attempt: number) => {
+      setConnectionStatus('reconnecting');
+      setReconnectAttempt(attempt);
+      logger.debug(`[WebSocket] Reconnect attempt ${attempt}`);
+    };
+
+    const handleReconnect = () => {
+      setConnectionStatus('connected');
+      setReconnectAttempt(0);
+      logger.debug('[WebSocket] Reconnected successfully');
+
+      // Re-join room after reconnection
+      if (hasJoined.current) {
+        wsClient.joinRoom(pin, nickname || undefined, participantId || undefined);
+      }
+    };
+
+    const handleReconnectFailed = () => {
+      setConnectionStatus('failed');
+      logger.error('[WebSocket] Reconnection failed after all attempts');
     };
 
     const handleJoinedRoom = (data: {
@@ -277,6 +308,9 @@ export function useGameSocket({
 
     socket.on('connect', handleConnect);
     socket.on('disconnect', handleDisconnect);
+    socket.io.on('reconnect_attempt', handleReconnectAttempt);
+    socket.io.on('reconnect', handleReconnect);
+    socket.io.on('reconnect_failed', handleReconnectFailed);
     socket.on(WS_EVENTS.JOINED_ROOM, handleJoinedRoom);
     socket.on(WS_EVENTS.PARTICIPANT_JOINED, handleParticipantJoined);
     socket.on(WS_EVENTS.PARTICIPANT_LEFT, handleParticipantLeft);
@@ -293,6 +327,9 @@ export function useGameSocket({
     return () => {
       socket.off('connect', handleConnect);
       socket.off('disconnect', handleDisconnect);
+      socket.io.off('reconnect_attempt', handleReconnectAttempt);
+      socket.io.off('reconnect', handleReconnect);
+      socket.io.off('reconnect_failed', handleReconnectFailed);
       socket.off(WS_EVENTS.JOINED_ROOM, handleJoinedRoom);
       socket.off(WS_EVENTS.PARTICIPANT_JOINED, handleParticipantJoined);
       socket.off(WS_EVENTS.PARTICIPANT_LEFT, handleParticipantLeft);
@@ -313,6 +350,8 @@ export function useGameSocket({
 
   return {
     isConnected,
+    connectionStatus,
+    reconnectAttempt,
     roomState,
     game,
     currentQuestion,

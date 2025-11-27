@@ -22,11 +22,20 @@ export class SentryExceptionFilter extends BaseExceptionFilter {
         });
       }
 
-      // Add request context
+      // Add request context (sanitize sensitive data)
+      const sanitizedBody = request.body
+        ? {
+            ...request.body,
+            ...(request.body.password && { password: '[REDACTED]' }),
+            ...(request.body.newPassword && { newPassword: '[REDACTED]' }),
+            ...(request.body.refreshToken && { refreshToken: '[REDACTED]' }),
+          }
+        : undefined;
+
       Sentry.setContext('request', {
         method: request.method,
         url: request.url,
-        body: request.body,
+        body: sanitizedBody,
       });
     }
 
