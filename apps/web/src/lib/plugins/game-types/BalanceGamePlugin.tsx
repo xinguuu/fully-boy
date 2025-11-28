@@ -162,12 +162,12 @@ export class BalanceGameFrontendPlugin implements FrontendGameTypePlugin {
                 {optionA}
               </div>
 
-              {/* Vote count & percentage */}
+              {/* Vote count & percentage - only show distribution when results are revealed */}
               <div className={`text-4xl font-black ${showResults && winner === 'A' ? 'text-white' : 'text-red-500'}`}>
                 {showResults ? `${percentA.toFixed(0)}%` : '?'}
               </div>
               <div className={`text-sm mt-1 ${showResults && winner === 'A' ? 'text-red-100' : 'text-gray-500'}`}>
-                {showResults ? `${countA}명` : `${countA}명 투표 중`}
+                {showResults ? `${countA}명` : '투표 진행 중'}
               </div>
             </div>
           </div>
@@ -209,12 +209,12 @@ export class BalanceGameFrontendPlugin implements FrontendGameTypePlugin {
                 {optionB}
               </div>
 
-              {/* Vote count & percentage */}
+              {/* Vote count & percentage - only show distribution when results are revealed */}
               <div className={`text-4xl font-black ${showResults && winner === 'B' ? 'text-white' : 'text-blue-500'}`}>
                 {showResults ? `${percentB.toFixed(0)}%` : '?'}
               </div>
               <div className={`text-sm mt-1 ${showResults && winner === 'B' ? 'text-blue-100' : 'text-gray-500'}`}>
-                {showResults ? `${countB}명` : `${countB}명 투표 중`}
+                {showResults ? `${countB}명` : '투표 진행 중'}
               </div>
             </div>
           </div>

@@ -2,6 +2,7 @@
 
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState, useRef } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useGameSocket, useAuth, useSound } from '@/lib/hooks';
 import { ParticipantView } from '@/components/game/ParticipantView';
 import { OrganizerView } from '@/components/game/OrganizerView';
@@ -17,6 +18,7 @@ import type { GamePhase } from '@/types/game.types';
 export default function LiveGamePage() {
   const params = useParams();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const pin = params.pin as string;
   const { user, isLoading: authLoading } = useAuth();
 
@@ -146,19 +148,23 @@ export default function LiveGamePage() {
     return undefined;
   }, [questionEnded]);
 
-  // Clean up localStorage and play victory sound when game finishes
+  // Clean up localStorage, invalidate cache, and play victory sound when game finishes
   useEffect(() => {
     if (roomState?.status === 'finished') {
       localStorage.removeItem(STORAGE_KEYS.ROOM_NICKNAME(pin));
       localStorage.removeItem(STORAGE_KEYS.ROOM_PARTICIPANT_ID(pin));
       localStorage.removeItem(STORAGE_KEYS.ROOM_IS_ORGANIZER(pin));
 
+      // Invalidate templates and games cache so playCount updates on browse page
+      queryClient.invalidateQueries({ queryKey: ['templates'] });
+      queryClient.invalidateQueries({ queryKey: ['games'] });
+
       if (!hasPlayedVictorySoundRef.current) {
         hasPlayedVictorySoundRef.current = true;
         playSound(SOUND_TYPES.VICTORY);
       }
     }
-  }, [roomState?.status, pin, playSound]);
+  }, [roomState?.status, pin, playSound, queryClient]);
 
   // Auto-redirect countdown when game finishes
   useEffect(() => {
@@ -168,7 +174,6 @@ export default function LiveGamePage() {
       setRedirectCountdown((prev) => {
         if (prev <= 1) {
           clearInterval(interval);
-          router.push(isOrganizer ? '/browse' : '/');
           return 0;
         }
         return prev - 1;
@@ -176,7 +181,14 @@ export default function LiveGamePage() {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [roomState?.status, isOrganizer, router]);
+  }, [roomState?.status]);
+
+  // Redirect when countdown reaches 0
+  useEffect(() => {
+    if (roomState?.status === 'finished' && redirectCountdown === 0) {
+      router.push(isOrganizer ? '/browse?tab=myGames' : '/');
+    }
+  }, [roomState?.status, redirectCountdown, isOrganizer, router]);
 
   const handleJoinRoom = (e: React.FormEvent) => {
     e.preventDefault();
@@ -368,10 +380,10 @@ export default function LiveGamePage() {
           )}
 
           <button
-            onClick={() => router.push(isOrganizer ? '/browse' : '/')}
+            onClick={() => router.push(isOrganizer ? '/browse?tab=myGames' : '/')}
             className="w-full mt-8 bg-white hover:bg-gray-50 text-primary-600 font-bold py-4 rounded-xl transition-all hover:scale-105 active:scale-100 cursor-pointer shadow-xl text-lg"
           >
-            {isOrganizer ? '게임 목록으로' : '홈으로'}{' '}
+            {isOrganizer ? '내 게임으로' : '홈으로'}{' '}
             <span className="text-primary-400 font-normal">({redirectCountdown}초)</span>
           </button>
         </div>

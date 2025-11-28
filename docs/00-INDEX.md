@@ -22,7 +22,9 @@ xingu/
     ├── 05-design-guide.md       # 🎨 디자인 시스템
     ├── 06-development-guide.md  # 💻 개발 가이드 & 컨벤션
     ├── 07-deployment-guide.md   # 🚀 배포 가이드
-    └── 08-sentry-setup.md       # 🐛 Sentry 설정 가이드
+    ├── 08-sentry-setup.md       # 🐛 Sentry 설정 가이드
+    ├── 09-game-ideas.md         # 🎮 게임 아이디어 & 구현 가이드
+    └── 10-oracle-cloud-deployment.md  # ☁️ Oracle Cloud 무료 배포 가이드
 ```
 
 ---
@@ -124,6 +126,8 @@ README → 01-overview → 02-ia → 04-architecture → 06-development-guide
 | [06-development-guide.md](06-development-guide.md) | 코딩 컨벤션, 파일 구조, Recent Changes | 개발자 | 1,000줄 |
 | [07-deployment-guide.md](07-deployment-guide.md) | Production 배포 가이드, 인프라 설정 | DevOps, Backend | 중량 |
 | [08-sentry-setup.md](08-sentry-setup.md) | Sentry 에러 추적 설정 상세 가이드 | DevOps, Backend | 중량 |
+| [09-game-ideas.md](09-game-ideas.md) | 게임 아이디어 및 구현 가이드 | 기획자, 개발자 | 중량 |
+| [10-oracle-cloud-deployment.md](10-oracle-cloud-deployment.md) | Oracle Cloud 무료 배포 완전 가이드 | DevOps, 1인개발자 | 대용량 |
 
 ---
 
@@ -161,6 +165,9 @@ README → 01-overview → 02-ia → 04-architecture → 06-development-guide
 
 ### "새로운 게임 타입을 추가하고 싶어요"
 → [06-development-guide.md](06-development-guide.md) - Plugin System 섹션 참조
+
+### "무료로 서버에 배포하고 싶어요"
+→ [10-oracle-cloud-deployment.md](10-oracle-cloud-deployment.md) - Oracle Cloud Always Free
 
 ---
 
@@ -220,5 +227,5 @@ pnpm dev
 
 ---
 
-**마지막 업데이트**: 2025-11-26
-**버전**: 1.2
+**마지막 업데이트**: 2025-11-28
+**버전**: 1.3

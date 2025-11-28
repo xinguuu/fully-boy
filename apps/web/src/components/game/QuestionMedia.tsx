@@ -53,7 +53,8 @@ function getVideoSrc(
 }
 
 /**
- * Image with crop and mask effects
+ * Image with blur effect - shows selected area clearly, blurs the rest
+ * Matches ImageEditor preview exactly
  */
 function MaskedImage({
   src,
@@ -66,192 +67,67 @@ function MaskedImage({
   maskType?: MaskType;
   maskIntensity?: number;
 }) {
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  // No crop area = show full image
-  if (!cropArea || maskType === 'none') {
+  // No blur = show full image
+  if (!cropArea || maskType !== 'blur') {
     return (
-      <div className="relative w-full max-w-2xl h-96">
+      <div className="relative w-full h-48 bg-gray-100 rounded-lg overflow-hidden">
         <Image
           src={src}
           alt="Question visual"
           fill
-          className="rounded-lg shadow-md object-contain"
-          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-          unoptimized={src.startsWith('data:')}
-        />
-      </div>
-    );
-  }
-
-  // Calculate blur intensity (0-100 → 0-20px)
-  const blurAmount = (maskIntensity / 100) * 20;
-
-  // Spotlight: dark overlay with bright crop area
-  if (maskType === 'spotlight') {
-    return (
-      <div ref={containerRef} className="relative w-full max-w-2xl h-96 overflow-hidden rounded-lg shadow-md">
-        {/* Background image (dimmed) */}
-        <Image
-          src={src}
-          alt="Question visual background"
-          fill
-          className="object-contain brightness-[0.2]"
-          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-          unoptimized={src.startsWith('data:')}
-        />
-        {/* Spotlight area (bright) */}
-        <div
-          className="absolute overflow-hidden"
-          style={{
-            left: `${cropArea.x}%`,
-            top: `${cropArea.y}%`,
-            width: `${cropArea.width}%`,
-            height: `${cropArea.height}%`,
-            borderRadius: '8px',
-            boxShadow: '0 0 40px 10px rgba(255, 255, 255, 0.3)',
-          }}
-        >
-          <div
-            className="relative"
-            style={{
-              width: `${100 / (cropArea.width / 100)}%`,
-              height: `${100 / (cropArea.height / 100)}%`,
-              marginLeft: `-${(cropArea.x / cropArea.width) * 100}%`,
-              marginTop: `-${(cropArea.y / cropArea.height) * 100}%`,
-            }}
-          >
-            <Image
-              src={src}
-              alt="Question visual spotlight"
-              fill
-              className="object-contain"
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-              unoptimized={src.startsWith('data:')}
-            />
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Blur: blur everything except crop area
-  if (maskType === 'blur') {
-    return (
-      <div ref={containerRef} className="relative w-full max-w-2xl h-96 overflow-hidden rounded-lg shadow-md">
-        {/* Background image (blurred) */}
-        <Image
-          src={src}
-          alt="Question visual background"
-          fill
           className="object-contain"
-          style={{ filter: `blur(${blurAmount}px)` }}
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           unoptimized={src.startsWith('data:')}
         />
-        {/* Clear area (no blur) */}
-        <div
-          className="absolute overflow-hidden"
-          style={{
-            left: `${cropArea.x}%`,
-            top: `${cropArea.y}%`,
-            width: `${cropArea.width}%`,
-            height: `${cropArea.height}%`,
-            borderRadius: '4px',
-            border: '2px solid rgba(255, 255, 255, 0.5)',
-          }}
-        >
-          <div
-            className="relative"
-            style={{
-              width: `${100 / (cropArea.width / 100)}%`,
-              height: `${100 / (cropArea.height / 100)}%`,
-              marginLeft: `-${(cropArea.x / cropArea.width) * 100}%`,
-              marginTop: `-${(cropArea.y / cropArea.height) * 100}%`,
-            }}
-          >
-            <Image
-              src={src}
-              alt="Question visual clear"
-              fill
-              className="object-contain"
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-              unoptimized={src.startsWith('data:')}
-            />
-          </div>
-        </div>
       </div>
     );
   }
 
-  // Mosaic: pixelate effect using CSS
-  if (maskType === 'mosaic') {
-    // Mosaic intensity: higher = more pixelated (scale down more)
-    const pixelSize = Math.max(2, Math.floor(maskIntensity / 5));
+  // Calculate blur intensity (0-100 → 0-40px) - 2배 강화
+  const blurAmount = (maskIntensity / 100) * 40;
 
-    return (
-      <div ref={containerRef} className="relative w-full max-w-2xl h-96 overflow-hidden rounded-lg shadow-md">
-        {/* Background image (pixelated via image-rendering) */}
-        <div className="absolute inset-0">
+  // Blur: blur everything except crop area (same as ImageEditor)
+  return (
+    <div className="relative w-full h-48 bg-gray-100 rounded-lg overflow-hidden">
+      {/* Background image (blurred) */}
+      <Image
+        src={src}
+        alt="Question visual background"
+        fill
+        className="object-contain"
+        style={{ filter: `blur(${blurAmount}px)` }}
+        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+        unoptimized={src.startsWith('data:')}
+      />
+      {/* Clear area (no blur) */}
+      <div
+        className="absolute overflow-hidden border-2 border-white shadow-lg"
+        style={{
+          left: `${cropArea.x}%`,
+          top: `${cropArea.y}%`,
+          width: `${cropArea.width}%`,
+          height: `${cropArea.height}%`,
+        }}
+      >
+        <div
+          className="absolute"
+          style={{
+            width: `${10000 / cropArea.width}%`,
+            height: `${10000 / cropArea.height}%`,
+            left: `-${(cropArea.x * 100) / cropArea.width}%`,
+            top: `-${(cropArea.y * 100) / cropArea.height}%`,
+          }}
+        >
           <Image
             src={src}
-            alt="Question visual background"
+            alt="Question visual clear"
             fill
             className="object-contain"
-            style={{
-              imageRendering: 'pixelated',
-              filter: `blur(${pixelSize}px)`,
-            }}
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
             unoptimized={src.startsWith('data:')}
           />
         </div>
-        {/* Clear area (no mosaic) */}
-        <div
-          className="absolute overflow-hidden"
-          style={{
-            left: `${cropArea.x}%`,
-            top: `${cropArea.y}%`,
-            width: `${cropArea.width}%`,
-            height: `${cropArea.height}%`,
-            borderRadius: '4px',
-            border: '2px solid rgba(255, 255, 255, 0.5)',
-          }}
-        >
-          <div
-            className="relative"
-            style={{
-              width: `${100 / (cropArea.width / 100)}%`,
-              height: `${100 / (cropArea.height / 100)}%`,
-              marginLeft: `-${(cropArea.x / cropArea.width) * 100}%`,
-              marginTop: `-${(cropArea.y / cropArea.height) * 100}%`,
-            }}
-          >
-            <Image
-              src={src}
-              alt="Question visual clear"
-              fill
-              className="object-contain"
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-              unoptimized={src.startsWith('data:')}
-            />
-          </div>
-        </div>
       </div>
-    );
-  }
-
-  // Default: show full image
-  return (
-    <div className="relative w-full max-w-2xl h-96">
-      <Image
-        src={src}
-        alt="Question visual"
-        fill
-        className="rounded-lg shadow-md object-contain"
-        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-        unoptimized={src.startsWith('data:')}
-      />
     </div>
   );
 }

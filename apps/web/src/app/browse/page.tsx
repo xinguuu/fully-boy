@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Search,
   User,
@@ -37,10 +37,15 @@ import {
 
 export default function BrowsePage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user, isLoading, isAuthenticated } = useAuth();
 
+  // Get initial tab from URL query parameter
+  const tabFromUrl = searchParams.get('tab');
+  const initialTab = tabFromUrl === 'myGames' ? 'myGames' : 'browse';
+
   // State declarations
-  const [activeTab, setActiveTab] = useState<'browse' | 'myGames'>('browse');
+  const [activeTab, setActiveTab] = useState<'browse' | 'myGames'>(initialTab);
   const [gameCategory, setGameCategory] = useState<GameCategoryFilter>('all');
   const [mobileFilter, setMobileFilter] = useState<MobileFilter>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -58,6 +63,22 @@ export default function BrowsePage() {
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Sync activeTab with URL when searchParams change (browser back/forward)
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    const newTab = tab === 'myGames' ? 'myGames' : 'browse';
+    if (newTab !== activeTab) {
+      setActiveTab(newTab);
+    }
+  }, [searchParams, activeTab]);
+
+  // Handle tab change with URL update
+  const handleTabChange = (tab: 'browse' | 'myGames') => {
+    setActiveTab(tab);
+    const url = tab === 'myGames' ? '/browse?tab=myGames' : '/browse';
+    router.replace(url, { scroll: false });
+  };
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -245,7 +266,7 @@ export default function BrowsePage() {
         <div className="border-b border-gray-200 mb-8">
           <nav className="flex gap-6">
             <button
-              onClick={() => setActiveTab('browse')}
+              onClick={() => handleTabChange('browse')}
               className={`pb-3 px-1 border-b-2 font-semibold transition-colors cursor-pointer ${
                 activeTab === 'browse'
                   ? 'border-primary-500 text-primary-500'
@@ -258,7 +279,7 @@ export default function BrowsePage() {
               </span>
             </button>
             <button
-              onClick={() => setActiveTab('myGames')}
+              onClick={() => handleTabChange('myGames')}
               className={`pb-3 px-1 border-b-2 font-semibold transition-colors cursor-pointer ${
                 activeTab === 'myGames'
                   ? 'border-primary-500 text-primary-500'
@@ -435,7 +456,7 @@ export default function BrowsePage() {
                 <p className="text-gray-500 text-lg mb-4">아직 만든 게임이 없습니다</p>
                 <p className="text-gray-400 mb-6">템플릿을 선택해서 나만의 게임을 만들어보세요!</p>
                 <button
-                  onClick={() => setActiveTab('browse')}
+                  onClick={() => handleTabChange('browse')}
                   className="px-6 py-3 bg-gradient-to-r from-primary-500 to-secondary-500 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all hover:scale-105 cursor-pointer"
                 >
                   게임 둘러보기

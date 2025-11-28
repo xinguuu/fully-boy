@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import Image from 'next/image';
-import type { MediaSettings, CropArea, MaskType } from '@xingu/shared';
+import type { MediaSettings, CropArea } from '@xingu/shared';
 
 interface ImageEditorProps {
   data?: MediaSettings['image'];
@@ -15,48 +15,89 @@ export function ImageEditor({ data, imageData, onChange }: ImageEditorProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
 
-  const cropArea = data?.cropArea || { x: 25, y: 25, width: 50, height: 50 };
-  const maskType = data?.maskType || 'none';
-  const maskIntensity = data?.maskIntensity ?? 50;
+  // 블러 활성화 여부 (없음 / 블러)
+  const blurEnabled = data?.maskType === 'blur';
+  const cropArea = data?.cropArea || { x: 0, y: 0, width: 100, height: 100 };
+  const blurIntensity = data?.maskIntensity ?? 50;
 
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    if (!containerRef.current) return;
-    const rect = containerRef.current.getBoundingClientRect();
-    setDragStart({
-      x: ((e.clientX - rect.left) / rect.width) * 100,
-      y: ((e.clientY - rect.top) / rect.height) * 100,
+  // 블러 토글
+  const toggleBlur = () => {
+    const newMaskType = blurEnabled ? 'none' : 'blur';
+    const defaultCropArea = { x: 20, y: 20, width: 60, height: 60 };
+
+    onChange({
+      data: data?.data,
+      cropArea: newMaskType === 'blur' ? (data?.cropArea || defaultCropArea) : undefined,
+      maskType: newMaskType,
+      maskIntensity: blurIntensity,
     });
-    setIsDragging(true);
+  };
+
+  // 마우스 좌표를 컨테이너 기준 퍼센트로 변환
+  const getPosition = useCallback((clientX: number, clientY: number) => {
+    if (!containerRef.current) return { x: 0, y: 0 };
+
+    const rect = containerRef.current.getBoundingClientRect();
+    const x = ((clientX - rect.left) / rect.width) * 100;
+    const y = ((clientY - rect.top) / rect.height) * 100;
+
+    return {
+      x: Math.max(0, Math.min(100, x)),
+      y: Math.max(0, Math.min(100, y)),
+    };
   }, []);
 
-  const handleMouseMove = useCallback(
-    (e: React.MouseEvent) => {
-      if (!isDragging || !containerRef.current) return;
-      const rect = containerRef.current.getBoundingClientRect();
-      const currentX = ((e.clientX - rect.left) / rect.width) * 100;
-      const currentY = ((e.clientY - rect.top) / rect.height) * 100;
+  // 드래그 시작
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    if (!blurEnabled) return;
+    e.preventDefault();
 
+    const pos = getPosition(e.clientX, e.clientY);
+    setDragStart(pos);
+    setIsDragging(true);
+  }, [blurEnabled, getPosition]);
+
+  // 드래그 중
+  useEffect(() => {
+    if (!isDragging) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const current = getPosition(e.clientX, e.clientY);
+
+      // 드래그 방향에 관계없이 영역 계산
+      const x = Math.min(dragStart.x, current.x);
+      const y = Math.min(dragStart.y, current.y);
+      const width = Math.abs(current.x - dragStart.x);
+      const height = Math.abs(current.y - dragStart.y);
+
+      // 최소 크기 10%
       const newCropArea: CropArea = {
-        x: Math.min(dragStart.x, currentX),
-        y: Math.min(dragStart.y, currentY),
-        width: Math.abs(currentX - dragStart.x),
-        height: Math.abs(currentY - dragStart.y),
+        x: Math.max(0, x),
+        y: Math.max(0, y),
+        width: Math.max(10, Math.min(100 - x, width)),
+        height: Math.max(10, Math.min(100 - y, height)),
       };
 
-      // Clamp values
-      newCropArea.x = Math.max(0, Math.min(100 - newCropArea.width, newCropArea.x));
-      newCropArea.y = Math.max(0, Math.min(100 - newCropArea.height, newCropArea.y));
-      newCropArea.width = Math.min(100 - newCropArea.x, newCropArea.width);
-      newCropArea.height = Math.min(100 - newCropArea.y, newCropArea.height);
+      onChange({
+        data: data?.data,
+        cropArea: newCropArea,
+        maskType: 'blur',
+        maskIntensity: blurIntensity,
+      });
+    };
 
-      onChange({ ...data, cropArea: newCropArea });
-    },
-    [isDragging, dragStart, data, onChange]
-  );
+    const handleMouseUp = () => {
+      setIsDragging(false);
+    };
 
-  const handleMouseUp = useCallback(() => {
-    setIsDragging(false);
-  }, []);
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging, dragStart, data?.data, blurIntensity, getPosition, onChange]);
 
   if (!imageData) {
     return (
@@ -66,102 +107,141 @@ export function ImageEditor({ data, imageData, onChange }: ImageEditorProps) {
     );
   }
 
+  // 블러 강도 (0-100 → 0-40px) - 2배 강화
+  const blurPx = (blurIntensity / 100) * 40;
+
   return (
     <div className="space-y-4">
-      {/* Crop Area Selector */}
+      {/* 블러 토글 */}
+      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+        <div>
+          <div className="font-medium text-gray-900">블러 효과</div>
+          <div className="text-xs text-gray-500">선택 영역 외 흐리게 처리</div>
+        </div>
+        <button
+          type="button"
+          onClick={toggleBlur}
+          className={`relative w-12 h-6 rounded-full transition-colors cursor-pointer ${
+            blurEnabled ? 'bg-primary-500' : 'bg-gray-300'
+          }`}
+        >
+          <div
+            className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${
+              blurEnabled ? 'translate-x-6' : 'translate-x-0.5'
+            }`}
+          />
+        </button>
+      </div>
+
+      {/* 이미지 편집 영역 */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
-          보여줄 영역 선택 (드래그)
+          {blurEnabled ? '선명하게 보여줄 영역 선택 (드래그)' : '미리보기'}
         </label>
+
         <div
           ref={containerRef}
-          className="relative w-full h-64 bg-gray-100 rounded-lg overflow-hidden cursor-crosshair select-none"
+          className={`relative w-full h-48 bg-gray-100 rounded-lg overflow-hidden select-none ${
+            blurEnabled ? 'cursor-crosshair' : ''
+          }`}
           onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          onMouseLeave={handleMouseUp}
         >
+          {/* 배경 이미지 (블러 적용) */}
           <Image
             src={imageData}
             alt="Preview"
             fill
-            className="object-contain"
-            unoptimized
-          />
-          {/* Crop overlay */}
-          <div
-            className="absolute border-2 border-primary-500 bg-primary-500/20"
+            className="object-contain pointer-events-none"
             style={{
-              left: `${cropArea.x}%`,
-              top: `${cropArea.y}%`,
-              width: `${cropArea.width}%`,
-              height: `${cropArea.height}%`,
+              filter: blurEnabled ? `blur(${blurPx}px)` : 'none',
             }}
-          >
-            <div className="absolute -top-6 left-0 text-xs bg-primary-500 text-white px-2 py-0.5 rounded">
-              {Math.round(cropArea.width)}% × {Math.round(cropArea.height)}%
-            </div>
-          </div>
-        </div>
-        <p className="text-xs text-gray-500 mt-1">
-          마우스로 드래그하여 보여줄 영역을 선택하세요
-        </p>
-      </div>
+            unoptimized
+            draggable={false}
+          />
 
-      {/* Mask Type */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          마스킹 효과
-        </label>
-        <div className="grid grid-cols-4 gap-2">
-          {[
-            { value: 'none', label: '없음', icon: '🖼️' },
-            { value: 'blur', label: '블러', icon: '🌫️' },
-            { value: 'mosaic', label: '모자이크', icon: '🧩' },
-            { value: 'spotlight', label: '스포트라이트', icon: '🔦' },
-          ].map((option) => (
-            <button
-              key={option.value}
-              type="button"
-              onClick={() => onChange({ ...data, maskType: option.value as MaskType })}
-              className={`p-3 rounded-lg border-2 transition-all cursor-pointer ${
-                maskType === option.value
-                  ? 'border-primary-500 bg-primary-50'
-                  : 'border-gray-200 hover:border-gray-300'
-              }`}
+          {/* 선명한 영역 (블러 활성화 시만) */}
+          {blurEnabled && (
+            <div
+              className="absolute overflow-hidden border-2 border-white shadow-lg"
+              style={{
+                left: `${cropArea.x}%`,
+                top: `${cropArea.y}%`,
+                width: `${cropArea.width}%`,
+                height: `${cropArea.height}%`,
+              }}
             >
-              <div className="text-2xl mb-1">{option.icon}</div>
-              <div className="text-xs font-medium">{option.label}</div>
-            </button>
-          ))}
+              {/* 선명한 이미지 표시 */}
+              <div
+                className="absolute"
+                style={{
+                  width: `${10000 / cropArea.width}%`,
+                  height: `${10000 / cropArea.height}%`,
+                  left: `-${(cropArea.x * 100) / cropArea.width}%`,
+                  top: `-${(cropArea.y * 100) / cropArea.height}%`,
+                }}
+              >
+                <Image
+                  src={imageData}
+                  alt="Clear area"
+                  fill
+                  className="object-contain pointer-events-none"
+                  unoptimized
+                  draggable={false}
+                />
+              </div>
+
+              {/* 크기 표시 */}
+              <div className="absolute -top-6 left-0 text-xs bg-white text-gray-700 px-2 py-0.5 rounded shadow whitespace-nowrap">
+                {Math.round(cropArea.width)}% × {Math.round(cropArea.height)}%
+              </div>
+            </div>
+          )}
         </div>
+
+        {blurEnabled && (
+          <p className="text-xs text-gray-500 mt-1">
+            드래그하여 선명하게 보여줄 영역을 선택하세요
+          </p>
+        )}
       </div>
 
-      {/* Mask Intensity */}
-      {maskType !== 'none' && (
+      {/* 블러 강도 */}
+      {blurEnabled && (
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            효과 강도: {maskIntensity}%
+            블러 강도: {blurIntensity}%
           </label>
           <input
             type="range"
-            min={0}
+            min={10}
             max={100}
-            value={maskIntensity}
-            onChange={(e) => onChange({ ...data, maskIntensity: Number(e.target.value) })}
+            value={blurIntensity}
+            onChange={(e) => onChange({
+              data: data?.data,
+              cropArea,
+              maskType: 'blur',
+              maskIntensity: Number(e.target.value),
+            })}
             className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
           />
         </div>
       )}
 
-      {/* Reset button */}
-      <button
-        type="button"
-        onClick={() => onChange({ data: data?.data })}
-        className="text-sm text-gray-500 hover:text-gray-700 cursor-pointer"
-      >
-        설정 초기화
-      </button>
+      {/* 초기화 버튼 */}
+      {blurEnabled && (
+        <button
+          type="button"
+          onClick={() => onChange({
+            data: data?.data,
+            cropArea: { x: 20, y: 20, width: 60, height: 60 },
+            maskType: 'blur',
+            maskIntensity: 50,
+          })}
+          className="text-sm text-gray-500 hover:text-gray-700 cursor-pointer"
+        >
+          영역 초기화
+        </button>
+      )}
     </div>
   );
 }

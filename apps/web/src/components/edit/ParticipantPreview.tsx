@@ -56,9 +56,9 @@ export function ParticipantPreview({
 
       {/* Timer Bar */}
       <div className="flex items-center gap-2 mb-2">
-        <span className="text-sm font-bold text-primary-500">{Math.round(duration * 0.75)}초</span>
+        <span className="text-sm font-bold text-primary-500">{duration}초</span>
         <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-          <div className="h-full bg-primary-500 rounded-full" style={{ width: '75%' }} />
+          <div className="h-full bg-primary-500 rounded-full" style={{ width: '100%' }} />
         </div>
       </div>
 

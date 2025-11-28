@@ -81,10 +81,18 @@ export function MediaEditor({
     const base64 = await fileToBase64(file);
 
     if (fileType === 'image') {
+      // 이미지 업로드 시 기본 cropArea도 함께 저장
+      const defaultCropArea = { x: 25, y: 25, width: 50, height: 50 };
       onChange({
         mediaSettings: {
           ...mediaSettings,
-          image: { ...mediaSettings?.image, data: base64 },
+          image: {
+            ...mediaSettings?.image,
+            data: base64,
+            cropArea: mediaSettings?.image?.cropArea || defaultCropArea,
+            maskType: mediaSettings?.image?.maskType || 'none',
+            maskIntensity: mediaSettings?.image?.maskIntensity ?? 50,
+          },
         },
       });
       setActiveTab('image');

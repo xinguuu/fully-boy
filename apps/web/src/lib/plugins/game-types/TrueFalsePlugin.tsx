@@ -85,24 +85,27 @@ export class TrueFalseFrontendPlugin implements FrontendGameTypePlugin {
                     </div>
                   )}
                 </div>
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className={isCorrect ? 'text-white font-semibold' : 'text-gray-600'}>
-                      {count}명 응답
-                    </span>
-                    <span className={isCorrect ? 'text-white font-semibold' : 'text-gray-500'}>
-                      {percentage.toFixed(0)}%
-                    </span>
+                {/* Only show per-answer stats when showing results */}
+                {showResults && (
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className={isCorrect ? 'text-white font-semibold' : 'text-gray-600'}>
+                        {count}명 응답
+                      </span>
+                      <span className={isCorrect ? 'text-white font-semibold' : 'text-gray-500'}>
+                        {percentage.toFixed(0)}%
+                      </span>
+                    </div>
+                    <div className={`w-full rounded-full h-3 ${isCorrect ? 'bg-white/30' : 'bg-gray-200'}`}>
+                      <div
+                        className={`h-3 rounded-full transition-all duration-500 ${
+                          isCorrect ? 'bg-white' : option === 'O' ? 'bg-blue-500' : 'bg-gray-400'
+                        }`}
+                        style={{ width: `${percentage}%` }}
+                      />
+                    </div>
                   </div>
-                  <div className={`w-full rounded-full h-3 ${isCorrect ? 'bg-white/30' : 'bg-gray-200'}`}>
-                    <div
-                      className={`h-3 rounded-full transition-all duration-500 ${
-                        isCorrect ? 'bg-white' : option === 'O' ? 'bg-blue-500' : 'bg-gray-400'
-                      }`}
-                      style={{ width: `${percentage}%` }}
-                    />
-                  </div>
-                </div>
+                )}
               </div>
             );
           })}

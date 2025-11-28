@@ -76,7 +76,7 @@ export function PreviewMedia({
 }
 
 /**
- * Thumbnail image with mask effects (simplified for small preview)
+ * Thumbnail image with blur effect (same aspect ratio as ImageEditor)
  */
 function MaskedImageThumbnail({
   src,
@@ -89,172 +89,54 @@ function MaskedImageThumbnail({
   maskType?: MaskType;
   maskIntensity?: number;
 }) {
-  // No mask = show plain image
-  if (!cropArea || maskType === 'none') {
+  // No blur = show plain image (same structure as ImageEditor: w-full h-48)
+  if (!cropArea || maskType !== 'blur') {
     return (
+      <div className="relative w-full h-20 bg-gray-100 rounded-lg overflow-hidden">
+        <img
+          src={src}
+          alt=""
+          className="w-full h-full object-contain"
+        />
+      </div>
+    );
+  }
+
+  // Calculate blur intensity (0-100 → 0-40px) - same as ImageEditor
+  const blurAmount = (maskIntensity / 100) * 40;
+
+  return (
+    <div className="relative w-full h-20 bg-gray-100 rounded-lg overflow-hidden">
+      {/* Background (blurred) */}
       <img
         src={src}
         alt=""
-        className="max-h-12 rounded object-contain"
+        className="absolute inset-0 w-full h-full object-contain"
+        style={{ filter: `blur(${blurAmount}px)` }}
       />
-    );
-  }
-
-  // Calculate blur intensity (0-100 → 0-10px for thumbnail)
-  const blurAmount = (maskIntensity / 100) * 10;
-
-  // Spotlight effect
-  if (maskType === 'spotlight') {
-    return (
-      <div className="relative max-h-12 h-12 w-auto overflow-hidden rounded">
-        {/* Background (dimmed) */}
+      {/* Clear area */}
+      <div
+        className="absolute overflow-hidden border-2 border-white shadow-lg"
+        style={{
+          left: `${cropArea.x}%`,
+          top: `${cropArea.y}%`,
+          width: `${cropArea.width}%`,
+          height: `${cropArea.height}%`,
+        }}
+      >
         <img
           src={src}
           alt=""
-          className="h-12 object-contain brightness-[0.2]"
-        />
-        {/* Spotlight area (bright) */}
-        <div
-          className="absolute overflow-hidden"
+          className="absolute object-contain"
           style={{
-            left: `${cropArea.x}%`,
-            top: `${cropArea.y}%`,
-            width: `${cropArea.width}%`,
-            height: `${cropArea.height}%`,
-            borderRadius: '2px',
-            boxShadow: '0 0 10px 2px rgba(255, 255, 255, 0.3)',
-          }}
-        >
-          <div
-            className="relative h-full"
-            style={{
-              width: `${100 / (cropArea.width / 100)}%`,
-              height: `${100 / (cropArea.height / 100)}%`,
-              marginLeft: `-${(cropArea.x / cropArea.width) * 100}%`,
-              marginTop: `-${(cropArea.y / cropArea.height) * 100}%`,
-            }}
-          >
-            <img
-              src={src}
-              alt=""
-              className="h-12 object-contain"
-            />
-          </div>
-        </div>
-        {/* Mask indicator */}
-        <div className="absolute top-0.5 right-0.5 bg-black/60 text-white text-[6px] px-1 rounded">
-          스포트라이트
-        </div>
-      </div>
-    );
-  }
-
-  // Blur effect
-  if (maskType === 'blur') {
-    return (
-      <div className="relative max-h-12 h-12 w-auto overflow-hidden rounded">
-        {/* Background (blurred) */}
-        <img
-          src={src}
-          alt=""
-          className="h-12 object-contain"
-          style={{ filter: `blur(${blurAmount}px)` }}
-        />
-        {/* Clear area */}
-        <div
-          className="absolute overflow-hidden"
-          style={{
-            left: `${cropArea.x}%`,
-            top: `${cropArea.y}%`,
-            width: `${cropArea.width}%`,
-            height: `${cropArea.height}%`,
-            borderRadius: '2px',
-            border: '1px solid rgba(255, 255, 255, 0.5)',
-          }}
-        >
-          <div
-            className="relative h-full"
-            style={{
-              width: `${100 / (cropArea.width / 100)}%`,
-              height: `${100 / (cropArea.height / 100)}%`,
-              marginLeft: `-${(cropArea.x / cropArea.width) * 100}%`,
-              marginTop: `-${(cropArea.y / cropArea.height) * 100}%`,
-            }}
-          >
-            <img
-              src={src}
-              alt=""
-              className="h-12 object-contain"
-            />
-          </div>
-        </div>
-        {/* Mask indicator */}
-        <div className="absolute top-0.5 right-0.5 bg-black/60 text-white text-[6px] px-1 rounded">
-          블러
-        </div>
-      </div>
-    );
-  }
-
-  // Mosaic effect
-  if (maskType === 'mosaic') {
-    const pixelSize = Math.max(1, Math.floor(maskIntensity / 10));
-
-    return (
-      <div className="relative max-h-12 h-12 w-auto overflow-hidden rounded">
-        {/* Background (pixelated) */}
-        <img
-          src={src}
-          alt=""
-          className="h-12 object-contain"
-          style={{
-            imageRendering: 'pixelated',
-            filter: `blur(${pixelSize}px)`,
+            width: `${10000 / cropArea.width}%`,
+            height: `${10000 / cropArea.height}%`,
+            left: `-${(cropArea.x * 100) / cropArea.width}%`,
+            top: `-${(cropArea.y * 100) / cropArea.height}%`,
           }}
         />
-        {/* Clear area */}
-        <div
-          className="absolute overflow-hidden"
-          style={{
-            left: `${cropArea.x}%`,
-            top: `${cropArea.y}%`,
-            width: `${cropArea.width}%`,
-            height: `${cropArea.height}%`,
-            borderRadius: '2px',
-            border: '1px solid rgba(255, 255, 255, 0.5)',
-          }}
-        >
-          <div
-            className="relative h-full"
-            style={{
-              width: `${100 / (cropArea.width / 100)}%`,
-              height: `${100 / (cropArea.height / 100)}%`,
-              marginLeft: `-${(cropArea.x / cropArea.width) * 100}%`,
-              marginTop: `-${(cropArea.y / cropArea.height) * 100}%`,
-            }}
-          >
-            <img
-              src={src}
-              alt=""
-              className="h-12 object-contain"
-            />
-          </div>
-        </div>
-        {/* Mask indicator */}
-        <div className="absolute top-0.5 right-0.5 bg-black/60 text-white text-[6px] px-1 rounded">
-          모자이크
-        </div>
       </div>
-    );
-  }
-
-  // Default: plain image
-  return (
-    <img
-      src={src}
-      alt=""
-      className="max-h-12 rounded object-contain"
-    />
+    </div>
   );
 }
 

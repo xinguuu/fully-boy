@@ -36,12 +36,13 @@ interface QuestionEditPanelProps {
   questionNumber: number;
   onSave: (question: QuestionFormData) => void;
   onChange?: (question: QuestionFormData) => void;
+  onDirtyChange?: (isDirty: boolean) => void;
   onDelete?: () => void;
   onCancel?: () => void;
   hidePreview?: boolean;
 }
 
-export function QuestionEditPanel({ question, questionNumber, onSave, onChange, onDelete, onCancel, hidePreview = false }: QuestionEditPanelProps) {
+export function QuestionEditPanel({ question, questionNumber, onSave, onChange, onDirtyChange, onDelete, onCancel, hidePreview = false }: QuestionEditPanelProps) {
   const [content, setContent] = useState('');
   const [type, setType] = useState<QuestionType>('multiple-choice');
   const [options, setOptions] = useState<string[]>(['', '', '', '']);
@@ -127,6 +128,13 @@ export function QuestionEditPanel({ question, questionNumber, onSave, onChange, 
     resetForm();
   }, [resetForm]);
 
+  // Notify parent of dirty state changes
+  useEffect(() => {
+    if (onDirtyChange) {
+      onDirtyChange(hasUnsavedChanges());
+    }
+  }, [onDirtyChange, hasUnsavedChanges]);
+
   // Notify parent of changes for real-time preview
   useEffect(() => {
     if (onChange) {
@@ -202,9 +210,32 @@ export function QuestionEditPanel({ question, questionNumber, onSave, onChange, 
     setOptions(updated);
   };
 
-  const isValid = content.trim() !== '' &&
-    (type === 'multiple-choice' ? options.some((opt) => opt.trim() !== '') : true) &&
-    (type === 'balance-game' ? (optionA.trim() !== '' && optionB.trim() !== '') : true);
+  const isValid = (() => {
+    // Content is always required
+    if (!content.trim()) return false;
+
+    switch (type) {
+      case 'multiple-choice':
+        // At least one option and correct answer must be set
+        if (!options.some(opt => opt.trim())) return false;
+        if (!correctAnswer) return false;
+        break;
+      case 'true-false':
+        // Correct answer (O or X) must be set
+        if (!correctAnswer || !['O', 'X'].includes(correctAnswer)) return false;
+        break;
+      case 'short-answer':
+        // Correct answer must not be empty
+        if (!correctAnswer.trim()) return false;
+        break;
+      case 'balance-game':
+        // Both options must be set (no correct answer needed)
+        if (!optionA.trim() || !optionB.trim()) return false;
+        break;
+    }
+
+    return true;
+  })();
 
   // Generate dummy data for preview
   const previewQuestion = useMemo<Question>(() => {

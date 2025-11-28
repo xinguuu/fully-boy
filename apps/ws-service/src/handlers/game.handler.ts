@@ -7,6 +7,60 @@ import { participantSessionService } from '../services/participant-session.servi
 import { scoreCalculator } from '../services/score-calculator.service';
 import { AuthenticatedSocket } from '../middleware/ws-auth.middleware';
 
+/**
+ * Increment playCount for the game and its source template (if copied from one).
+ * This should be called when a game session ends to track play statistics.
+ */
+async function incrementPlayCount(gameId: string): Promise<void> {
+  try {
+    // Get game details to check for sourceGameId
+    const game = await prisma.game.findUnique({
+      where: { id: gameId },
+      select: { id: true, sourceGameId: true },
+    });
+
+    if (!game) {
+      logger.warn('Game not found for playCount increment', { gameId });
+      return;
+    }
+
+    // Increment playCount for the played game
+    await prisma.game.update({
+      where: { id: gameId },
+      data: {
+        playCount: {
+          increment: 1,
+        },
+      },
+    });
+
+    // If this game was copied from a template, increment source template's playCount too
+    if (game.sourceGameId) {
+      const sourceGame = await prisma.game.findUnique({
+        where: { id: game.sourceGameId },
+        select: { id: true, isPublic: true },
+      });
+
+      // Only increment if source is a public template
+      if (sourceGame?.isPublic) {
+        await prisma.game.update({
+          where: { id: game.sourceGameId },
+          data: {
+            playCount: {
+              increment: 1,
+            },
+          },
+        });
+      }
+    }
+
+    logger.info('PlayCount incremented', { gameId, sourceGameId: game.sourceGameId });
+  } catch (error) {
+    // Log but don't fail the request if playCount increment fails
+    logger.error('Failed to increment playCount', { gameId, error });
+  }
+}
+
 export function setupGameHandlers(io: Server, socket: Socket) {
   socket.on(WS_EVENTS.START_GAME, async (data: { pin: string }) => {
     try {
@@ -211,6 +265,9 @@ export function setupGameHandlers(io: Server, socket: Socket) {
               questionStats: {} as never,
             },
           });
+
+          // Increment playCount for the game and source template
+          await incrementPlayCount(finalState.gameId);
 
           await prisma.room.update({
             where: { pin },
@@ -676,6 +733,9 @@ export function setupGameHandlers(io: Server, socket: Socket) {
               },
             });
 
+            // Increment playCount for the game and source template
+            await incrementPlayCount(finalState.gameId);
+
             await prisma.room.update({
               where: { pin },
               data: {
@@ -763,6 +823,9 @@ export function setupGameHandlers(io: Server, socket: Socket) {
           questionStats: {} as never,
         },
       });
+
+      // Increment playCount for the game and source template
+      await incrementPlayCount(updatedState.gameId);
 
       await prisma.room.update({
         where: { pin },

@@ -8,8 +8,9 @@ import { GameType } from '@xingu/shared';
 import { ArrowLeft, Trash2, Plus, Settings, LayoutGrid, List, FileText, ChevronDown, X, Clock, Check, Image as ImageIcon, Volume2, Video } from 'lucide-react';
 import { SettingsModal } from '@/components/edit/SettingsModal';
 import { QuestionEditPanel } from '@/components/edit/QuestionEditPanel';
-import { OrganizerPreview } from '@/components/edit/OrganizerPreview';
-import { ParticipantPreview } from '@/components/edit/ParticipantPreview';
+import { UnsavedChangesModal } from '@/components/edit/UnsavedChangesModal';
+import { OrganizerView } from '@/components/game/OrganizerView';
+import { ParticipantView } from '@/components/game/ParticipantView';
 import { GAME_TYPE_DEFAULTS, GAME_TYPE_NAMES } from '@/components/edit/constants';
 import { logger } from '@/lib/logger';
 
@@ -73,6 +74,16 @@ export default function EditForm() {
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'edit' | 'grid'>('edit');
   const [isGameInfoOpen, setIsGameInfoOpen] = useState(false);
+
+  // Track QuestionEditPanel dirty state
+  const [isQuestionDirty, setIsQuestionDirty] = useState(false);
+
+  // Unsaved changes modal state
+  const [unsavedModal, setUnsavedModal] = useState<{
+    isOpen: boolean;
+    pendingAction: 'back' | 'selectQuestion' | null;
+    pendingQuestionId: string | null;
+  }>({ isOpen: false, pendingAction: null, pendingQuestionId: null });
 
   // Track initial state for unsaved changes detection
   const initialStateRef = useRef<{
@@ -206,7 +217,79 @@ export default function EditForm() {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [hasUnsavedChanges]);
 
+  // Handle back navigation with unsaved changes warning
+  const handleBack = useCallback(() => {
+    if (hasUnsavedChanges() || isQuestionDirty) {
+      setUnsavedModal({
+        isOpen: true,
+        pendingAction: 'back',
+        pendingQuestionId: null,
+      });
+      return;
+    }
+    router.back();
+  }, [hasUnsavedChanges, isQuestionDirty, router]);
+
+  // Validate question data
+  const isQuestionValid = useCallback((q: QuestionFormData): boolean => {
+    // Content is always required
+    if (!q.content.trim()) return false;
+
+    switch (q.data.type) {
+      case 'multiple-choice':
+        // At least one option and correct answer must be set
+        if (!q.data.options || !q.data.options.some(opt => opt.trim())) return false;
+        if (!q.data.correctAnswer) return false;
+        break;
+      case 'true-false':
+        // Correct answer (O or X) must be set
+        if (!q.data.correctAnswer || !['O', 'X'].includes(q.data.correctAnswer)) return false;
+        break;
+      case 'short-answer':
+        // Correct answer must not be empty
+        if (!q.data.correctAnswer?.trim()) return false;
+        break;
+      case 'balance-game':
+        // Both options must be set (no correct answer needed)
+        if (!q.data.optionA?.trim() || !q.data.optionB?.trim()) return false;
+        break;
+    }
+
+    return true;
+  }, []);
+
+  // Build questions array including current unsaved edits
+  const buildQuestionsForSave = useCallback((): QuestionFormData[] | null => {
+    let questionsToSave = [...questions];
+
+    // Include current unsaved question edits
+    if (isQuestionDirty && previewData) {
+      // Validate current question
+      if (!isQuestionValid(previewData)) {
+        alert('현재 편집 중인 질문의 필수 항목을 모두 입력해주세요.');
+        return null;
+      }
+
+      if (selectedQuestionId === 'new') {
+        const newId = crypto.randomUUID();
+        const newQuestion = { ...previewData, id: newId, order: questions.length };
+        questionsToSave = [...questions, newQuestion];
+      } else if (selectedQuestionId) {
+        const index = questions.findIndex(q => q.id === selectedQuestionId);
+        if (index !== -1) {
+          questionsToSave = [...questions];
+          questionsToSave[index] = { ...previewData, id: selectedQuestionId, order: index };
+        }
+      }
+    }
+
+    return questionsToSave;
+  }, [questions, isQuestionDirty, previewData, selectedQuestionId, isQuestionValid]);
+
   const handleSave = async () => {
+    const questionsToSave = buildQuestionsForSave();
+    if (questionsToSave === null) return; // Validation failed
+
     isSavingRef.current = true;
     try {
       if (isNewGameMode) {
@@ -223,11 +306,8 @@ export default function EditForm() {
           minPlayers: gameTypeDefaults.minPlayers,
           maxPlayers: gameTypeDefaults.maxPlayers,
           needsMobile: gameTypeDefaults.needsMobile,
-          settings: {
-            timeLimit,
-            soundEnabled,
-          },
-          questions: questions.map((q) => ({
+          settings: { timeLimit, soundEnabled },
+          questions: questionsToSave.map((q) => ({
             order: q.order,
             content: q.content,
             data: q.data,
@@ -251,11 +331,8 @@ export default function EditForm() {
           minPlayers: sourceData.minPlayers,
           maxPlayers: sourceData.maxPlayers,
           needsMobile: sourceData.needsMobile,
-          settings: {
-            timeLimit,
-            soundEnabled,
-          },
-          questions: questions.map((q) => ({
+          settings: { timeLimit, soundEnabled },
+          questions: questionsToSave.map((q) => ({
             order: q.order,
             content: q.content,
             data: q.data,
@@ -270,11 +347,8 @@ export default function EditForm() {
         await updateGame.mutateAsync({
           title,
           description: description || undefined,
-          settings: {
-            timeLimit,
-            soundEnabled,
-          },
-          questions: questions.map((q) => ({
+          settings: { timeLimit, soundEnabled },
+          questions: questionsToSave.map((q) => ({
             id: q.id,
             order: q.order,
             content: q.content,
@@ -295,6 +369,9 @@ export default function EditForm() {
   };
 
   const handleSaveAndCreateRoom = async () => {
+    const questionsToSave = buildQuestionsForSave();
+    if (questionsToSave === null) return; // Validation failed
+
     isSavingRef.current = true;
     try {
       let finalGameId = gameId;
@@ -313,11 +390,8 @@ export default function EditForm() {
           minPlayers: gameTypeDefaults.minPlayers,
           maxPlayers: gameTypeDefaults.maxPlayers,
           needsMobile: gameTypeDefaults.needsMobile,
-          settings: {
-            timeLimit,
-            soundEnabled,
-          },
-          questions: questions.map((q) => ({
+          settings: { timeLimit, soundEnabled },
+          questions: questionsToSave.map((q) => ({
             order: q.order,
             content: q.content,
             data: q.data,
@@ -342,11 +416,8 @@ export default function EditForm() {
           minPlayers: sourceData.minPlayers,
           maxPlayers: sourceData.maxPlayers,
           needsMobile: sourceData.needsMobile,
-          settings: {
-            timeLimit,
-            soundEnabled,
-          },
-          questions: questions.map((q) => ({
+          settings: { timeLimit, soundEnabled },
+          questions: questionsToSave.map((q) => ({
             order: q.order,
             content: q.content,
             data: q.data,
@@ -362,11 +433,8 @@ export default function EditForm() {
         await updateGame.mutateAsync({
           title,
           description: description || undefined,
-          settings: {
-            timeLimit,
-            soundEnabled,
-          },
-          questions: questions.map((q) => ({
+          settings: { timeLimit, soundEnabled },
+          questions: questionsToSave.map((q) => ({
             id: q.id,
             order: q.order,
             content: q.content,
@@ -392,14 +460,144 @@ export default function EditForm() {
     }
   };
 
-  // Handle back navigation with unsaved changes warning
-  const handleBack = useCallback(() => {
-    if (hasUnsavedChanges()) {
-      const confirmed = window.confirm('저장하지 않은 변경사항이 있습니다. 정말 나가시겠습니까?');
-      if (!confirmed) return;
+  // Handle unsaved modal actions
+  const handleUnsavedModalSave = useCallback(async () => {
+    const { pendingAction, pendingQuestionId } = unsavedModal;
+
+    // Build updated questions array with current edits
+    let updatedQuestions = [...questions];
+    if (isQuestionDirty && previewData) {
+      // Validate current question before saving
+      if (!isQuestionValid(previewData)) {
+        alert('필수 항목을 모두 입력해주세요.');
+        setUnsavedModal({ isOpen: false, pendingAction: null, pendingQuestionId: null });
+        return;
+      }
+
+      if (selectedQuestionId === 'new') {
+        const newId = crypto.randomUUID();
+        const newQuestion = { ...previewData, id: newId, order: questions.length };
+        updatedQuestions = [...questions, newQuestion];
+      } else if (selectedQuestionId) {
+        const index = questions.findIndex(q => q.id === selectedQuestionId);
+        if (index !== -1) {
+          updatedQuestions = [...questions];
+          updatedQuestions[index] = { ...previewData, id: selectedQuestionId, order: index };
+        }
+      }
     }
-    router.back();
-  }, [hasUnsavedChanges, router]);
+
+    // For 'back' action, we need to save to backend since we're leaving the page
+    if (pendingAction === 'back') {
+      setUnsavedModal({ isOpen: false, pendingAction: null, pendingQuestionId: null });
+      isSavingRef.current = true;
+
+      try {
+        if (isNewGameMode) {
+          if (!gameTypeDefaults) {
+            alert('게임 타입을 찾을 수 없습니다.');
+            isSavingRef.current = false;
+            return;
+          }
+          await createGame.mutateAsync({
+            title,
+            description: description || undefined,
+            gameType: gameTypeDefaults.gameType,
+            category: gameTypeDefaults.category,
+            duration: gameTypeDefaults.duration,
+            minPlayers: gameTypeDefaults.minPlayers,
+            maxPlayers: gameTypeDefaults.maxPlayers,
+            needsMobile: gameTypeDefaults.needsMobile,
+            settings: { timeLimit, soundEnabled },
+            questions: updatedQuestions.map((q) => ({
+              order: q.order,
+              content: q.content,
+              data: q.data,
+              imageUrl: q.imageUrl,
+              videoUrl: q.videoUrl,
+              audioUrl: q.audioUrl,
+              mediaSettings: q.mediaSettings,
+            })),
+          });
+        } else if (isDraftMode) {
+          if (!sourceData) {
+            alert('템플릿을 찾을 수 없습니다.');
+            isSavingRef.current = false;
+            return;
+          }
+          await createGame.mutateAsync({
+            title,
+            description: description || undefined,
+            gameType: sourceData.gameType,
+            category: sourceData.category,
+            duration: sourceData.duration,
+            minPlayers: sourceData.minPlayers,
+            maxPlayers: sourceData.maxPlayers,
+            needsMobile: sourceData.needsMobile,
+            settings: { timeLimit, soundEnabled },
+            questions: updatedQuestions.map((q) => ({
+              order: q.order,
+              content: q.content,
+              data: q.data,
+              imageUrl: q.imageUrl,
+              videoUrl: q.videoUrl,
+              audioUrl: q.audioUrl,
+              mediaSettings: q.mediaSettings,
+            })),
+            sourceGameId: templateId || undefined,
+          });
+        } else {
+          await updateGame.mutateAsync({
+            title,
+            description: description || undefined,
+            settings: { timeLimit, soundEnabled },
+            questions: updatedQuestions.map((q) => ({
+              id: q.id,
+              order: q.order,
+              content: q.content,
+              data: q.data,
+              imageUrl: q.imageUrl,
+              videoUrl: q.videoUrl,
+              audioUrl: q.audioUrl,
+              mediaSettings: q.mediaSettings,
+            })),
+          });
+        }
+        router.push('/browse');
+      } catch (error) {
+        logger.error('Failed to save game:', error);
+        alert('게임 저장에 실패했습니다. 다시 시도해주세요.');
+        isSavingRef.current = false;
+      }
+      return;
+    }
+
+    // For 'selectQuestion' action, just save to local state
+    if (pendingAction === 'selectQuestion') {
+      setQuestions(updatedQuestions);
+      setUnsavedModal({ isOpen: false, pendingAction: null, pendingQuestionId: null });
+      setIsQuestionDirty(false);
+      setSelectedQuestionId(pendingQuestionId);
+      setPreviewData(null);
+    }
+  }, [unsavedModal, isQuestionDirty, previewData, selectedQuestionId, questions, router, isNewGameMode, isDraftMode, gameTypeDefaults, sourceData, title, description, timeLimit, soundEnabled, templateId, createGame, updateGame, isQuestionValid]);
+
+  const handleUnsavedModalDiscard = useCallback(() => {
+    const { pendingAction, pendingQuestionId } = unsavedModal;
+    setUnsavedModal({ isOpen: false, pendingAction: null, pendingQuestionId: null });
+    setIsQuestionDirty(false);
+
+    if (pendingAction === 'back') {
+      router.back();
+    } else if (pendingAction === 'selectQuestion') {
+      setSelectedQuestionId(pendingQuestionId);
+      setPreviewData(null);
+    }
+  }, [unsavedModal, router]);
+
+  const handleUnsavedModalCancel = useCallback(() => {
+    setUnsavedModal({ isOpen: false, pendingAction: null, pendingQuestionId: null });
+  }, []);
 
   // Helper to get selected question and its index
   const getSelectedQuestion = useCallback(() => {
@@ -417,6 +615,15 @@ export default function EditForm() {
   };
 
   const handleSelectQuestion = (questionId: string | null) => {
+    // Check if current question has unsaved changes
+    if (isQuestionDirty && questionId !== selectedQuestionId) {
+      setUnsavedModal({
+        isOpen: true,
+        pendingAction: 'selectQuestion',
+        pendingQuestionId: questionId,
+      });
+      return;
+    }
     setSelectedQuestionId(questionId);
     setPreviewData(null); // Reset preview data when selection changes
   };
@@ -768,29 +975,57 @@ export default function EditForm() {
                       const questionNum = selectedQuestionId === 'new' ? questions.length + 1 : selectedIndex + 1;
                       const totalNum = questions.length || 1;
 
+                      if (!displayQuestion) {
+                        return (
+                          <div className="h-full flex items-center justify-center">
+                            <span className="text-gray-400 text-sm">질문을 선택하세요</span>
+                          </div>
+                        );
+                      }
+
+                      const previewQuestion = {
+                        id: displayQuestion.id || 'preview',
+                        order: displayQuestion.order,
+                        content: displayQuestion.content,
+                        data: displayQuestion.data,
+                        imageUrl: displayQuestion.imageUrl,
+                        videoUrl: displayQuestion.videoUrl,
+                        audioUrl: displayQuestion.audioUrl,
+                        mediaSettings: displayQuestion.mediaSettings,
+                      };
+
                       return (
                         <div className="flex flex-col gap-4 h-full">
                           {/* Organizer Preview (Top) */}
                           <div className="flex-1 min-h-0">
                             <div className="text-[10px] text-gray-400 uppercase tracking-wider mb-2 font-medium">주최자 화면</div>
-                            <div className="rounded-xl shadow-lg overflow-hidden h-[calc(100%-20px)]">
-                              <OrganizerPreview
-                                question={displayQuestion}
-                                questionIndex={questionNum - 1}
-                                totalQuestions={totalNum}
-                              />
+                            <div className="rounded-xl shadow-lg overflow-hidden h-[calc(100%-20px)] bg-gradient-to-br from-primary-50 via-white to-secondary-50">
+                              <div className="origin-top-left scale-[0.35] w-[286%] h-[286%]">
+                                <OrganizerView
+                                  pin="123456"
+                                  currentQuestion={previewQuestion}
+                                  questionIndex={questionNum - 1}
+                                  totalQuestions={totalNum}
+                                  duration={displayQuestion.data.duration || 30}
+                                  isPreview={true}
+                                />
+                              </div>
                             </div>
                           </div>
 
                           {/* Participant Preview (Bottom) */}
                           <div className="flex-1 min-h-0">
                             <div className="text-[10px] text-gray-400 uppercase tracking-wider mb-2 font-medium">참가자 화면</div>
-                            <div className="rounded-xl shadow-lg overflow-hidden h-[calc(100%-20px)]">
-                              <ParticipantPreview
-                                question={displayQuestion}
-                                questionIndex={questionNum - 1}
-                                totalQuestions={totalNum}
-                              />
+                            <div className="rounded-xl shadow-lg overflow-hidden h-[calc(100%-20px)] bg-gradient-to-br from-primary-50 via-white to-secondary-50">
+                              <div className="origin-top-left scale-[0.35] w-[286%] h-[286%]">
+                                <ParticipantView
+                                  currentQuestion={previewQuestion}
+                                  questionIndex={questionNum - 1}
+                                  totalQuestions={totalNum}
+                                  duration={displayQuestion.data.duration || 30}
+                                  isPreview={true}
+                                />
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -805,6 +1040,7 @@ export default function EditForm() {
                       questionNumber={selectedQuestionId === 'new' ? questions.length + 1 : getSelectedQuestionIndex() + 1}
                       onSave={handleSaveQuestion}
                       onChange={setPreviewData}
+                      onDirtyChange={setIsQuestionDirty}
                       onDelete={selectedQuestionId !== 'new' ? handleDeleteCurrentQuestion : undefined}
                       onCancel={selectedQuestionId === 'new' ? () => setSelectedQuestionId(null) : undefined}
                       hidePreview
@@ -936,6 +1172,15 @@ export default function EditForm() {
         questions={questions}
         soundEnabled={soundEnabled}
         onSave={handleSaveSettings}
+      />
+
+      {/* Unsaved Changes Modal */}
+      <UnsavedChangesModal
+        isOpen={unsavedModal.isOpen}
+        onSave={handleUnsavedModalSave}
+        onDiscard={handleUnsavedModalDiscard}
+        onCancel={handleUnsavedModalCancel}
+        isSaving={unsavedModal.pendingAction === 'back' && (createGame.isPending || updateGame.isPending)}
       />
     </div>
   );
